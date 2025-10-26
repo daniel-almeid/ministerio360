@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Visitor } from "../app/types/visitors";
+import { Visitor } from "../types/visitors";
 import VisitorModal from "./visitorModal";
 
 interface VisitorDetailsDrawerProps {
     visitor: Visitor;
-    onClose: () => void;     // fecha o drawer
-    onUpdated: () => void;   // recarrega a lista na página
+    onClose: () => void;
+    onUpdated: () => void;
 }
 
 export default function VisitorDetailsDrawer({ visitor, onClose, onUpdated }: VisitorDetailsDrawerProps) {
@@ -73,8 +73,8 @@ export default function VisitorDetailsDrawer({ visitor, onClose, onUpdated }: Vi
                 <VisitorModal
                     onClose={() => setOpenEditModal(false)}
                     onSuccess={() => {
-                        onUpdated();   // <- recarrega a lista
-                        handleClose(); // <- fecha o drawer com animação
+                        onUpdated();
+                        handleClose();
                     }}
                     visitor={visitor}
                 />

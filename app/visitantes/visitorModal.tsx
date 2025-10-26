@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
-import { Visitor } from "../app/types/visitors";
+import { supabase } from "../../lib/supabaseClient";
+import { Visitor } from "../types/visitors";
 
 interface VisitorModalProps {
   onClose: () => void;
-  onSuccess: () => void; // <- CHAMADO APÓS SALVAR PARA REFRESH
-  visitor?: Visitor;     // <- Edição se vier preenchido
+  onSuccess: () => void;
+  visitor?: Visitor;
 }
 
 export default function VisitorModal({ onClose, onSuccess, visitor }: VisitorModalProps) {

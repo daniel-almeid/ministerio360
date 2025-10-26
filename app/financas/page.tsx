@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import { ModalNovaTransacao } from "../../components/modalNewTransition";
+import { ModalNovaTransacao } from "./modalNewTransition";
 
 export default function FinancasPage() {
     const [transacoes, setTransacoes] = useState<any[]>([]);

@@ -1,13 +1,18 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
+
+type Ministry = {
+    id: string;
+    name: string;
+};
 
 type Props = {
     member?: {
         id: string;
         name: string;
-        ministry: string | null;
+        ministry_id: string | null;
         email: string | null;
         phone: string | null;
         is_active: boolean;
@@ -20,19 +25,23 @@ type Props = {
 export default function MemberModal({ member, onClose, onSuccess }: Props) {
     const [form, setForm] = useState({
         name: "",
-        ministry: "",
+        ministry_id: "",
         email: "",
         phone: "",
         is_active: true,
         joined_at: "",
     });
     const [saving, setSaving] = useState(false);
+    const [ministries, setMinistries] = useState<Ministry[]>([]);
 
+    // Carregar ministérios e preencher formulário se for edição
     useEffect(() => {
+        loadMinistries();
+
         if (member) {
             setForm({
                 name: member.name,
-                ministry: member.ministry || "",
+                ministry_id: member.ministry_id || "",
                 email: member.email || "",
                 phone: member.phone || "",
                 is_active: member.is_active,
@@ -41,13 +50,21 @@ export default function MemberModal({ member, onClose, onSuccess }: Props) {
         }
     }, [member]);
 
+    async function loadMinistries() {
+        const { data } = await supabase
+            .from("ministries")
+            .select("id, name")
+            .order("name", { ascending: true });
+        setMinistries(data || []);
+    }
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setSaving(true);
 
         const payload = {
             ...form,
-            ministry: form.ministry || null,
+            ministry_id: form.ministry_id || null,
             email: form.email || null,
             phone: form.phone || null,
             joined_at: form.joined_at ? new Date(form.joined_at).toISOString() : null,
@@ -84,6 +101,7 @@ export default function MemberModal({ member, onClose, onSuccess }: Props) {
 
                 <form className="space-y-4" onSubmit={handleSubmit}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Nome */}
                         <input
                             type="text"
                             placeholder="Nome"
@@ -92,13 +110,22 @@ export default function MemberModal({ member, onClose, onSuccess }: Props) {
                             onChange={(e) => setForm({ ...form, name: e.target.value })}
                             required
                         />
-                        <input
-                            type="text"
-                            placeholder="Ministério"
+
+                        {/* Ministério */}
+                        <select
                             className="border p-2 rounded-lg"
-                            value={form.ministry}
-                            onChange={(e) => setForm({ ...form, ministry: e.target.value })}
-                        />
+                            value={form.ministry_id}
+                            onChange={(e) => setForm({ ...form, ministry_id: e.target.value })}
+                        >
+                            <option value="">Sem ministério</option>
+                            {ministries.map((m) => (
+                                <option key={m.id} value={m.id}>
+                                    {m.name}
+                                </option>
+                            ))}
+                        </select>
+
+                        {/* Email */}
                         <input
                             type="email"
                             placeholder="Email"
@@ -106,6 +133,8 @@ export default function MemberModal({ member, onClose, onSuccess }: Props) {
                             value={form.email}
                             onChange={(e) => setForm({ ...form, email: e.target.value })}
                         />
+
+                        {/* Telefone */}
                         <input
                             type="text"
                             placeholder="Telefone"
@@ -113,12 +142,16 @@ export default function MemberModal({ member, onClose, onSuccess }: Props) {
                             value={form.phone}
                             onChange={(e) => setForm({ ...form, phone: e.target.value })}
                         />
+
+                        {/* Data de entrada */}
                         <input
                             type="date"
                             className="border p-2 rounded-lg"
                             value={form.joined_at}
                             onChange={(e) => setForm({ ...form, joined_at: e.target.value })}
                         />
+
+                        {/* Checkbox de ativo */}
                         <label className="flex items-center gap-2 text-sm text-gray-700">
                             <input
                                 type="checkbox"
@@ -152,4 +185,3 @@ export default function MemberModal({ member, onClose, onSuccess }: Props) {
         </div>
     );
 }
-

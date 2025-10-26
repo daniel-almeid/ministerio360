@@ -10,11 +10,13 @@ import {
   BarChart3,
   Settings,
   UserPlus,
+  Church,
 } from "lucide-react";
 
 const links = [
   { href: "/", label: "Dashboard", icon: Home },
   { href: "/financas", label: "Finanças", icon: DollarSign },
+  { href: "/ministries", label: "Ministérios", icon: Church },
   { href: "/membros", label: "Membros", icon: Users },
   { href: "/visitantes", label: "Visitantes", icon: UserPlus },
   { href: "/agenda", label: "Agenda & Escalas", icon: Calendar },
@@ -37,10 +39,9 @@ export function Sidebar() {
               key={href}
               href={href}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all
-                ${
-                  isActive
-                    ? "bg-[#38B2AC] text-white shadow-md"
-                    : "hover:bg-[#2C5282] text-[#81E6D9]"
+                ${isActive
+                  ? "bg-[#38B2AC] text-white shadow-md"
+                  : "hover:bg-[#2C5282] text-[#81E6D9]"
                 }`}
             >
               <Icon size={20} />

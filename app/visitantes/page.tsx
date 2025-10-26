@@ -3,8 +3,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { getVisitors } from "../services/visitors";
 import { Visitor } from "../types/visitors";
-import VisitorModal from "../../components/visitorModal";
-import VisitorDetailsDrawer from "../../components/visitorDetailsDrawer";
+import VisitorModal from "./visitorModal";
+import VisitorDetailsDrawer from "./visitorDetailsDrawer";
 
 export default function VisitantesPage() {
     const [visitors, setVisitors] = useState<Visitor[]>([]);
@@ -133,7 +133,7 @@ export default function VisitantesPage() {
                 )}
             </div>
 
-            {/* 🧩 Modal de registro */}
+            {/* Modal de registro */}
             {openModal && (
                 <VisitorModal
                     onClose={() => setOpenModal(false)}

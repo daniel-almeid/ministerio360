@@ -2,17 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import MemberModal from "../../components/memberModal";
+import MemberModal from "./memberModal";
 
 type Member = {
     id: string;
     name: string;
-    ministry: string | null;
+    ministry_id: string | null;
+    ministry_name?: string | null; // ✅ nome do ministério carregado via join
     email: string | null;
     phone: string | null;
     is_active: boolean;
     joined_at: string | null;
-    created_at: string;
 };
 
 export default function MembersPage() {
@@ -25,16 +25,32 @@ export default function MembersPage() {
 
     async function loadMembers() {
         setLoading(true);
+
+        // 🔹 Faz o join para trazer o nome do ministério (se existir)
         const { data, error } = await supabase
             .from("members")
-            .select("*")
+            .select(`
+        id,
+        name,
+        email,
+        phone,
+        is_active,
+        joined_at,
+        ministry_id,
+        ministries ( name )
+      `)
             .order("created_at", { ascending: false });
 
         if (error) {
             console.error("Erro ao carregar membros:", error);
             setMembers([]);
         } else {
-            setMembers((data as Member[]) || []);
+            // 🔹 Mapeia para incluir o nome do ministério
+            const mapped = (data || []).map((m: any) => ({
+                ...m,
+                ministry_name: m.ministries?.name || null,
+            }));
+            setMembers(mapped);
         }
         setLoading(false);
     }
@@ -48,15 +64,13 @@ export default function MembersPage() {
         const q = search.trim().toLowerCase();
 
         return members.filter((m) => {
-            // Filtro de status
             if (statusFilter === "active" && !m.is_active) return false;
             if (statusFilter === "inactive" && m.is_active) return false;
 
-            // Filtro de texto (nome e ministério)
             if (!q) return true;
 
             const nome = m.name?.toLowerCase() || "";
-            const ministerio = m.ministry?.toLowerCase() || "";
+            const ministerio = m.ministry_name?.toLowerCase() || "";
 
             return nome.includes(q) || ministerio.includes(q);
         });
@@ -87,7 +101,7 @@ export default function MembersPage() {
                                 key={option.key}
                                 onClick={() => setStatusFilter(option.key as any)}
                                 className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all
-                        ${statusFilter === option.key
+                  ${statusFilter === option.key
                                         ? "bg-[#38B2AC] text-white shadow-sm"
                                         : "text-gray-600 hover:text-[#38B2AC]"
                                     }`}
@@ -134,7 +148,7 @@ export default function MembersPage() {
                                     className="border-b last:border-none hover:bg-gray-50 transition"
                                 >
                                     <td className="p-3 capitalize font-medium">{m.name}</td>
-                                    <td className="p-3 capitalize">{m.ministry || "-"}</td>
+                                    <td className="p-3 capitalize">{m.ministry_name || "-"}</td>
                                     <td className="p-3">
                                         {m.is_active ? (
                                             <span className="text-green-700 bg-green-100 px-2 py-1 rounded-full text-xs font-medium">
