@@ -10,7 +10,22 @@ export function ModalNovaTransacao({ onClose, onSuccess }: any) {
     const [note, setNote] = useState("");
     const [loading, setLoading] = useState(false);
 
+    const categoriasPadrao = [
+        "Dízimo",
+        "Oferta",
+        "Compras",
+        "Contas",
+        "Eventos",
+        "Doações",
+        "Missões",
+    ];
+
     async function handleSave() {
+        if (!category || !amount) {
+            alert("Preencha todos os campos obrigatórios!");
+            return;
+        }
+
         setLoading(true);
 
         const { error } = await supabase.from("transactions").insert([
@@ -18,13 +33,14 @@ export function ModalNovaTransacao({ onClose, onSuccess }: any) {
                 type,
                 category,
                 amount: parseFloat(amount),
-                details: note,
+                note,
             },
         ]);
 
         setLoading(false);
-        if (error) alert("Erro ao salvar: " + error.message);
-        else {
+        if (error) {
+            alert("Erro ao salvar: " + error.message);
+        } else {
             onSuccess?.();
             onClose();
         }
@@ -36,6 +52,7 @@ export function ModalNovaTransacao({ onClose, onSuccess }: any) {
                 <h2 className="text-xl font-semibold mb-4">Nova Transação</h2>
 
                 <div className="space-y-3">
+                    {/* Tipo */}
                     <div>
                         <label className="block text-sm text-gray-600 mb-1">Tipo</label>
                         <select
@@ -48,17 +65,34 @@ export function ModalNovaTransacao({ onClose, onSuccess }: any) {
                         </select>
                     </div>
 
+                    {/* Categoria */}
                     <div>
                         <label className="block text-sm text-gray-600 mb-1">Categoria</label>
-                        <input
-                            type="text"
-                            className="w-full border rounded-lg px-3 py-2"
+                        <select
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
-                            placeholder="Ex: Dízimo, Oferta..."
-                        />
+                            className="w-full border rounded-lg px-3 py-2"
+                        >
+                            <option value="">Selecione uma categoria</option>
+                            {categoriasPadrao.map((cat) => (
+                                <option key={cat} value={cat}>
+                                    {cat}
+                                </option>
+                            ))}
+                            <option value="outra">Outra...</option>
+                        </select>
+
+                        {category === "outra" && (
+                            <input
+                                type="text"
+                                className="w-full border rounded-lg px-3 py-2 mt-2"
+                                placeholder="Digite o nome da categoria"
+                                onChange={(e) => setCategory(e.target.value)}
+                            />
+                        )}
                     </div>
 
+                    {/* Pessoa ou motivo */}
                     <div>
                         <label className="block text-sm text-gray-600 mb-1">
                             {type === "entrada" ? "Nome da pessoa" : "Motivo da saída"}
@@ -76,6 +110,7 @@ export function ModalNovaTransacao({ onClose, onSuccess }: any) {
                         />
                     </div>
 
+                    {/* Valor */}
                     <div>
                         <label className="block text-sm text-gray-600 mb-1">Valor</label>
                         <input
@@ -87,6 +122,7 @@ export function ModalNovaTransacao({ onClose, onSuccess }: any) {
                         />
                     </div>
 
+                    {/* Observação */}
                     <div>
                         <label className="block text-sm text-gray-600 mb-1">Observação</label>
                         <textarea
@@ -94,10 +130,12 @@ export function ModalNovaTransacao({ onClose, onSuccess }: any) {
                             rows={2}
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
+                            placeholder="Ex: Oferta referente ao culto de domingo"
                         />
                     </div>
                 </div>
 
+                {/* Botões */}
                 <div className="mt-5 flex justify-end gap-3">
                     <button
                         onClick={onClose}
@@ -108,7 +146,7 @@ export function ModalNovaTransacao({ onClose, onSuccess }: any) {
                     <button
                         onClick={handleSave}
                         disabled={loading}
-                        className="px-4 py-2 bg-[#38B2AC] text-white rounded-lg hover:bg-[#319795]"
+                        className="px-4 py-2 bg-[#38B2AC] text-white rounded-lg hover:bg-[#319795] disabled:opacity-50"
                     >
                         {loading ? "Salvando..." : "Salvar"}
                     </button>
