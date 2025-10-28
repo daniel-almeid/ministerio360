@@ -133,7 +133,6 @@ export default function VisitantesPage() {
                 )}
             </div>
 
-            {/* Modal de registro */}
             {openModal && (
                 <VisitorModal
                     onClose={() => setOpenModal(false)}

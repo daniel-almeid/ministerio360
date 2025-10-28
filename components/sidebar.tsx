@@ -21,7 +21,7 @@ const links = [
   { href: "/visitantes", label: "Visitantes", icon: UserPlus },
   { href: "/agenda", label: "Agenda & Escalas", icon: Calendar },
   { href: "/relatorios", label: "Relatórios", icon: BarChart3 },
-  { href: "/config", label: "Configurações", icon: Settings },
+  { href: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
 export function Sidebar() {
