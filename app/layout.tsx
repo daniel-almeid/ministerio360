@@ -1,31 +1,15 @@
-import "./globals.css";
-import { Poppins } from "next/font/google";
-import { Sidebar } from "../components/sidebar";
-import { Header } from "../components/header";
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-poppins",
-  display: "swap",
-});
+// app/layout.tsx
+import './globals.css';
 
 export const metadata = {
-  title: "Ministério 360",
-  description: "Painel de gestão para igrejas",
+    title: 'Ministério360',
+    description: 'Gestão ministerial moderna e integrada',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="pt-BR" className={poppins.variable}>
-      <body className="flex min-h-screen bg-[#F7FAFC] text-gray-800 font-sans">
-        <Sidebar />
-        <div className="flex-1 flex flex-col">
-          <Header />
-          <main className="p-6">{children}</main>
-        </div>
-      </body>
-    </html>
-  );
+    return (
+        <html lang="pt-BR">
+            <body suppressHydrationWarning>{children}</body>
+        </html>
+    );
 }
-
