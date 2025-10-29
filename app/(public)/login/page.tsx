@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
@@ -8,33 +8,58 @@ export default function LoginPage() {
     const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [remember, setRemember] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        const savedEmail = localStorage.getItem('rememberedEmail');
+        if (savedEmail) {
+            setEmail(savedEmail);
+            setRemember(true);
+        }
+    }, []);
 
     async function handleLogin(e: React.FormEvent) {
         e.preventDefault();
         setError('');
         setLoading(true);
 
-        // Simula autenticação (aceita qualquer e-mail/senha)
-        await new Promise((resolve) => setTimeout(resolve, 800));
-
-        if (email && password) {
-            router.push('/dashboard');
+        if (remember) {
+            localStorage.setItem('rememberedEmail', email);
         } else {
-            setError('Informe e-mail e senha.');
+            localStorage.removeItem('rememberedEmail');
         }
 
-        setLoading(false);
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+
+        if (email && password) {
+            setTimeout(() => router.push('/dashboard'), 600);
+        } else {
+            setError('Informe e-mail e senha.');
+            setLoading(false);
+        }
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-200 to-gray-200 px-6">
+        <div className="relative min-h-screen flex items-center justify-center bg-linear-to-br from-gray-200 to-gray-200 px-6 overflow-hidden">
+            {loading && (
+                <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
+                    <div className="flex flex-col items-center space-y-4">
+                        <Loader2 className="animate-spin text-[#38B2AC] w-10 h-10" />
+                        <p className="text-gray-700 font-medium animate-pulse">
+                            Entrando...
+                        </p>
+                    </div>
+                </div>
+            )}
+
             <form
                 onSubmit={handleLogin}
-                className="w-full max-w-lg p-12 md:p-20 space-y-10 rounded-2xl bg-white/70 backdrop-blur-sm border border-gray-300/50 shadow-md"
+                className={`w-full max-w-lg p-12 md:p-20 space-y-10 rounded-2xl bg-white/70 backdrop-blur-sm border border-gray-300/50 shadow-md transition-all duration-300 ${loading ? 'opacity-60 pointer-events-none' : 'opacity-100'
+                    }`}
             >
-                {/* Logo / Título */}
+
                 <div className="text-center mb-8">
                     <h1 className="text-5xl font-extrabold text-gray-800 tracking-tight">
                         Ministério<span className="text-[#38B2AC]">360</span>
@@ -44,7 +69,6 @@ export default function LoginPage() {
                     </p>
                 </div>
 
-                {/* Campos */}
                 <div className="space-y-6">
                     <div>
                         <label className="block text-base font-medium text-gray-700 mb-2">
@@ -73,6 +97,22 @@ export default function LoginPage() {
                             required
                         />
                     </div>
+
+                    <div className="flex items-center space-x-3 mt-2">
+                        <input
+                            id="remember"
+                            type="checkbox"
+                            checked={remember}
+                            onChange={(e) => setRemember(e.target.checked)}
+                            className="w-5 h-5 accent-[#38B2AC] cursor-pointer"
+                        />
+                        <label
+                            htmlFor="remember"
+                            className="text-gray-700 select-none cursor-pointer"
+                        >
+                            Lembrar meus dados
+                        </label>
+                    </div>
                 </div>
 
                 {error && (
@@ -81,16 +121,34 @@ export default function LoginPage() {
                     </p>
                 )}
 
-                {/* Botão */}
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full flex items-center justify-center gap-2 bg-[#38B2AC] hover:bg-[#319795] text-white py-4 text-lg rounded-xl font-semibold transition-all duration-200 disabled:opacity-60 shadow-sm"
-                >
-                    {loading ? <Loader2 className="animate-spin h-6 w-6" /> : 'Entrar'}
-                </button>
+                <div className="space-y-4">
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className={`w-full flex items-center justify-center gap-2 text-white py-4 text-lg rounded-xl font-semibold transition-all duration-200 disabled:opacity-60 shadow-sm ${loading
+                                ? 'bg-linear-to-r from-[#38B2AC] to-[#319795] animate-pulse'
+                                : 'bg-[#38B2AC] hover:bg-[#319795]'
+                            }`}
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 className="animate-spin h-6 w-6" />
+                                Entrando...
+                            </>
+                        ) : (
+                            'Entrar'
+                        )}
+                    </button>
 
-                {/* Recuperação */}
+                    <button
+                        type="button"
+                        onClick={() => router.push('/register')}
+                        className="w-full flex items-center justify-center gap-2 border border-[#38B2AC] text-[#38B2AC] hover:bg-[#E6FFFA] py-4 text-lg rounded-xl font-semibold transition-all duration-200"
+                    >
+                        Criar conta
+                    </button>
+                </div>
+
                 <div className="text-center mt-6">
                     <button
                         type="button"
@@ -101,7 +159,6 @@ export default function LoginPage() {
                     </button>
                 </div>
 
-                {/* Rodapé */}
                 <p className="text-center text-sm text-gray-500 mt-10">
                     © {new Date().getFullYear()} Ministério360
                 </p>
