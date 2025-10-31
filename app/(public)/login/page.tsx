@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { supabase } from '../../../lib/supabaseClient';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -31,15 +32,36 @@ export default function LoginPage() {
             localStorage.removeItem('rememberedEmail');
         }
 
-        await new Promise((resolve) => setTimeout(resolve, 1200));
+        // Faz login com Supabase Auth
+        const { data, error: loginError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
 
-        if (email && password) {
-            setTimeout(() => router.push('/dashboard'), 600);
-        } else {
-            setError('Informe e-mail e senha.');
+        if (loginError) {
+            console.error(loginError);
+            if (loginError.message.includes('Invalid login credentials')) {
+                setError('E-mail ou senha incorretos.');
+            } else if (loginError.message.includes('Email not confirmed')) {
+                setError('Confirme seu e-mail antes de fazer login.');
+            } else {
+                setError('Erro ao entrar: ' + loginError.message);
+            }
             setLoading(false);
+            return;
         }
+
+        // Garante que o e-mail foi confirmado
+        if (!data?.user?.email_confirmed_at) {
+            setError('Confirme seu e-mail antes de acessar.');
+            setLoading(false);
+            return;
+        }
+
+        setLoading(false);
+        router.push('/dashboard');
     }
+
 
     return (
         <div className="relative min-h-screen flex items-center justify-center bg-linear-to-br from-gray-200 to-gray-200 px-6 overflow-hidden">
@@ -126,8 +148,8 @@ export default function LoginPage() {
                         type="submit"
                         disabled={loading}
                         className={`w-full flex items-center justify-center gap-2 text-white py-4 text-lg rounded-xl font-semibold transition-all duration-200 disabled:opacity-60 shadow-sm ${loading
-                                ? 'bg-linear-to-r from-[#38B2AC] to-[#319795] animate-pulse'
-                                : 'bg-[#38B2AC] hover:bg-[#319795]'
+                            ? 'bg-linear-to-r from-[#38B2AC] to-[#319795] animate-pulse'
+                            : 'bg-[#38B2AC] hover:bg-[#319795]'
                             }`}
                     >
                         {loading ? (
