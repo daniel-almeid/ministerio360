@@ -1,0 +1,10 @@
+{
+  "buildCommand": "next build --webpack",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD .",
+  "env": {
+    "NEXT_TELEMETRY_DISABLED": "1"
+  }
+}
