@@ -28,17 +28,21 @@ export function ModalNovaTransacao({ onClose, onSuccess }: any) {
 
         setLoading(true);
 
-        const { error } = await supabase.from("transactions").insert([
-            {
-                type,
-                category,
-                amount: parseFloat(amount),
-                note,
-            },
-        ]);
+        const payload = {
+            type,
+            category,
+            amount: parseFloat(amount),
+            note,
+        };
+
+        console.log("Enviando payload:", payload);
+
+        const { error } = await supabase.from("transactions").insert([payload]);
 
         setLoading(false);
+
         if (error) {
+            console.error("Erro ao salvar transação:", error);
             alert("Erro ao salvar: " + error.message);
         } else {
             onSuccess?.();

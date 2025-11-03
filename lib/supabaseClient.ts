@@ -7,5 +7,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+    detectSessionInUrl: true,  // <-- ESSENCIAL para cookies e revalidação
+    storageKey: 'supabase-auth', // <-- nome fixo no localStorage
   },
 });

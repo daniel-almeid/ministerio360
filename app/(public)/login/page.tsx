@@ -13,6 +13,7 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    // === Lê e-mail salvo no localStorage ===
     useEffect(() => {
         const savedEmail = localStorage.getItem('rememberedEmail');
         if (savedEmail) {
@@ -26,42 +27,70 @@ export default function LoginPage() {
         setError('');
         setLoading(true);
 
-        if (remember) {
-            localStorage.setItem('rememberedEmail', email);
-        } else {
-            localStorage.removeItem('rememberedEmail');
-        }
+        try {
+            // === Limpa tokens antigos ===
+            await supabase.auth.signOut();
+            sessionStorage.clear();
 
-        // Faz login com Supabase Auth
-        const { data, error: loginError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
+            // === Login ===
+            const { data, error: loginError } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
 
-        if (loginError) {
-            console.error(loginError);
-            if (loginError.message.includes('Invalid login credentials')) {
+            if (loginError) {
+                console.error('Erro no login:', loginError);
                 setError('E-mail ou senha incorretos.');
-            } else if (loginError.message.includes('Email not confirmed')) {
-                setError('Confirme seu e-mail antes de fazer login.');
-            } else {
-                setError('Erro ao entrar: ' + loginError.message);
+                setLoading(false);
+                return;
             }
-            setLoading(false);
-            return;
-        }
 
-        // Garante que o e-mail foi confirmado
-        if (!data?.user?.email_confirmed_at) {
-            setError('Confirme seu e-mail antes de acessar.');
-            setLoading(false);
-            return;
-        }
+            if (!data?.user?.email_confirmed_at) {
+                setError('Confirme seu e-mail antes de acessar.');
+                setLoading(false);
+                return;
+            }
 
-        setLoading(false);
-        router.push('/dashboard');
+            // === Atualiza sessão local ===
+            const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+            if (refreshError) {
+                console.warn('Erro ao atualizar sessão:', refreshError.message);
+            }
+
+            if (refreshed?.session) {
+                await supabase.auth.setSession({
+                    access_token: refreshed.session.access_token,
+                    refresh_token: refreshed.session.refresh_token,
+                });
+                console.log('✅ Sessão Supabase atualizada localmente.');
+            }
+
+            // === Confere se o JWT contém o church_id ===
+            const { data: sessionData } = await supabase.auth.getSession();
+            const churchId = sessionData?.session?.user?.app_metadata?.church_id;
+
+            if (churchId) {
+                console.log('✅ Login completo — church_id presente no JWT:', churchId);
+            } else {
+                console.warn('⚠️ JWT ainda sem church_id (normal no localhost, ok em produção)');
+            }
+
+            // === Salva e-mail se lembrar ===
+            if (remember) {
+                localStorage.setItem('rememberedEmail', email);
+            } else {
+                localStorage.removeItem('rememberedEmail');
+            }
+
+            // === Redireciona ===
+            router.push('/dashboard');
+        } catch (err: any) {
+            console.error('Erro inesperado no login:', err.message);
+            setError('Erro inesperado. Tente novamente.');
+        } finally {
+            setLoading(false);
+        }
     }
-
 
     return (
         <div className="relative min-h-screen flex items-center justify-center bg-linear-to-br from-gray-200 to-gray-200 px-6 overflow-hidden">
