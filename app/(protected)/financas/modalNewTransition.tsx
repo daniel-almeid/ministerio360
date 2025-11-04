@@ -28,25 +28,64 @@ export function ModalNovaTransacao({ onClose, onSuccess }: any) {
 
         setLoading(true);
 
-        const payload = {
-            type,
-            category,
-            amount: parseFloat(amount),
-            note,
-        };
+        try {
+            // 🔹 1. Atualiza o token de autenticação
+            const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
 
-        console.log("Enviando payload:", payload);
+            if (refreshError) {
+                console.warn("Erro ao atualizar sessão:", refreshError.message);
+            }
 
-        const { error } = await supabase.from("transactions").insert([payload]);
+            const session = refreshed?.session;
+            if (!session || !session.access_token) {
+                throw new Error("Sessão inválida ou expirada. Faça login novamente.");
+            }
 
-        setLoading(false);
+            // 🔹 2. Sincroniza PostgREST
+            await supabase.auth.setSession({
+                access_token: session.access_token,
+                refresh_token: session.refresh_token,
+            });
 
-        if (error) {
-            console.error("Erro ao salvar transação:", error);
-            alert("Erro ao salvar: " + error.message);
-        } else {
-            onSuccess?.();
-            onClose();
+            console.log("JWT ativo no insert:", session.user?.app_metadata);
+
+            // 🔹 3. Monta o payload
+            const payload = {
+                type,
+                category,
+                amount: parseFloat(amount),
+                note,
+            };
+
+            console.log("Enviando payload:", payload);
+
+            // 🔹 4. Envio manual via fetch (com header Authorization correto)
+            const restUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/transactions`;
+            const res = await fetch(restUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${session.access_token}`,
+                    apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                    Prefer: "return=minimal",
+                },
+                body: JSON.stringify([payload]),
+            });
+
+            if (!res.ok) {
+                const errText = await res.text();
+                console.error("Erro ao salvar transação:", errText);
+                alert("Erro ao salvar transação: " + errText);
+            } else {
+                console.log("✅ Transação salva com sucesso!");
+                onSuccess?.();
+                onClose();
+            }
+        } catch (err: any) {
+            console.error("Erro inesperado:", err.message);
+            alert("Erro inesperado: " + err.message);
+        } finally {
+            setLoading(false);
         }
     }
 

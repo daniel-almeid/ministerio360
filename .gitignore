@@ -29,3 +29,5 @@ coverage/
 
 # Vercel deployment files
 .vercel/
+
+.vercel

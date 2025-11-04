@@ -32,7 +32,7 @@ export default function LoginPage() {
             await supabase.auth.signOut();
             sessionStorage.clear();
 
-            // === Login ===
+            // === Tenta login ===
             const { data, error: loginError } = await supabase.auth.signInWithPassword({
                 email,
                 password,
@@ -40,29 +40,34 @@ export default function LoginPage() {
 
             if (loginError) {
                 console.error('Erro no login:', loginError);
-                setError('E-mail ou senha incorretos.');
-                setLoading(false);
+                if (loginError.message.includes('Invalid login credentials')) {
+                    setError('E-mail ou senha incorretos.');
+                } else if (loginError.message.includes('Email not confirmed')) {
+                    setError('Confirme seu e-mail antes de acessar.');
+                } else {
+                    setError('Erro ao entrar: ' + loginError.message);
+                }
                 return;
             }
 
+            // === Garante que o e-mail foi confirmado ===
             if (!data?.user?.email_confirmed_at) {
                 setError('Confirme seu e-mail antes de acessar.');
-                setLoading(false);
                 return;
             }
 
-            // === Atualiza sessão local ===
+            // === Atualiza o JWT com church_id ===
+            console.log('🔄 Atualizando sessão Supabase...');
             const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
-            if (refreshError) {
-                console.warn('Erro ao atualizar sessão:', refreshError.message);
-            }
 
-            if (refreshed?.session) {
+            if (refreshError) {
+                console.warn('⚠️ Erro ao atualizar sessão:', refreshError.message);
+            } else if (refreshed?.session) {
                 await supabase.auth.setSession({
                     access_token: refreshed.session.access_token,
                     refresh_token: refreshed.session.refresh_token,
                 });
-                console.log('✅ Sessão Supabase atualizada localmente.');
+                console.log('✅ Sessão Supabase atualizada.');
             }
 
             // === Confere se o JWT contém o church_id ===
@@ -72,17 +77,17 @@ export default function LoginPage() {
             if (churchId) {
                 console.log('✅ Login completo — church_id presente no JWT:', churchId);
             } else {
-                console.warn('⚠️ JWT ainda sem church_id (normal no localhost, ok em produção)');
+                console.warn('⚠️ JWT ainda sem church_id (pode demorar alguns segundos após novo cadastro).');
             }
 
-            // === Salva e-mail se lembrar ===
+            // === Lembrar e-mail ===
             if (remember) {
                 localStorage.setItem('rememberedEmail', email);
             } else {
                 localStorage.removeItem('rememberedEmail');
             }
 
-            // === Redireciona ===
+            // === Redireciona para o dashboard ===
             router.push('/dashboard');
         } catch (err: any) {
             console.error('Erro inesperado no login:', err.message);
@@ -90,6 +95,9 @@ export default function LoginPage() {
         } finally {
             setLoading(false);
         }
+
+        const { data } = await supabase.auth.getSession();
+        console.log('JWT claims:', data.session?.user?.app_metadata);
     }
 
     return (
