@@ -17,42 +17,76 @@ export default function FinancasPage() {
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
   });
   const [currentPage, setCurrentPage] = useState(1);
+  const [sessionLoaded, setSessionLoaded] = useState(false);
 
   async function loadTransactions(type = "todas", monthYear = selectedMonth) {
     setLoading(true);
 
-    const [year, month] = monthYear.split("-");
-    const start = new Date(Number(year), Number(month) - 1, 1);
-    const end = new Date(Number(year), Number(month), 0, 23, 59, 59);
+    try {
+      // Garante que o usuário está autenticado
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
 
-    let query = supabase
-      .from("transactions")
-      .select("*")
-      .gte("created_at", start.toISOString())
-      .lte("created_at", end.toISOString())
-      .order("created_at", { ascending: false });
+      if (!session) {
+        console.warn("Usuário não autenticado — abortando carregamento.");
+        setTransactions([]);
+        setLoading(false);
+        return;
+      }
 
-    if (type !== "todas") {
-      query = query.eq("type", type);
-    }
+      console.log("🔑 JWT ativo:", session.user?.app_metadata);
 
-    const { data, error } = await query;
+      // Define o intervalo do mês selecionado
+      const [year, month] = monthYear.split("-");
+      const start = new Date(Number(year), Number(month) - 1, 1);
+      const end = new Date(Number(year), Number(month), 0, 23, 59, 59);
 
-    if (error) {
-      console.error("Erro ao carregar transações:", error);
-    } else {
-      setTransactions(data || []);
-      setCurrentPage(1);
+      let query = supabase
+        .from("transactions")
+        .select("*")
+        .gte("created_at", start.toISOString())
+        .lte("created_at", end.toISOString())
+        .order("created_at", { ascending: false });
+
+      if (type !== "todas") query = query.eq("type", type);
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("Erro ao carregar transações:", error);
+      } else {
+        console.log(`📦 ${data?.length || 0} transações carregadas`);
+        setTransactions(data || []);
+        setCurrentPage(1);
+      }
+    } catch (err: any) {
+      console.error("Erro inesperado ao carregar transações:", err.message);
     }
 
     setLoading(false);
   }
 
+  // Aguarda restauração da sessão antes de carregar
   useEffect(() => {
-    loadTransactions(filter, selectedMonth);
-  }, [filter, selectedMonth]);
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession();
 
-  // === PAGINAÇÃO ===
+      if (!session) {
+        console.warn("Sessão não encontrada — redirecionar para login?");
+      } else {
+        console.log("✅ Sessão restaurada:", session.user?.app_metadata);
+        setSessionLoaded(true);
+      }
+    }
+
+    init();
+  }, []);
+
+  useEffect(() => {
+    if (sessionLoaded) loadTransactions(filter, selectedMonth);
+  }, [filter, selectedMonth, sessionLoaded]);
+
+  // === Paginação ===
   const totalPages = useMemo(() => Math.ceil(transactions.length / ITEMS_PER_PAGE), [transactions]);
   const paginatedData = useMemo(() => {
     const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -66,6 +100,14 @@ export default function FinancasPage() {
   const handleNext = () => {
     if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
   };
+
+  if (!sessionLoaded) {
+    return (
+      <p className="text-gray-500 text-center mt-10">
+        Carregando sessão e dados financeiros...
+      </p>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -123,10 +165,7 @@ export default function FinancasPage() {
                 </thead>
                 <tbody>
                   {paginatedData.map((t) => (
-                    <tr
-                      key={t.id}
-                      className="border-b last:border-none hover:bg-gray-50 transition-colors"
-                    >
+                    <tr key={t.id} className="border-b last:border-none hover:bg-gray-50 transition-colors">
                       <td
                         className={`py-2 px-3 capitalize font-medium ${
                           t.type === "entrada" ? "text-green-600" : "text-red-600"
@@ -148,7 +187,6 @@ export default function FinancasPage() {
               </table>
             </div>
 
-            {/* === PAGINAÇÃO MODERNA === */}
             {totalPages > 1 && (
               <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-6 border-t border-gray-100 pt-4">
                 <span className="text-sm text-gray-500">
@@ -161,8 +199,7 @@ export default function FinancasPage() {
                     {Math.min(currentPage * ITEMS_PER_PAGE, transactions.length)}
                   </strong>{" "}
                   de{" "}
-                  <strong className="text-gray-700">{transactions.length}</strong>{" "}
-                  transações
+                  <strong className="text-gray-700">{transactions.length}</strong> transações
                 </span>
 
                 <div className="flex items-center gap-2">
@@ -174,38 +211,9 @@ export default function FinancasPage() {
                         ? "text-gray-300 border-gray-200 cursor-not-allowed bg-gray-50"
                         : "text-gray-700 border-gray-300 hover:border-[#38B2AC] hover:text-[#38B2AC]"
                     }`}
-                    aria-label="Página anterior"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-
-                  {/* Páginas numeradas com elipses */}
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1)
-                      .filter(
-                        (page) =>
-                          page === 1 ||
-                          page === totalPages ||
-                          (page >= currentPage - 1 && page <= currentPage + 1)
-                      )
-                      .map((page, i, arr) => (
-                        <div key={page}>
-                          {i > 0 && arr[i - 1] !== page - 1 && (
-                            <span className="text-gray-400 px-1">…</span>
-                          )}
-                          <button
-                            onClick={() => setCurrentPage(page)}
-                            className={`w-9 h-9 rounded-xl text-sm font-medium transition-all ${
-                              currentPage === page
-                                ? "bg-[#38B2AC] text-white shadow-md"
-                                : "text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            {page}
-                          </button>
-                        </div>
-                      ))}
-                  </div>
 
                   <button
                     onClick={handleNext}
@@ -215,7 +223,6 @@ export default function FinancasPage() {
                         ? "text-gray-300 border-gray-200 cursor-not-allowed bg-gray-50"
                         : "text-gray-700 border-gray-300 hover:border-[#38B2AC] hover:text-[#38B2AC]"
                     }`}
-                    aria-label="Próxima página"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>

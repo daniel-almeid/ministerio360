@@ -1,4 +1,3 @@
--- Limpeza multi-tenant (sem JWT)
 create or replace function public.clean_old_records()
 returns void
 language plpgsql
@@ -7,17 +6,14 @@ set search_path = public
 as $$
 declare
   v_today date := (now() at time zone 'America/Sao_Paulo')::date;
-  v_church_id uuid := public.current_church_id();
+  v_church_id uuid := (auth.jwt() ->> 'church_id')::uuid;
 begin
   if v_church_id is null then
-    raise exception 'Usuário sem church_id (church_profiles não encontrado para este auth.uid()).';
+    raise exception 'JWT sem church_id.';
   end if;
 
-  delete from public.events  where church_id = v_church_id and (date::date) <= v_today;
-  delete from public.scales  where church_id = v_church_id and (date::date) <= v_today;
+  delete from public.events where church_id = v_church_id and (date::date) <= v_today;
+  delete from public.scales where church_id = v_church_id and (date::date) <= v_today;
 
-  raise notice 'Limpeza executada para % (America/Sao_Paulo), church_id=%', v_today, v_church_id;
+  raise notice 'Limpeza concluída para % (church_id=%)', v_today, v_church_id;
 end$$;
-
--- Exemplo: executar manualmente
--- select public.clean_old_records();

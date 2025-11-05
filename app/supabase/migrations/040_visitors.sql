@@ -9,70 +9,36 @@ create table if not exists public.visitors (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   visit_date date not null,
-  followup_status visitor_followup_status not null default 'pendente',
+  followup_status visitor_followup_status default 'pendente',
   phone text,
   email text,
   notes text,
-  is_member boolean not null default false,
-  church_id uuid references public.church_profiles(id) on delete cascade,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  is_member boolean default false,
+  church_id uuid not null references public.church_profiles(id) on delete cascade,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
 );
 
-create index if not exists idx_visitors_church_id on public.visitors (church_id);
-create index if not exists idx_visitors_visit_date on public.visitors (visit_date);
+create index if not exists idx_visitors_church_id on public.visitors(church_id);
 
-drop trigger if exists trg_visitors_set_updated_at on public.visitors;
-create trigger trg_visitors_set_updated_at
+drop trigger if exists trg_visitors_updated_at on public.visitors;
+create trigger trg_visitors_updated_at
 before update on public.visitors
 for each row execute function public.set_updated_at();
 
--- Preenche church_id automaticamente
-create or replace function public.set_visitor_church_id()
-returns trigger language plpgsql as $$
-begin
-  if new.church_id is null then
-    new.church_id := public.current_church_id();
-  end if;
-  if new.church_id is null then
-    raise exception 'Não é possível inserir visitante sem church_id.';
-  end if;
-  return new;
-end$$;
-
-drop trigger if exists trg_visitors_default_church on public.visitors;
-create trigger trg_visitors_default_church
+drop trigger if exists trg_visitors_church_id on public.visitors;
+create trigger trg_visitors_church_id
 before insert on public.visitors
-for each row execute function public.set_visitor_church_id();
+for each row execute function public.set_church_id();
 
 alter table public.visitors enable row level security;
 
-drop policy if exists "visitors_select_by_church" on public.visitors;
-create policy "visitors_select_by_church"
+drop policy if exists "visitors_rls" on public.visitors;
+create policy "visitors_rls"
 on public.visitors
-for select to authenticated
-using (auth.role() = 'service_role' or church_id = public.current_church_id());
+for all to authenticated
+using (church_id = (auth.jwt() ->> 'church_id')::uuid)
+with check (church_id = (auth.jwt() ->> 'church_id')::uuid);
 
-drop policy if exists "visitors_insert_by_church" on public.visitors;
-create policy "visitors_insert_by_church"
-on public.visitors
-for insert to authenticated
-with check (auth.role() = 'service_role' or church_id = public.current_church_id());
-
-drop policy if exists "visitors_update_by_church" on public.visitors;
-create policy "visitors_update_by_church"
-on public.visitors
-for update to authenticated
-using (auth.role() = 'service_role' or church_id = public.current_church_id())
-with check (auth.role() = 'service_role' or church_id = public.current_church_id());
-
-drop policy if exists "visitors_delete_by_church" on public.visitors;
-create policy "visitors_delete_by_church"
-on public.visitors
-for delete to authenticated
-using (auth.role() = 'service_role' or church_id = public.current_church_id());
-
+grant all on public.visitors to authenticated;
 revoke all on public.visitors from anon;
-grant select, insert, update, delete on public.visitors to authenticated;
-
-notify pgrst, 'reload schema';

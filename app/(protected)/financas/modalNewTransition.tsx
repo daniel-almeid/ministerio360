@@ -29,27 +29,23 @@ export function ModalNovaTransacao({ onClose, onSuccess }: any) {
         setLoading(true);
 
         try {
-            // 🔹 1. Atualiza o token de autenticação
-            const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+            // Garante que a sessão do usuário está válida
+            const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
-            if (refreshError) {
-                console.warn("Erro ao atualizar sessão:", refreshError.message);
+            if (sessionError) {
+                console.error("Erro ao obter sessão:", sessionError.message);
+                throw new Error("Falha ao obter sessão.");
             }
 
-            const session = refreshed?.session;
-            if (!session || !session.access_token) {
-                throw new Error("Sessão inválida ou expirada. Faça login novamente.");
+            const session = sessionData?.session;
+            if (!session) {
+                alert("Sessão expirada. Faça login novamente.");
+                return;
             }
 
-            // 🔹 2. Sincroniza PostgREST
-            await supabase.auth.setSession({
-                access_token: session.access_token,
-                refresh_token: session.refresh_token,
-            });
+            console.log("🔑 Sessão válida:", session.user?.app_metadata);
 
-            console.log("JWT ativo no insert:", session.user?.app_metadata);
-
-            // 🔹 3. Monta o payload
+            // Monta o payload (sem church_id — o trigger do banco preenche automaticamente)
             const payload = {
                 type,
                 category,
@@ -59,28 +55,18 @@ export function ModalNovaTransacao({ onClose, onSuccess }: any) {
 
             console.log("Enviando payload:", payload);
 
-            // 🔹 4. Envio manual via fetch (com header Authorization correto)
-            const restUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/transactions`;
-            const res = await fetch(restUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${session.access_token}`,
-                    apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-                    Prefer: "return=minimal",
-                },
-                body: JSON.stringify([payload]),
-            });
+            // Inserção autenticada (RLS usa o JWT com church_id)
+            const { error } = await supabase.from("transactions").insert(payload);
 
-            if (!res.ok) {
-                const errText = await res.text();
-                console.error("Erro ao salvar transação:", errText);
-                alert("Erro ao salvar transação: " + errText);
-            } else {
-                console.log("✅ Transação salva com sucesso!");
-                onSuccess?.();
-                onClose();
+            if (error) {
+                console.error("Erro ao salvar transação:", error);
+                alert("Erro ao salvar transação: " + error.message);
+                return;
             }
+
+            console.log("✅ Transação salva com sucesso!");
+            onSuccess?.();
+            onClose();
         } catch (err: any) {
             console.error("Erro inesperado:", err.message);
             alert("Erro inesperado: " + err.message);
@@ -88,7 +74,6 @@ export function ModalNovaTransacao({ onClose, onSuccess }: any) {
             setLoading(false);
         }
     }
-
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-xl shadow-lg w-[400px]">
