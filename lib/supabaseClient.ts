@@ -1,13 +1,22 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Usa sempre a chave pública (anon)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Para evitar conflito de storage entre abas
+const createScopedStorage = () => {
+  try {
+    if (typeof window !== "undefined") {
+      return window.sessionStorage; // isolado por aba
+    }
+  } catch (_) { }
+  return undefined;
+};
 
-// Client único global — NÃO recrie, o Supabase gerencia sessão e refresh internamente
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     persistSession: true,
+    storage: createScopedStorage(),
     autoRefreshToken: true,
     detectSessionInUrl: true,
   },

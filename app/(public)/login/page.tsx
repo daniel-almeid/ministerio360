@@ -30,7 +30,10 @@ export default function LoginPage() {
         try {
             // Garante que nenhuma sessão antiga interfira
             await supabase.auth.signOut();
+            localStorage.clear();
             sessionStorage.clear();
+            indexedDB.deleteDatabase('supabase-auth');
+            indexedDB.deleteDatabase('Supabase');
 
             // Login
             const { data, error: loginError } = await supabase.auth.signInWithPassword({
