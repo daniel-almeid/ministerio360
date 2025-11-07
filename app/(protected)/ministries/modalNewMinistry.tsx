@@ -9,40 +9,35 @@ type Props = {
 };
 
 export default function ModalNewMinistry({ onClose, onSuccess }: Props) {
-  const [form, setForm] = useState({
-    name: '',
-    description: '',
-  });
+  const [form, setForm] = useState({ name: '', description: '' });
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
 
+    // A inserção agora é isolada automaticamente via RLS + trigger
     const { error } = await supabase
       .from('ministries')
-      .insert([{ name: form.name, description: form.description || null }]);
+      .insert([{ name: form.name.trim(), description: form.description || null }]);
 
     setSaving(false);
 
     if (error) {
+      console.error('Erro ao salvar ministério:', error.message);
       alert('Erro ao salvar: ' + error.message);
-    } else {
-      onSuccess();
-      onClose();
-      setForm({ name: '', description: '' });
+      return;
     }
+
+    onSuccess();
+    onClose();
+    setForm({ name: '', description: '' });
   }
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-      {/* Fundo clicável para fechar */}
-      <div
-        className="absolute inset-0"
-        onClick={onClose}
-      ></div>
+      <div className="absolute inset-0" onClick={onClose}></div>
 
-      {/* Conteúdo do modal */}
       <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-4 z-10">
         <h3 className="text-xl font-semibold text-gray-700">Novo Ministério</h3>
 

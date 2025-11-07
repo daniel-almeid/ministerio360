@@ -22,6 +22,15 @@ export default function MinistriesPage() {
 
     async function loadMinistries() {
         setLoading(true);
+
+        const {
+            data: { session },
+        } = await supabase.auth.getSession();
+        const church_id = session?.user?.app_metadata?.church_id;
+
+        console.log('🕊️ Sessão atual:', session?.user?.email);
+        console.log('🏛️ church_id ativo:', church_id);
+
         const { data, error } = await supabase
             .from('ministries')
             .select('*')
@@ -29,7 +38,10 @@ export default function MinistriesPage() {
 
         if (error) {
             console.error('Erro ao carregar ministérios:', error.message);
+        } else {
+            console.log(`✅ ${data.length} ministérios carregados`);
         }
+
         setMinistries(data || []);
         setLoading(false);
     }
@@ -47,7 +59,7 @@ export default function MinistriesPage() {
                 </button>
             </div>
 
-            {/* Conteúdo */}
+            {/* Tabela */}
             <section className="bg-white p-6 rounded-xl shadow-md">
                 {loading ? (
                     <p className="text-gray-500 text-center py-8">Carregando ministérios...</p>
@@ -82,7 +94,7 @@ export default function MinistriesPage() {
                 )}
             </section>
 
-            {/* Modal de Novo Ministério */}
+            {/* Modal */}
             {isModalOpen && (
                 <ModalNewMinistry
                     onClose={() => setIsModalOpen(false)}
