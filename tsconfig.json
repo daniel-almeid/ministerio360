@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "forceConsistentCasingInFileNames": false,
     "target": "ES2017",
     "lib": [
       "dom",

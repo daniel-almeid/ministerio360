@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 const links = [
-  { href: "/", label: "Dashboard", icon: Home },
+  { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/financas", label: "Finanças", icon: DollarSign },
   { href: "/ministries", label: "Ministérios", icon: Church },
   { href: "/membros", label: "Membros", icon: Users },
