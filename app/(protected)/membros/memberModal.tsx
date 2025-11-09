@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
+import toast from "react-hot-toast";
 
 type Ministry = {
     id: string;
@@ -51,16 +52,28 @@ export default function MemberModal({ member, onClose, onSuccess }: Props) {
     }, [member]);
 
     async function loadMinistries() {
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from("ministries")
             .select("id, name")
             .order("name", { ascending: true });
+
+        if (error) {
+            console.error("Erro ao carregar ministérios:", error.message);
+            toast.error("Erro ao carregar ministérios.");
+        }
+
         setMinistries(data || []);
     }
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setSaving(true);
+
+        if (!form.name.trim()) {
+            toast.error("O nome do membro é obrigatório!");
+            setSaving(false);
+            return;
+        }
 
         const payload = {
             ...form,
@@ -85,8 +98,12 @@ export default function MemberModal({ member, onClose, onSuccess }: Props) {
         setSaving(false);
 
         if (error) {
-            alert("Erro ao salvar: " + error.message);
+            console.error("Erro ao salvar membro:", error.message);
+            toast.error("Erro ao salvar membro. Tente novamente.");
         } else {
+            toast.success(
+                member ? "Membro atualizado com sucesso!" : "Membro cadastrado com sucesso!"
+            );
             onSuccess();
             onClose();
         }
@@ -94,7 +111,7 @@ export default function MemberModal({ member, onClose, onSuccess }: Props) {
 
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 space-y-4">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 space-y-4 animate-fadeIn">
                 <h3 className="text-xl font-semibold text-gray-700">
                     {member ? "Editar Membro" : "Novo Membro"}
                 </h3>
@@ -175,7 +192,7 @@ export default function MemberModal({ member, onClose, onSuccess }: Props) {
                         <button
                             type="submit"
                             disabled={saving}
-                            className="px-4 py-2 bg-[#38B2AC] text-white rounded-lg hover:bg-[#319795]"
+                            className="px-4 py-2 bg-[#38B2AC] text-white rounded-lg hover:bg-[#319795] disabled:opacity-50"
                         >
                             {saving ? "Salvando..." : "Salvar"}
                         </button>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
+import toast from 'react-hot-toast';
 
 type Props = {
   onClose: () => void;
@@ -14,31 +15,43 @@ export default function ModalNewMinistry({ onClose, onSuccess }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
 
-    // A inserção agora é isolada automaticamente via RLS + trigger
-    const { error } = await supabase
-      .from('ministries')
-      .insert([{ name: form.name.trim(), description: form.description || null }]);
-
-    setSaving(false);
-
-    if (error) {
-      console.error('Erro ao salvar ministério:', error.message);
-      alert('Erro ao salvar: ' + error.message);
+    if (!form.name.trim()) {
+      toast.error('O nome do ministério é obrigatório!');
       return;
     }
 
-    onSuccess();
-    onClose();
-    setForm({ name: '', description: '' });
+    setSaving(true);
+
+    try {
+      const { error } = await supabase
+        .from('ministries')
+        .insert([{ name: form.name.trim(), description: form.description || null }]);
+
+      if (error) {
+        console.error('Erro ao salvar ministério:', error.message);
+        toast.error('Erro ao salvar ministério. Tente novamente.');
+        return;
+      }
+
+      toast.success('Ministério cadastrado com sucesso!');
+      onSuccess();
+      onClose();
+      setForm({ name: '', description: '' });
+    } catch (err: any) {
+      console.error('Erro inesperado:', err.message);
+      toast.error('Erro inesperado ao salvar ministério.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+      {/* Clicar fora fecha o modal */}
       <div className="absolute inset-0" onClick={onClose}></div>
 
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-4 z-10">
+      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-4 z-10 animate-fadeIn">
         <h3 className="text-xl font-semibold text-gray-700">Novo Ministério</h3>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -76,7 +89,7 @@ export default function ModalNewMinistry({ onClose, onSuccess }: Props) {
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 bg-[#38B2AC] text-white rounded-lg hover:bg-[#319795]"
+              className="px-4 py-2 bg-[#38B2AC] text-white rounded-lg hover:bg-[#319795] disabled:opacity-50"
             >
               {saving ? 'Salvando...' : 'Salvar'}
             </button>

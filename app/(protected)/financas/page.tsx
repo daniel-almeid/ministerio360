@@ -167,9 +167,8 @@ export default function FinancasPage() {
                   {paginatedData.map((t) => (
                     <tr key={t.id} className="border-b last:border-none hover:bg-gray-50 transition-colors">
                       <td
-                        className={`py-2 px-3 capitalize font-medium ${
-                          t.type === "entrada" ? "text-green-600" : "text-red-600"
-                        }`}
+                        className={`py-2 px-3 capitalize font-medium ${t.type === "entrada" ? "text-green-600" : "text-red-600"
+                          }`}
                       >
                         {t.type}
                       </td>
@@ -206,11 +205,10 @@ export default function FinancasPage() {
                   <button
                     onClick={handlePrevious}
                     disabled={currentPage === 1}
-                    className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all ${
-                      currentPage === 1
+                    className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all ${currentPage === 1
                         ? "text-gray-300 border-gray-200 cursor-not-allowed bg-gray-50"
                         : "text-gray-700 border-gray-300 hover:border-[#38B2AC] hover:text-[#38B2AC]"
-                    }`}
+                      }`}
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
@@ -218,11 +216,10 @@ export default function FinancasPage() {
                   <button
                     onClick={handleNext}
                     disabled={currentPage === totalPages}
-                    className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all ${
-                      currentPage === totalPages
+                    className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all ${currentPage === totalPages
                         ? "text-gray-300 border-gray-200 cursor-not-allowed bg-gray-50"
                         : "text-gray-700 border-gray-300 hover:border-[#38B2AC] hover:text-[#38B2AC]"
-                    }`}
+                      }`}
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>

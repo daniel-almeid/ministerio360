@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
+import toast from "react-hot-toast";
 
 export function ModalNovaTransacao({ onClose, onSuccess }: any) {
     const [type, setType] = useState("entrada");
@@ -22,30 +23,28 @@ export function ModalNovaTransacao({ onClose, onSuccess }: any) {
 
     async function handleSave() {
         if (!category || !amount) {
-            alert("Preencha todos os campos obrigatórios!");
+            toast.error("Preencha todos os campos obrigatórios!");
             return;
         }
 
         setLoading(true);
 
         try {
-            // Garante que a sessão do usuário está válida
             const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
             if (sessionError) {
                 console.error("Erro ao obter sessão:", sessionError.message);
+                toast.error("Erro ao validar sessão. Faça login novamente.");
                 throw new Error("Falha ao obter sessão.");
             }
 
             const session = sessionData?.session;
             if (!session) {
-                alert("Sessão expirada. Faça login novamente.");
+                toast.error("Sessão expirada. Faça login novamente.");
                 return;
             }
 
-            console.log("🔑 Sessão válida:", session.user?.app_metadata);
-
-            // Monta o payload (sem church_id — o trigger do banco preenche automaticamente)
+            // Monta o payload
             const payload = {
                 type,
                 category,
@@ -53,27 +52,25 @@ export function ModalNovaTransacao({ onClose, onSuccess }: any) {
                 note,
             };
 
-            console.log("Enviando payload:", payload);
-
-            // Inserção autenticada (RLS usa o JWT com church_id)
             const { error } = await supabase.from("transactions").insert(payload);
 
             if (error) {
                 console.error("Erro ao salvar transação:", error);
-                alert("Erro ao salvar transação: " + error.message);
+                toast.error("Erro ao salvar transação.");
                 return;
             }
 
-            console.log("✅ Transação salva com sucesso!");
+            toast.success("Transação salva com sucesso!");
             onSuccess?.();
             onClose();
         } catch (err: any) {
             console.error("Erro inesperado:", err.message);
-            alert("Erro inesperado: " + err.message);
+            toast.error("Erro inesperado: " + err.message);
         } finally {
             setLoading(false);
         }
     }
+
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-xl shadow-lg w-[400px]">

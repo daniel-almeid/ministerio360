@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../../lib/supabaseClient';
 import { createScale } from '../../../lib/scalesService';
+import toast from 'react-hot-toast';
 
 type ModalNewScaleProps = {
     onClose: () => void;
@@ -34,13 +35,14 @@ export default function ModalNewScale({ onClose, onSuccess }: ModalNewScaleProps
                 .select('id, name')
                 .order('name');
 
-            if (!error && data) setMinistries(data as Ministry[]);
+            if (error) toast.error('Erro ao carregar ministérios.');
+            if (data) setMinistries(data as Ministry[]);
         })();
     }, []);
 
     const ministriesSelectedObjects = useMemo(
         () => ministries.filter((m) => form.ministriesSelected.includes(m.id)),
-        [ministries, form.ministriesSelected],
+        [ministries, form.ministriesSelected]
     );
 
     async function ensureMembersLoaded(ministryId: string) {
@@ -53,12 +55,15 @@ export default function ModalNewScale({ onClose, onSuccess }: ModalNewScaleProps
             .order('name');
 
         if (error) {
-            console.error('Erro ao carregar membros do ministério:', error.message);
+            console.error('Erro ao carregar membros:', error.message);
+            toast.error('Erro ao carregar membros do ministério.');
             return;
         }
 
-        const list = (data || []).map((m) => ({ id: m.id, name: m.name }));
-        setMembersByMinistry((prev) => ({ ...prev, [ministryId]: list }));
+        setMembersByMinistry((prev) => ({
+            ...prev,
+            [ministryId]: (data || []).map((m) => ({ id: m.id, name: m.name })),
+        }));
     }
 
     function toggleMinistry(ministryId: string) {
@@ -71,19 +76,23 @@ export default function ModalNewScale({ onClose, onSuccess }: ModalNewScaleProps
             const nextSelectedByMinistry = { ...prev.selectedByMinistry };
             if (exists) delete nextSelectedByMinistry[ministryId];
 
-            return { ...prev, ministriesSelected: nextMinistries, selectedByMinistry: nextSelectedByMinistry };
+            return {
+                ...prev,
+                ministriesSelected: nextMinistries,
+                selectedByMinistry: nextSelectedByMinistry,
+            };
         });
 
-        if (!form.ministriesSelected.includes(ministryId)) {
-            ensureMembersLoaded(ministryId);
-        }
+        if (!form.ministriesSelected.includes(ministryId)) ensureMembersLoaded(ministryId);
     }
 
     function toggleMember(ministryId: string, memberId: string) {
         setForm((prev) => {
             const current = prev.selectedByMinistry[ministryId] || [];
             const selected = current.includes(memberId);
-            const next = selected ? current.filter((id) => id !== memberId) : [...current, memberId];
+            const next = selected
+                ? current.filter((id) => id !== memberId)
+                : [...current, memberId];
 
             return {
                 ...prev,
@@ -97,14 +106,24 @@ export default function ModalNewScale({ onClose, onSuccess }: ModalNewScaleProps
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        if (!form.date || !form.event || !form.responsible || form.ministriesSelected.length === 0) return;
+
+        if (!form.date || !form.event || !form.responsible) {
+            toast.error('Preencha todos os campos obrigatórios!');
+            return;
+        }
+        if (form.ministriesSelected.length === 0) {
+            toast.error('Selecione ao menos um ministério!');
+            return;
+        }
 
         setLoading(true);
         try {
-            const assignments = Object.entries(form.selectedByMinistry).map(([ministryId, memberIds]) => ({
-                ministryId,
-                memberIds,
-            }));
+            const assignments = Object.entries(form.selectedByMinistry).map(
+                ([ministryId, memberIds]) => ({
+                    ministryId,
+                    memberIds,
+                })
+            );
 
             await createScale({
                 date: form.date,
@@ -114,10 +133,12 @@ export default function ModalNewScale({ onClose, onSuccess }: ModalNewScaleProps
                 assignments,
             });
 
+            toast.success('Escala criada com sucesso!');
             onSuccess();
             onClose();
         } catch (err: any) {
             console.error(err?.message || err);
+            toast.error('Erro ao salvar escala.');
         } finally {
             setLoading(false);
         }
@@ -131,7 +152,6 @@ export default function ModalNewScale({ onClose, onSuccess }: ModalNewScaleProps
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
             >
-                
                 <motion.div
                     className="absolute inset-0 bg-black/50 backdrop-blur-sm"
                     onClick={onClose}
@@ -159,46 +179,40 @@ export default function ModalNewScale({ onClose, onSuccess }: ModalNewScaleProps
                         </button>
                     </div>
 
+                    {/* Formulário */}
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Campos básicos */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-1">Data</label>
-                                <input
-                                    type="date"
-                                    value={form.date}
-                                    onChange={(e) => setForm({ ...form, date: e.target.value })}
-                                    required
-                                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#38B2AC] outline-none"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-1">Responsável</label>
-                                <input
-                                    type="text"
-                                    value={form.responsible}
-                                    onChange={(e) => setForm({ ...form, responsible: e.target.value })}
-                                    placeholder="Ex: Ana Paula"
-                                    required
-                                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#38B2AC] outline-none"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-1">Evento</label>
-                                <input
-                                    type="text"
-                                    value={form.event}
-                                    onChange={(e) => setForm({ ...form, event: e.target.value })}
-                                    placeholder="Ex: Culto Jovens"
-                                    required
-                                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#38B2AC] outline-none"
-                                />
-                            </div>
+                            <input
+                                type="date"
+                                value={form.date}
+                                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                                required
+                                className="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#38B2AC] outline-none"
+                            />
+                            <input
+                                type="text"
+                                value={form.responsible}
+                                onChange={(e) => setForm({ ...form, responsible: e.target.value })}
+                                placeholder="Responsável"
+                                required
+                                className="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#38B2AC] outline-none"
+                            />
+                            <input
+                                type="text"
+                                value={form.event}
+                                onChange={(e) => setForm({ ...form, event: e.target.value })}
+                                placeholder="Evento"
+                                required
+                                className="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#38B2AC] outline-none"
+                            />
                         </div>
 
+                        {/* Ministérios */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Ministérios</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">
+                                Ministérios
+                            </label>
                             <div className="flex flex-wrap gap-2">
                                 {ministries.map((m) => {
                                     const selected = form.ministriesSelected.includes(m.id);
@@ -207,11 +221,10 @@ export default function ModalNewScale({ onClose, onSuccess }: ModalNewScaleProps
                                             key={m.id}
                                             type="button"
                                             onClick={() => toggleMinistry(m.id)}
-                                            className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
-                                                selected
+                                            className={`px-3 py-1 rounded-full text-xs border font-medium transition ${selected
                                                     ? 'bg-[#38B2AC] text-white border-[#38B2AC]'
                                                     : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-                                            }`}
+                                                }`}
                                         >
                                             {m.name}
                                         </button>
@@ -220,15 +233,20 @@ export default function ModalNewScale({ onClose, onSuccess }: ModalNewScaleProps
                             </div>
                         </div>
 
+                        {/* Membros */}
                         {ministriesSelectedObjects.length > 0 && (
                             <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-1">Membros</label>
+                                <label className="block text-sm font-medium text-gray-600 mb-1">
+                                    Membros
+                                </label>
                                 <div className="max-h-[180px] overflow-y-auto border rounded-lg p-2">
                                     {ministriesSelectedObjects.map((min) => {
                                         const list = membersByMinistry[min.id] || [];
                                         return (
                                             <div key={min.id} className="mb-3">
-                                                <p className="text-sm font-medium text-gray-700 mb-1">{min.name}</p>
+                                                <p className="text-sm font-medium text-gray-700 mb-1">
+                                                    {min.name}
+                                                </p>
                                                 <div className="flex flex-wrap gap-2">
                                                     {list.length === 0 && (
                                                         <span className="text-xs text-gray-400">
@@ -243,11 +261,10 @@ export default function ModalNewScale({ onClose, onSuccess }: ModalNewScaleProps
                                                                 key={mem.id}
                                                                 type="button"
                                                                 onClick={() => toggleMember(min.id, mem.id)}
-                                                                className={`px-3 py-1 rounded-full text-xs border font-medium transition ${
-                                                                    selected
+                                                                className={`px-3 py-1 rounded-full text-xs border font-medium transition ${selected
                                                                         ? 'bg-[#E6FFFA] text-[#319795] border-[#38B2AC]'
                                                                         : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-                                                                }`}
+                                                                    }`}
                                                             >
                                                                 {mem.name}
                                                             </button>
