@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import MemberModal from "./memberModal";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 
 type Member = {
     id: string;
@@ -33,15 +33,15 @@ export default function MembersPage() {
         const { data, error } = await supabase
             .from("members")
             .select(`
-        id,
-        name,
-        email,
-        phone,
-        is_active,
-        joined_at,
-        ministry_id,
-        ministries ( name )
-      `)
+                id,
+                name,
+                email,
+                phone,
+                is_active,
+                joined_at,
+                ministry_id,
+                ministries ( name )
+            `)
             .order("created_at", { ascending: false });
 
         if (error) {
@@ -55,6 +55,7 @@ export default function MembersPage() {
             setMembers(mapped);
             setCurrentPage(1);
         }
+
         setLoading(false);
     }
 
@@ -62,7 +63,6 @@ export default function MembersPage() {
         loadMembers();
     }, []);
 
-    // === FILTRO E BUSCA ===
     const filtered = useMemo(() => {
         const q = search.trim().toLowerCase();
         return members.filter((m) => {
@@ -75,20 +75,14 @@ export default function MembersPage() {
         });
     }, [members, search, statusFilter]);
 
-    // === PAGINAÇÃO LOCAL ===
     const totalPages = useMemo(() => Math.ceil(filtered.length / ITEMS_PER_PAGE), [filtered]);
     const paginatedMembers = useMemo(() => {
         const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
         return filtered.slice(startIdx, startIdx + ITEMS_PER_PAGE);
     }, [filtered, currentPage]);
 
-    const handlePrevious = () => {
-        if (currentPage > 1) setCurrentPage((prev) => prev - 1);
-    };
-
-    const handleNext = () => {
-        if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
-    };
+    const handlePrevious = () => currentPage > 1 && setCurrentPage((p) => p - 1);
+    const handleNext = () => currentPage < totalPages && setCurrentPage((p) => p + 1);
 
     return (
         <div className="space-y-6">
@@ -99,7 +93,7 @@ export default function MembersPage() {
                     <input
                         type="text"
                         placeholder="Buscar por nome ou ministério..."
-                        className="px-4 py-2 border rounded-lg w-full md:w-74 focus:ring-2 focus:ring-[#38B2AC] outline-none"
+                        className="px-4 py-2 border rounded-lg w-full md:w-72 focus:ring-2 focus:ring-[#38B2AC] outline-none"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
@@ -135,61 +129,63 @@ export default function MembersPage() {
                 </button>
             </div>
 
-            <div className="bg-white rounded-xl shadow-md">
+            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 {loading ? (
-                    <p className="text-gray-500 text-center py-6">Carregando...</p>
+                    <p className="text-gray-500 text-center py-10">Carregando...</p>
                 ) : filtered.length === 0 ? (
-                    <p className="text-gray-500 text-center py-6">Nenhum membro encontrado.</p>
+                    <p className="text-gray-500 text-center py-10">Nenhum membro encontrado.</p>
                 ) : (
                     <>
                         <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="text-left text-gray-500 border-b">
-                                        <th className="p-3">Nome</th>
-                                        <th className="p-3">Ministério</th>
-                                        <th className="p-3">Status</th>
-                                        <th className="p-3">Contato</th>
-                                        <th className="p-3">Entrada</th>
-                                        <th className="p-3 text-right">Ações</th>
+                            <table className="w-full border-collapse">
+                                <thead className="bg-gray-50/60 border-b border-gray-100">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Nome</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Ministério</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Contato</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Entrada</th>
+                                        <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Ações</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="divide-y divide-gray-100">
                                     {paginatedMembers.map((m) => (
-                                        <tr
-                                            key={m.id}
-                                            className="border-b last:border-none hover:bg-gray-50 transition"
-                                        >
-                                            <td className="p-3 capitalize font-medium">{m.name}</td>
-                                            <td className="p-3 capitalize">{m.ministry_name || "-"}</td>
-                                            <td className="p-3">
+                                        <tr key={m.id} className="hover:bg-[#F9FAFB] transition-all duration-200">
+                                            <td className="px-6 py-4 font-medium text-gray-800 capitalize">{m.name}</td>
+                                            <td className="px-6 py-4 text-gray-600 capitalize">
+                                                {m.ministry_name || <span className="text-gray-400 italic">Sem ministério</span>}
+                                            </td>
+                                            <td className="px-6 py-4">
                                                 {m.is_active ? (
-                                                    <span className="text-green-700 bg-green-100 px-2 py-1 rounded-full text-xs font-medium">
+                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold text-green-700 bg-green-100">
                                                         Ativo
                                                     </span>
                                                 ) : (
-                                                    <span className="text-red-700 bg-red-100 px-2 py-1 rounded-full text-xs font-medium">
+                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold text-red-700 bg-red-100">
                                                         Inativo
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="p-3">
-                                                <div className="text-gray-700">{m.email || "-"}</div>
+                                            <td className="px-6 py-4 text-sm">
+                                                <div className="text-gray-800">{m.email || "-"}</div>
                                                 <div className="text-gray-500 text-xs">{m.phone || ""}</div>
                                             </td>
-                                            <td className="p-3 text-gray-600">
+                                            <td className="px-6 py-4 text-gray-600 text-sm flex items-center gap-2">
+                                                <Calendar className="w-4 h-4 text-[#38B2AC]" />
                                                 {m.joined_at
                                                     ? new Date(m.joined_at).toLocaleDateString("pt-BR")
                                                     : "-"}
                                             </td>
-                                            <td
-                                                className="p-3 text-right text-[#38B2AC] cursor-pointer hover:underline"
-                                                onClick={() => {
-                                                    setSelectedMember(m);
-                                                    setOpenModal(true);
-                                                }}
-                                            >
-                                                Editar
+                                            <td className="px-6 py-4 text-right">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedMember(m);
+                                                        setOpenModal(true);
+                                                    }}
+                                                    className="inline-flex items-center gap-1 text-sm text-[#38B2AC] hover:text-[#2C7A7B] font-medium transition-all"
+                                                >
+                                                    Editar
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
@@ -197,9 +193,8 @@ export default function MembersPage() {
                             </table>
                         </div>
 
-                        {/* === PAGINAÇÃO MODERNA === */}
                         {totalPages > 1 && (
-                            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-6 border-t border-gray-100 pt-4 px-4 pb-2">
+                            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-6 border-t border-gray-100 pt-4 px-6 pb-4">
                                 <span className="text-sm text-gray-500">
                                     Exibindo{" "}
                                     <strong className="text-gray-700">
@@ -217,16 +212,14 @@ export default function MembersPage() {
                                     <button
                                         onClick={handlePrevious}
                                         disabled={currentPage === 1}
-                                        className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all ${currentPage === 1
+                                        className={`flex items-center justify-center w-9 h-9 rounded-lg border transition-all ${currentPage === 1
                                                 ? "text-gray-300 border-gray-200 cursor-not-allowed bg-gray-50"
                                                 : "text-gray-700 border-gray-300 hover:border-[#38B2AC] hover:text-[#38B2AC]"
                                             }`}
-                                        aria-label="Página anterior"
                                     >
                                         <ChevronLeft className="w-4 h-4" />
                                     </button>
 
-                                    {/* Páginas numeradas com elipses */}
                                     <div className="flex items-center gap-1">
                                         {Array.from({ length: totalPages }, (_, i) => i + 1)
                                             .filter(
@@ -242,7 +235,7 @@ export default function MembersPage() {
                                                     )}
                                                     <button
                                                         onClick={() => setCurrentPage(page)}
-                                                        className={`w-9 h-9 rounded-xl text-sm font-medium transition-all ${currentPage === page
+                                                        className={`w-9 h-9 rounded-lg text-sm font-medium transition-all ${currentPage === page
                                                                 ? "bg-[#38B2AC] text-white shadow-md"
                                                                 : "text-gray-600 hover:bg-gray-100"
                                                             }`}
@@ -256,11 +249,10 @@ export default function MembersPage() {
                                     <button
                                         onClick={handleNext}
                                         disabled={currentPage === totalPages}
-                                        className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all ${currentPage === totalPages
+                                        className={`flex items-center justify-center w-9 h-9 rounded-lg border transition-all ${currentPage === totalPages
                                                 ? "text-gray-300 border-gray-200 cursor-not-allowed bg-gray-50"
                                                 : "text-gray-700 border-gray-300 hover:border-[#38B2AC] hover:text-[#38B2AC]"
                                             }`}
-                                        aria-label="Próxima página"
                                     >
                                         <ChevronRight className="w-4 h-4" />
                                     </button>
@@ -269,7 +261,7 @@ export default function MembersPage() {
                         )}
                     </>
                 )}
-            </div>
+            </section>
 
             {openModal && (
                 <MemberModal

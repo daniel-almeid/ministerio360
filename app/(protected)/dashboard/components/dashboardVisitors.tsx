@@ -1,5 +1,7 @@
 'use client';
 
+import { Calendar, Phone, Mail } from 'lucide-react';
+
 type Visitor = {
     id: string;
     name: string;
@@ -15,40 +17,66 @@ interface DashboardVisitorsProps {
 
 export function DashboardVisitors({ visitors, loading }: DashboardVisitorsProps) {
     return (
-        <section className="bg-white rounded-2xl p-6 shadow-md">
-            <h3 className="font-semibold text-gray-700 mb-3">Visitantes recentes</h3>
+        <section className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">Visitantes recentes</h3>
 
             {loading ? (
-                <p className="text-gray-500 text-center py-6">Carregando...</p>
+                <p className="text-gray-500 text-center py-8 text-sm">Carregando visitantes...</p>
             ) : visitors.length === 0 ? (
-                <p className="text-gray-500 text-center py-6">
+                <p className="text-gray-500 text-center py-8 text-sm">
                     Nenhum visitante registrado recentemente.
                 </p>
             ) : (
-                <table className="w-full text-sm">
-                    <thead>
-                        <tr className="text-left text-gray-500 border-b">
-                            <th className="pb-2">Nome</th>
-                            <th className="pb-2">Data</th>
-                            <th className="pb-2">Contato</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {visitors.map((v) => (
-                            <tr key={v.id} className="border-b last:border-none">
-                                <td className="py-2">{v.name}</td>
-                                <td className="py-2">
-                                    {v.visit_date
-                                        ? new Date(v.visit_date).toLocaleDateString('pt-BR')
-                                        : '-'}
-                                </td>
-                                <td className="py-2 text-[#38B2AC]">
-                                    {v.phone || v.email || 'Não informado'}
-                                </td>
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                        <thead className="bg-gray-50/60 border-b border-gray-100">
+                            <tr>
+                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                    Nome
+                                </th>
+                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                    Data da Visita
+                                </th>
+                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                    Contato
+                                </th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {visitors.map((v) => (
+                                <tr
+                                    key={v.id}
+                                    className="hover:bg-[#F9FAFB] transition-all duration-200 group"
+                                >
+                                    <td className="px-5 py-4 font-medium text-gray-800 text-[15px]">
+                                        {v.name}
+                                    </td>
+                                    <td className="px-5 py-4 text-gray-700 flex items-center gap-2 text-sm">
+                                        <Calendar className="w-4 h-4 text-[#38B2AC]" />
+                                        {v.visit_date
+                                            ? new Date(v.visit_date).toLocaleDateString('pt-BR')
+                                            : '-'}
+                                    </td>
+                                    <td className="px-5 py-4 text-gray-700 text-sm">
+                                        {v.phone ? (
+                                            <div className="flex items-center gap-2">
+                                                <Phone className="w-4 h-4 text-[#38B2AC]" />
+                                                {v.phone}
+                                            </div>
+                                        ) : v.email ? (
+                                            <div className="flex items-center gap-2">
+                                                <Mail className="w-4 h-4 text-[#38B2AC]" />
+                                                {v.email}
+                                            </div>
+                                        ) : (
+                                            <span className="text-gray-400">Não informado</span>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             )}
         </section>
     );

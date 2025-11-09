@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import ModalNewMinistry from './modalNewMinistry';
+import { Calendar, Info } from 'lucide-react';
 
 type Ministry = {
     id: string;
@@ -23,14 +24,6 @@ export default function MinistriesPage() {
     async function loadMinistries() {
         setLoading(true);
 
-        const {
-            data: { session },
-        } = await supabase.auth.getSession();
-        const church_id = session?.user?.app_metadata?.church_id;
-
-        console.log('🕊️ Sessão atual:', session?.user?.email);
-        console.log('🏛️ church_id ativo:', church_id);
-
         const { data, error } = await supabase
             .from('ministries')
             .select('*')
@@ -48,47 +41,68 @@ export default function MinistriesPage() {
 
     return (
         <div className="space-y-6">
-            {/* Cabeçalho da página */}
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-semibold text-gray-700">Ministérios</h2>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="px-3 py-2 bg-[#38B2AC] text-white rounded-lg hover:bg-[#319795] transition-colors"
+                    className="px-3 py-2 bg-[#38B2AC] text-white rounded-lg hover:bg-[#319795] transition-all shadow-sm"
                 >
                     + Novo Ministério
                 </button>
             </div>
 
-            {/* Tabela */}
-            <section className="bg-white p-6 rounded-xl shadow-md">
+            {/* table */}
+            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 {loading ? (
-                    <p className="text-gray-500 text-center py-8">Carregando ministérios...</p>
+                    <p className="text-gray-500 text-center py-10">Carregando ministérios...</p>
                 ) : ministries.length > 0 ? (
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="text-gray-500 border-b">
-                                <th className="pb-2 text-left">Nome</th>
-                                <th className="pb-2 text-left">Descrição</th>
-                                <th className="pb-2 text-left">Criado em</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {ministries.map((m) => (
-                                <tr
-                                    key={m.id}
-                                    className="border-b hover:bg-gray-50 cursor-pointer transition-colors"
-                                >
-                                    <td className="py-2 font-medium text-gray-800">{m.name}</td>
-                                    <td className="py-2 text-gray-600">{m.description || '-'}</td>
-                                    <td className="py-2 text-gray-500">
-                                        {new Date(m.created_at).toLocaleDateString('pt-BR')}
-                                    </td>
+                    <div className="overflow-x-auto">
+                        <table className="w-full border-collapse">
+                            <thead className="bg-gray-50/60 backdrop-blur-sm border-b border-gray-100">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                        Nome
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                        Descrição
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                        Criado em
+                                    </th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+
+                            <tbody className="divide-y divide-gray-100">
+                                {ministries.map((m) => (
+                                    <tr
+                                        key={m.id}
+                                        className="group hover:bg-[#F9FAFB] transition-all duration-200"
+                                    >
+
+                                        <td className="px-6 py-4 font-medium text-gray-800 flex items-center gap-2">
+                                            <Info className="w-4 h-4 text-[#38B2AC]" />
+                                            <span>{m.name}</span>
+                                        </td>
+
+                                        <td className="px-6 py-4 text-gray-600 text-sm">
+                                            {m.description ? (
+                                                m.description
+                                            ) : (
+                                                <span className="text-gray-400 italic">Sem descrição</span>
+                                            )}
+                                        </td>
+
+                                        <td className="px-6 py-4 text-gray-500 text-sm flex items-center gap-2">
+                                            <Calendar className="w-4 h-4 text-[#38B2AC]" />
+                                            {new Date(m.created_at).toLocaleDateString('pt-BR')}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 ) : (
-                    <p className="text-gray-500 text-sm text-center py-8">
+                    <p className="text-gray-500 text-sm text-center py-10">
                         Nenhum ministério cadastrado ainda.
                     </p>
                 )}

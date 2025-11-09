@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import { ModalNovaTransacao } from "./modalNewTransition";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowDownCircle, ArrowUpCircle, Calendar } from "lucide-react";
 
 const ITEMS_PER_PAGE = 15;
 
@@ -23,10 +23,8 @@ export default function FinancasPage() {
     setLoading(true);
 
     try {
-      // Garante que o usuário está autenticado
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
-
       if (!session) {
         console.warn("Usuário não autenticado — abortando carregamento.");
         setTransactions([]);
@@ -34,9 +32,6 @@ export default function FinancasPage() {
         return;
       }
 
-      console.log("🔑 JWT ativo:", session.user?.app_metadata);
-
-      // Define o intervalo do mês selecionado
       const [year, month] = monthYear.split("-");
       const start = new Date(Number(year), Number(month) - 1, 1);
       const end = new Date(Number(year), Number(month), 0, 23, 59, 59);
@@ -51,34 +46,21 @@ export default function FinancasPage() {
       if (type !== "todas") query = query.eq("type", type);
 
       const { data, error } = await query;
-
-      if (error) {
-        console.error("Erro ao carregar transações:", error);
-      } else {
-        console.log(`📦 ${data?.length || 0} transações carregadas`);
-        setTransactions(data || []);
-        setCurrentPage(1);
-      }
+      if (error) console.error("Erro ao carregar transações:", error);
+      else setTransactions(data || []);
     } catch (err: any) {
-      console.error("Erro inesperado ao carregar transações:", err.message);
+      console.error("Erro inesperado:", err.message);
+    } finally {
+      setLoading(false);
+      setCurrentPage(1);
     }
-
-    setLoading(false);
   }
 
-  // Aguarda restauração da sessão antes de carregar
   useEffect(() => {
     async function init() {
       const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session) {
-        console.warn("Sessão não encontrada — redirecionar para login?");
-      } else {
-        console.log("✅ Sessão restaurada:", session.user?.app_metadata);
-        setSessionLoaded(true);
-      }
+      if (session) setSessionLoaded(true);
     }
-
     init();
   }, []);
 
@@ -86,49 +68,39 @@ export default function FinancasPage() {
     if (sessionLoaded) loadTransactions(filter, selectedMonth);
   }, [filter, selectedMonth, sessionLoaded]);
 
-  // === Paginação ===
   const totalPages = useMemo(() => Math.ceil(transactions.length / ITEMS_PER_PAGE), [transactions]);
   const paginatedData = useMemo(() => {
     const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
     return transactions.slice(startIdx, startIdx + ITEMS_PER_PAGE);
   }, [transactions, currentPage]);
 
-  const handlePrevious = () => {
-    if (currentPage > 1) setCurrentPage((prev) => prev - 1);
-  };
-
-  const handleNext = () => {
-    if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
-  };
+  const handlePrevious = () => currentPage > 1 && setCurrentPage((prev) => prev - 1);
+  const handleNext = () => currentPage < totalPages && setCurrentPage((prev) => prev + 1);
 
   if (!sessionLoaded) {
-    return (
-      <p className="text-gray-500 text-center mt-10">
-        Carregando sessão e dados financeiros...
-      </p>
-    );
+    return <p className="text-gray-500 text-center mt-10">Carregando sessão e dados financeiros...</p>;
   }
 
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold text-gray-700">Finanças</h2>
 
-      <div className="bg-white p-6 rounded-xl shadow-md">
+      <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
-          <h3 className="font-semibold text-gray-700">Transações</h3>
+          <h3 className="text-lg font-semibold text-gray-700">Transações</h3>
 
           <div className="flex flex-wrap items-center gap-3">
             <input
               type="month"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="border rounded-lg px-3 py-2 text-sm text-gray-600 cursor-pointer"
+              className="border rounded-lg px-3 py-2 text-sm text-gray-600 cursor-pointer focus:ring-2 focus:ring-[#38B2AC] outline-none"
             />
 
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="border rounded-lg px-3 py-2 text-sm text-gray-600"
+              className="border rounded-lg px-3 py-2 text-sm text-gray-600 focus:ring-2 focus:ring-[#38B2AC] outline-none"
             >
               <option value="todas">Todas</option>
               <option value="entrada">Entradas</option>
@@ -137,7 +109,7 @@ export default function FinancasPage() {
 
             <button
               onClick={() => setOpenModal(true)}
-              className="px-4 py-2 bg-[#38B2AC] text-white rounded-lg hover:bg-[#319795] transition-colors"
+              className="px-4 py-2 bg-[#38B2AC] text-white rounded-lg hover:bg-[#319795] transition-all shadow-sm"
             >
               + Nova Transação
             </button>
@@ -145,39 +117,45 @@ export default function FinancasPage() {
         </div>
 
         {loading ? (
-          <p className="text-gray-500 text-center py-6">Carregando...</p>
+          <p className="text-gray-500 text-center py-8 text-sm">Carregando...</p>
         ) : transactions.length === 0 ? (
-          <p className="text-gray-500 text-center py-6">
-            Nenhuma transação encontrada para este período.
-          </p>
+          <p className="text-gray-500 text-center py-8 text-sm">Nenhuma transação encontrada neste período.</p>
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm border-separate border-spacing-y-1">
-                <thead>
-                  <tr className="text-gray-500 border-b text-left">
-                    <th className="pb-2 px-3">Tipo</th>
-                    <th className="pb-2 px-3">Categoria</th>
-                    <th className="pb-2 px-3">Valor</th>
-                    <th className="pb-2 px-3">Pessoa/Motivo</th>
-                    <th className="pb-2 px-3">Data</th>
+              <table className="w-full border-collapse">
+                <thead className="bg-gray-50/60 border-b border-gray-100">
+                  <tr>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Tipo</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Categoria</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Valor</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Pessoa / Motivo</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Data</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-100">
                   {paginatedData.map((t) => (
-                    <tr key={t.id} className="border-b last:border-none hover:bg-gray-50 transition-colors">
-                      <td
-                        className={`py-2 px-3 capitalize font-medium ${t.type === "entrada" ? "text-green-600" : "text-red-600"
-                          }`}
-                      >
-                        {t.type}
+                    <tr key={t.id} className="hover:bg-[#F9FAFB] transition-all duration-200">
+                      <td className="px-5 py-4 font-medium flex items-center gap-2 text-[15px]">
+                        {t.type === "entrada" ? (
+                          <>
+                            <ArrowUpCircle className="w-4 h-4 text-green-600" />
+                            <span className="text-green-700">Entrada</span>
+                          </>
+                        ) : (
+                          <>
+                            <ArrowDownCircle className="w-4 h-4 text-red-600" />
+                            <span className="text-red-700">Saída</span>
+                          </>
+                        )}
                       </td>
-                      <td className="py-2 px-3 capitalize">{t.category}</td>
-                      <td className="py-2 px-3">
+                      <td className="px-5 py-4 text-gray-700 capitalize text-[15px]">{t.category}</td>
+                      <td className="px-5 py-4 text-[15px] font-semibold">
                         R$ {Number(t.amount).toFixed(2).replace(".", ",")}
                       </td>
-                      <td className="py-2 px-3 capitalize">{t.note || "-"}</td>
-                      <td className="py-2 px-3 text-gray-500">
+                      <td className="px-5 py-4 text-gray-700 text-[15px] capitalize">{t.note || "-"}</td>
+                      <td className="px-5 py-4 flex items-center gap-2 text-gray-600 text-sm">
+                        <Calendar className="w-4 h-4 text-[#38B2AC]" />
                         {new Date(t.created_at).toLocaleDateString("pt-BR")}
                       </td>
                     </tr>
@@ -228,7 +206,7 @@ export default function FinancasPage() {
             )}
           </>
         )}
-      </div>
+      </section>
 
       {openModal && (
         <ModalNovaTransacao
