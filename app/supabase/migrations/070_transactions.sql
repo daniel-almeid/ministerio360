@@ -1,11 +1,11 @@
--- ==========================================================
--- 🔹 EXTENSÕES NECESSÁRIAS
--- ==========================================================
+-- =====================================================
+-- EXTENSÕES NECESSÁRIAS
+-- =====================================================
 create extension if not exists "pgcrypto";
 
--- ==========================================================
--- 🔹 FUNÇÃO CENTRAL: Retorna o church_id do usuário atual
--- ==========================================================
+-- =====================================================
+-- FUNÇÃO CENTRAL: Retorna o church_id do usuário atual
+-- =====================================================
 create or replace function public.current_church_id()
 returns uuid
 language sql
@@ -25,24 +25,31 @@ $$;
 
 grant execute on function public.current_church_id() to authenticated;
 
--- ==========================================================
--- 🔹 FUNÇÃO: Atualiza automaticamente o campo updated_at
--- ==========================================================
+-- =====================================================
+-- FUNÇÃO: Atualiza automaticamente o campo updated_at
+-- =====================================================
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
 as $$
 begin
-  new.updated_at := now();
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_name = tg_table_name
+    and column_name = 'updated_at'
+  ) then
+    new.updated_at := now();
+  end if;
   return new;
 end;
 $$;
 
 grant execute on function public.set_updated_at() to authenticated;
 
--- ==========================================================
--- 🔹 TABELA: CHURCH_PROFILES
--- ==========================================================
+-- =====================================================
+-- TABELA: CHURCH_PROFILES
+-- =====================================================
 create table if not exists public.church_profiles (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null unique,
@@ -51,20 +58,17 @@ create table if not exists public.church_profiles (
   updated_at timestamptz not null default now()
 );
 
-create index if not exists idx_church_profiles_user_id
-on public.church_profiles (user_id);
+create index if not exists idx_church_profiles_user_id on public.church_profiles (user_id);
 
--- ==========================================================
--- 🔹 TRIGGER: Atualiza automaticamente o campo updated_at
--- ==========================================================
+-- TRIGGER: Atualiza automaticamente o campo updated_at
 drop trigger if exists trg_church_profiles_updated_at on public.church_profiles;
 create trigger trg_church_profiles_updated_at
 before update on public.church_profiles
 for each row execute function public.set_updated_at();
 
--- ==========================================================
--- 🔹 RLS: Cada usuário só acessa sua própria igreja
--- ==========================================================
+-- =====================================================
+-- RLS: Cada usuário só acessa sua própria igreja
+-- =====================================================
 alter table public.church_profiles enable row level security;
 alter table public.church_profiles force row level security;
 
@@ -86,9 +90,9 @@ with check (auth.uid() = user_id);
 revoke all on public.church_profiles from anon;
 grant select, insert, update, delete on public.church_profiles to authenticated;
 
--- ==========================================================
--- 🔹 FUNÇÃO: Atualiza o claim church_id no JWT
--- ==========================================================
+-- =====================================================
+-- FUNÇÃO: Atualiza o claim church_id no JWT
+-- =====================================================
 create or replace function public.refresh_church_claim(p_user_id uuid)
 returns json
 language plpgsql
@@ -103,7 +107,7 @@ begin
   where user_id = p_user_id;
 
   if v_church_id is null then
-    raise notice '❌ Usuário % não possui church_profile', p_user_id;
+    raise notice 'Usuario % não possui church_profile', p_user_id;
     return json_build_object('status', 'error', 'message', 'church_profile não encontrado');
   end if;
 
@@ -115,16 +119,16 @@ begin
   )
   where id = p_user_id;
 
-  raise notice '✅ Claim church_id atualizado: % -> %', p_user_id, v_church_id;
+  raise notice 'Claim church_id atualizado: % -> %', p_user_id, v_church_id;
   return json_build_object('status', 'success', 'church_id', v_church_id);
 end;
 $$;
 
 grant execute on function public.refresh_church_claim(uuid) to authenticated;
 
--- ==========================================================
--- 🔹 FUNÇÃO: Cria automaticamente um perfil ao registrar usuário
--- ==========================================================
+-- =====================================================
+-- FUNÇÃO: Cria automaticamente um perfil ao registrar usuário
+-- =====================================================
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -140,7 +144,7 @@ begin
 
   perform public.refresh_church_claim(new.id);
 
-  raise notice '🏗️ Novo usuário %, igreja criada %', new.id, v_church_id;
+  raise notice 'Novo usuário %, igreja criada %', new.id, v_church_id;
   return new;
 end;
 $$;
@@ -148,12 +152,11 @@ $$;
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
 after insert on auth.users
-for each row
-execute function public.handle_new_user();
+for each row execute function public.handle_new_user();
 
--- ==========================================================
--- 🔹 TABELA: TRANSACTIONS (Financeiro isolado por igreja)
--- ==========================================================
+-- =====================================================
+-- TABELA: TRANSACTIONS
+-- =====================================================
 create table if not exists public.transactions (
   id uuid primary key default gen_random_uuid(),
   type text not null check (type in ('entrada', 'saida')),
@@ -166,12 +169,29 @@ create table if not exists public.transactions (
   updated_at timestamptz not null default now()
 );
 
-create index if not exists idx_transactions_church_id
-on public.transactions(church_id);
+create index if not exists idx_transactions_church_id on public.transactions(church_id);
 
--- ==========================================================
--- 🔹 TRIGGERS
--- ==========================================================
+-- =====================================================
+-- FUNÇÃO: Define automaticamente o church_id na inserção
+-- =====================================================
+create or replace function public.set_transaction_church_id()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.church_id is null then
+    new.church_id := public.current_church_id();
+  end if;
+  if new.church_id is null then
+    raise exception 'Não foi possível definir o church_id ao inserir transação.';
+  end if;
+  return new;
+end;
+$$;
+
+-- =====================================================
+-- TRIGGERS
+-- =====================================================
 drop trigger if exists trg_transactions_updated_at on public.transactions;
 create trigger trg_transactions_updated_at
 before update on public.transactions
@@ -182,54 +202,32 @@ create trigger trg_transactions_church_id
 before insert on public.transactions
 for each row execute function public.set_transaction_church_id();
 
--- ==========================================================
--- 🔹 FUNÇÃO: Define automaticamente o church_id na inserção
--- ==========================================================
-create or replace function public.set_transaction_church_id()
-returns trigger
-language plpgsql
-as $$
-begin
-  if new.church_id is null then
-    new.church_id := public.current_church_id();
-  end if;
-
-  if new.church_id is null then
-    raise exception '❌ Não foi possível definir o church_id ao inserir transação.';
-  end if;
-
-  return new;
-end;
-$$;
-
--- ==========================================================
--- 🔹 RLS SEGURO (ISOLAMENTO ENTRE IGREJAS)
--- ==========================================================
+-- =====================================================
+-- RLS — Isolamento total por igreja
+-- =====================================================
 alter table public.transactions enable row level security;
 alter table public.transactions force row level security;
 
--- Remove políticas inseguras, caso existam
-drop policy if exists "Enable read access for all users" on public.transactions;
-drop policy if exists "Enable insert access for all users" on public.transactions;
-
--- 🔸 SELECT — apenas registros da igreja do JWT
 drop policy if exists "select_transactions_by_church" on public.transactions;
+drop policy if exists "insert_transactions_by_church" on public.transactions;
+drop policy if exists "update_transactions_by_church" on public.transactions;
+drop policy if exists "delete_transactions_by_church" on public.transactions;
+
+-- SELECT — exibe apenas transações da igreja atual
 create policy "select_transactions_by_church"
 on public.transactions
 for select
 to authenticated
 using (church_id = public.current_church_id());
 
--- 🔸 INSERT — força uso do church_id da sessão
-drop policy if exists "insert_transactions_by_church" on public.transactions;
+-- INSERT — permite inserir apenas na própria igreja
 create policy "insert_transactions_by_church"
 on public.transactions
 for insert
 to authenticated
 with check (church_id = public.current_church_id());
 
--- 🔸 UPDATE — só edita registros da própria igreja
-drop policy if exists "update_transactions_by_church" on public.transactions;
+-- UPDATE — permite editar apenas registros da própria igreja
 create policy "update_transactions_by_church"
 on public.transactions
 for update
@@ -237,21 +235,14 @@ to authenticated
 using (church_id = public.current_church_id())
 with check (church_id = public.current_church_id());
 
--- 🔸 DELETE — só remove registros da própria igreja
-drop policy if exists "delete_transactions_by_church" on public.transactions;
+-- DELETE — permite deletar registros da própria igreja
 create policy "delete_transactions_by_church"
 on public.transactions
 for delete
 to authenticated
 using (church_id = public.current_church_id());
 
--- ==========================================================
--- 🔹 PERMISSÕES
--- ==========================================================
-revoke all on public.transactions from anon;
-grant select, insert, update, delete on public.transactions to authenticated;
-
--- ==========================================================
--- 🔹 RELOAD DO SCHEMA
--- ==========================================================
+-- =====================================================
+-- RECARREGA O SCHEMA DO SUPABASE
+-- =====================================================
 notify pgrst, 'reload schema';
