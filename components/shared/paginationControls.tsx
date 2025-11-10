@@ -21,7 +21,7 @@ export function PaginationControls({
                 <strong className="text-gray-700">
                     {Math.min(currentPage * itemsPerPage, totalItems)}
                 </strong>{" "}
-                de <strong className="text-gray-700">{totalItems}</strong> transações
+                de <strong className="text-gray-700">{totalItems}</strong> 
             </span>
 
             <div className="flex items-center gap-2">

@@ -21,7 +21,7 @@ export default function Loading() {
                 animate={{ opacity: [0.3, 1, 0.3] }}
                 transition={{ duration: 1.2, repeat: Infinity }}
             >
-                Carregando sua experiência...
+                Carregando...
             </motion.p>
 
             <div className="w-40 h-1.5 bg-gray-200 rounded-full mt-5 overflow-hidden">

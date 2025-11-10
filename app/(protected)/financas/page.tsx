@@ -5,7 +5,7 @@ import { ModalEditTransaction } from "./components/modals/modalEditTransaction";
 import { ModalNewTransaction } from "./components/modals/modalNewTransition";
 import { ModalDeleteTransaction } from "./components/modals/modalDeleteTransaction";
 import { TransactionTable } from "./components/transactionTable";
-import { PaginationControls } from "./components/paginationControls";
+import { PaginationControls } from "../../../components/shared/paginationControls";
 import { useTransactions } from "./hook/useTransactions";
 
 export default function FinancasPage() {
