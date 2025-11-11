@@ -17,16 +17,20 @@ type Props = {
 };
 
 export default function VisitorTable({
-    visitors,
+    visitors: initialVisitors,
     loading,
     search,
     setSearch,
     onNewClick,
     onSelect,
 }: Props) {
+    const [visitors, setVisitors] = useState(initialVisitors);
     const itemsPerPage = 10;
     const [currentPage, setCurrentPage] = useState(1);
-    const { processingId, handleFollowup } = useFollowup();
+    const { processingId, handleFollowup, handleFinish } = useFollowup();
+
+    // Atualiza visitantes caso a prop inicial mude
+    useMemo(() => setVisitors(initialVisitors), [initialVisitors]);
 
     const sortedVisitors = useMemo(
         () =>
@@ -46,6 +50,24 @@ export default function VisitorTable({
 
     const handleNext = () => currentPage < totalPages && setCurrentPage((p) => p + 1);
     const handlePrevious = () => currentPage > 1 && setCurrentPage((p) => p - 1);
+
+    async function handleFollowupClick(v: any) {
+        const updated = await handleFollowup(v);
+        if (updated) {
+            setVisitors((prev) =>
+                prev.map((x) => (x.id === v.id ? updated : x))
+            );
+        }
+    }
+
+    async function handleFinishClick(v: any) {
+        const updated = await handleFinish(v);
+        if (updated) {
+            setVisitors((prev) =>
+                prev.map((x) => (x.id === v.id ? updated : x))
+            );
+        }
+    }
 
     return (
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-4">
@@ -84,7 +106,8 @@ export default function VisitorTable({
                     <TableBody
                         visitors={paginatedVisitors}
                         onSelect={onSelect}
-                        onFollowup={handleFollowup}
+                        onFollowup={handleFollowupClick}
+                        onFinish={handleFinishClick}
                         processingId={processingId}
                     />
 
