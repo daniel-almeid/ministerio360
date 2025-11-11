@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../../lib/supabaseClient";
-import { Visitor } from "../../types/visitors";
+import { supabase } from "../../../../../lib/supabaseClient";
+import { Visitor } from "../../../../types/visitors";
 import toast from "react-hot-toast";
 
 interface VisitorModalProps {

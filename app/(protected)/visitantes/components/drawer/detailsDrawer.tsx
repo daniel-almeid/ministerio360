@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Visitor } from "../../types/visitors";
-import VisitorModal from "./visitorModal";
+import VisitorModal from "../modals/newVisitor";
 
 interface VisitorDetailsDrawerProps {
     visitor: Visitor;
