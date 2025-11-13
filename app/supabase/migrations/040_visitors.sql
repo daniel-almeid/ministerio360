@@ -1,5 +1,5 @@
 -- ==========================================================
--- 🔹 ENUM: visitor_followup_status
+-- ENUM: visitor_followup_status
 -- ==========================================================
 do $$
 begin
@@ -9,7 +9,7 @@ begin
 end$$;
 
 -- ==========================================================
--- 🔹 TABELA: VISITORS (Isolamento total por igreja)
+-- TABELA: visitors (Isolamento por igreja)
 -- ==========================================================
 create table if not exists public.visitors (
   id uuid primary key default gen_random_uuid(),
@@ -20,6 +20,7 @@ create table if not exists public.visitors (
   email text,
   notes text,
   is_member boolean default false,
+  archived boolean default false, -- <- NOVO
   church_id uuid not null references public.church_profiles(id) on delete cascade,
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
@@ -29,8 +30,11 @@ create table if not exists public.visitors (
 create index if not exists idx_visitors_church_id
 on public.visitors(church_id);
 
+create index if not exists idx_visitors_archived
+on public.visitors(archived);
+
 -- ==========================================================
--- 🔹 TRIGGERS
+-- TRIGGERS
 -- ==========================================================
 drop trigger if exists trg_visitors_updated_at on public.visitors;
 create trigger trg_visitors_updated_at
@@ -45,33 +49,46 @@ for each row
 execute function public.set_church_id();
 
 -- ==========================================================
--- 🔹 RLS + POLÍTICAS (modo compatível com Supabase)
+-- RLS E POLÍTICAS
 -- ==========================================================
 alter table public.visitors enable row level security;
 alter table public.visitors force row level security;
 
--- Remova versões antigas e recrie as válidas
-drop policy if exists "select_visitors_by_church" on public.visitors;
-drop policy if exists "insert_visitors_by_church" on public.visitors;
-drop policy if exists "update_visitors_by_church" on public.visitors;
-drop policy if exists "delete_visitors_by_church" on public.visitors;
+drop policy if exists select_visitors_by_church on public.visitors;
+drop policy if exists select_archived_visitors_by_church on public.visitors;
+drop policy if exists insert_visitors_by_church on public.visitors;
+drop policy if exists update_visitors_by_church on public.visitors;
+drop policy if exists delete_visitors_by_church on public.visitors;
 
--- SELECT — apenas registros da igreja atual
-create policy "select_visitors_by_church"
+-- SELECT — visitantes ativos (não arquivados)
+create policy select_visitors_by_church
 on public.visitors
 for select
 to authenticated
-using (church_id = public.current_church_id());
+using (
+    church_id = public.current_church_id()
+    AND archived = false
+);
 
--- INSERT — restringe ao church_id do JWT
-create policy "insert_visitors_by_church"
+-- SELECT — visitantes arquivados (se um dia quiser mostrar)
+create policy select_archived_visitors_by_church
+on public.visitors
+for select
+to authenticated
+using (
+    church_id = public.current_church_id()
+    AND archived = true
+);
+
+-- INSERT — restrito à igreja do JWT
+create policy insert_visitors_by_church
 on public.visitors
 for insert
 to authenticated
 with check (church_id = public.current_church_id());
 
--- UPDATE — apenas registros da própria igreja
-create policy "update_visitors_by_church"
+-- UPDATE — somente registros da própria igreja
+create policy update_visitors_by_church
 on public.visitors
 for update
 to authenticated
@@ -79,14 +96,14 @@ using (church_id = public.current_church_id())
 with check (church_id = public.current_church_id());
 
 -- DELETE — idem
-create policy "delete_visitors_by_church"
+create policy delete_visitors_by_church
 on public.visitors
 for delete
 to authenticated
 using (church_id = public.current_church_id());
 
 -- ==========================================================
--- 🔹 PERMISSÕES E RELOAD
+-- PERMISSÕES E RELOAD
 -- ==========================================================
 revoke all on public.visitors from anon;
 grant select, insert, update, delete on public.visitors to authenticated;

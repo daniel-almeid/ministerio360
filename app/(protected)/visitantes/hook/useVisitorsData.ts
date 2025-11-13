@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { getVisitors } from "../../../services/visitors";
 import { Visitor } from "../../../types/visitors";
 
@@ -9,11 +9,12 @@ export function useVisitorsData() {
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
     const [reloadFlag, setReloadFlag] = useState(false);
+    const [showArchived, setShowArchived] = useState(false);
 
     async function loadVisitors() {
         setLoading(true);
         try {
-            const data = await getVisitors();
+            const data = await getVisitors(showArchived);
             setVisitors(data);
         } catch (err) {
             console.error(err);
@@ -24,15 +25,18 @@ export function useVisitorsData() {
 
     useEffect(() => {
         loadVisitors();
-    }, [reloadFlag]);
+    }, [reloadFlag, showArchived]);
 
     const filteredVisitors = useMemo(() => {
         const q = search.trim().toLowerCase();
         if (!q) return visitors;
+
         return visitors.filter((v) =>
             [v.name, v.email, v.phone]
                 .filter(Boolean)
-                .some((value) => String(value).toLowerCase().includes(q))
+                .some((value) =>
+                    String(value).toLowerCase().includes(q)
+                )
         );
     }, [search, visitors]);
 
@@ -44,6 +48,8 @@ export function useVisitorsData() {
         loading,
         reloadFlag,
         setReloadFlag,
+        showArchived,
+        setShowArchived,
         loadVisitors,
     };
 }

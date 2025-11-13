@@ -14,6 +14,8 @@ export default function VisitantesPage() {
         setSearch,
         filteredVisitors,
         loadVisitors,
+        showArchived,
+        setShowArchived,
     } = useVisitorsData();
 
     const [openModal, setOpenModal] = useState(false);
@@ -28,8 +30,10 @@ export default function VisitantesPage() {
                 loading={loading}
                 search={search}
                 setSearch={setSearch}
+                showArchived={showArchived}
+                onToggleArchived={() => setShowArchived(!showArchived)}
                 onNewClick={() => setOpenModal(true)}
-                onSelect={setSelectedVisitor}
+                onSelect={(v) => setSelectedVisitor(v)}
             />
 
             {openModal && (

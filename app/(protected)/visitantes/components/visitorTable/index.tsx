@@ -12,6 +12,10 @@ type Props = {
     loading: boolean;
     search: string;
     setSearch: (v: string) => void;
+
+    showArchived: boolean;
+    onToggleArchived: () => void;
+
     onNewClick: () => void;
     onSelect: (v: any) => void;
 };
@@ -21,23 +25,31 @@ export default function VisitorTable({
     loading,
     search,
     setSearch,
+
+    showArchived,
+    onToggleArchived,
+
     onNewClick,
     onSelect,
 }: Props) {
     const [visitors, setVisitors] = useState(initialVisitors);
+
     const itemsPerPage = 10;
     const [currentPage, setCurrentPage] = useState(1);
     const { processingId, handleFollowup, handleFinish } = useFollowup();
 
-    // Atualiza visitantes caso a prop inicial mude
     useMemo(() => setVisitors(initialVisitors), [initialVisitors]);
+
+    const filteredByArchive = useMemo(() => {
+        return visitors.filter((v) => !!v.archived === showArchived);
+    }, [visitors, showArchived]);
 
     const sortedVisitors = useMemo(
         () =>
-            [...visitors].sort((a, b) =>
+            [...filteredByArchive].sort((a, b) =>
                 a.name?.localeCompare(b.name ?? "", "pt-BR", { sensitivity: "base" })
             ),
-        [visitors]
+        [filteredByArchive]
     );
 
     const totalItems = sortedVisitors.length;
@@ -48,8 +60,10 @@ export default function VisitorTable({
         return sortedVisitors.slice(start, start + itemsPerPage);
     }, [sortedVisitors, currentPage]);
 
-    const handleNext = () => currentPage < totalPages && setCurrentPage((p) => p + 1);
-    const handlePrevious = () => currentPage > 1 && setCurrentPage((p) => p - 1);
+    const handleNext = () =>
+        currentPage < totalPages && setCurrentPage((p) => p + 1);
+    const handlePrevious = () =>
+        currentPage > 1 && setCurrentPage((p) => p - 1);
 
     async function handleFollowupClick(v: any) {
         const updated = await handleFollowup(v);
@@ -88,13 +102,26 @@ export default function VisitorTable({
                     </div>
                 </div>
 
-                <button
-                    onClick={onNewClick}
-                    className="flex items-center gap-2 px-3 py-2 bg-[#38B2AC] text-white rounded-lg hover:bg-[#319795] transition-all shadow-sm"
-                >
-                    <PlusCircle size={18} />
-                    Novo Visitante
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={onToggleArchived}
+                        className={`px-4 py-2 rounded-lg border flex items-center gap-2 
+            ${showArchived ? "bg-gray-800 text-white" : "bg-white text-gray-700"}
+        `}
+                    >
+                        {showArchived ? "Ativos" : "Arquivados"}
+                    </button>
+
+                    {!showArchived && (
+                        <button
+                            onClick={onNewClick}
+                            className="flex items-center gap-2 px-3 py-2 bg-[#38B2AC] text-white rounded-lg hover:bg-[#319795] transition-all shadow-sm"
+                        >
+                            <PlusCircle size={18} />
+                            Novo Visitante
+                        </button>
+                    )}
+                </div>
             </div>
 
             {loading ? (
@@ -110,7 +137,6 @@ export default function VisitorTable({
                         onFinish={handleFinishClick}
                         processingId={processingId}
                     />
-
                     <div className="border-t border-gray-100 mt-2">
                         <div className="py-2 px-2">
                             <PaginationControls
@@ -126,7 +152,9 @@ export default function VisitorTable({
                 </>
             ) : (
                 <p className="text-gray-500 text-sm text-center py-8">
-                    Nenhum visitante cadastrado ainda.
+                    {showArchived
+                        ? "Nenhum visitante arquivado."
+                        : "Nenhum visitante cadastrado ainda."}
                 </p>
             )}
         </section>

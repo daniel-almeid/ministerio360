@@ -1,14 +1,16 @@
 import { supabase } from "../../lib/supabaseClient";
 import { Visitor } from "../types/visitors";
 
-// Buscar visitantes
-export async function getVisitors(): Promise<Visitor[]> {
+// Buscar visitantes (ativos ou arquivados)
+export async function getVisitors(archived: boolean = false): Promise<Visitor[]> {
     const { data, error } = await supabase
         .from("visitors")
         .select("*")
+        .eq("archived", archived)
         .order("visit_date", { ascending: false });
 
     if (error) throw error;
+
     return data as Visitor[];
 }
 
