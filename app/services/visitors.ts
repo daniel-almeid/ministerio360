@@ -1,7 +1,6 @@
 import { supabase } from "../../lib/supabaseClient";
 import { Visitor } from "../types/visitors";
 
-// Buscar visitantes (ativos ou arquivados)
 export async function getVisitors(archived: boolean = false): Promise<Visitor[]> {
     const { data, error } = await supabase
         .from("visitors")
@@ -14,7 +13,6 @@ export async function getVisitors(archived: boolean = false): Promise<Visitor[]>
     return data as Visitor[];
 }
 
-// Adicionar visitante
 export async function addVisitor(visitor: Omit<Visitor, "id" | "created_at" | "updated_at">) {
     const { data, error } = await supabase
         .from("visitors")
@@ -28,4 +26,18 @@ export async function addVisitor(visitor: Omit<Visitor, "id" | "created_at" | "u
     }
 
     return data as Visitor;
+}
+
+export async function archiveVisitor(id: string) {
+    const { error } = await supabase
+        .from("visitors")
+        .update({ archived: true })
+        .eq("id", id);
+
+    if (error) {
+        console.error("Erro ao arquivar visitante:", error);
+        return { success: false, error };
+    }
+
+    return { success: true };
 }

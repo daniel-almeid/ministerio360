@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Search, PlusCircle } from "lucide-react";
 import { PaginationControls } from "@/components/shared/paginationControls";
 import Loading from "@/components/shared/loading";
@@ -12,12 +12,10 @@ type Props = {
     loading: boolean;
     search: string;
     setSearch: (v: string) => void;
-
-    showArchived: boolean;
-    onToggleArchived: () => void;
-
     onNewClick: () => void;
     onSelect: (v: any) => void;
+    showArchived: boolean;
+    onToggleArchived: () => void;
 };
 
 export default function VisitorTable({
@@ -25,31 +23,51 @@ export default function VisitorTable({
     loading,
     search,
     setSearch,
-
-    showArchived,
-    onToggleArchived,
-
     onNewClick,
     onSelect,
+    showArchived,
+    onToggleArchived,
 }: Props) {
     const [visitors, setVisitors] = useState(initialVisitors);
+    const [statusFilter, setStatusFilter] = useState("all");
+
+    const [statusLoading, setStatusLoading] = useState(false);
+    const [pageLoading, setPageLoading] = useState(false);
 
     const itemsPerPage = 10;
     const [currentPage, setCurrentPage] = useState(1);
+
     const { processingId, handleFollowup, handleFinish } = useFollowup();
 
     useMemo(() => setVisitors(initialVisitors), [initialVisitors]);
 
+    useEffect(() => {
+        setStatusLoading(true);
+        const timer = setTimeout(() => setStatusLoading(false), 350);
+        return () => clearTimeout(timer);
+    }, [statusFilter]);
+
+    useEffect(() => {
+        setPageLoading(true);
+        const timer = setTimeout(() => setPageLoading(false), 350);
+        return () => clearTimeout(timer);
+    }, [currentPage]);
+
     const filteredByArchive = useMemo(() => {
-        return visitors.filter((v) => !!v.archived === showArchived);
+        return visitors.filter(v => !!v.archived === showArchived);
     }, [visitors, showArchived]);
+
+    const filteredByStatus = useMemo(() => {
+        if (statusFilter === "all") return filteredByArchive;
+        return filteredByArchive.filter(v => v.followup_status === statusFilter);
+    }, [filteredByArchive, statusFilter]);
 
     const sortedVisitors = useMemo(
         () =>
-            [...filteredByArchive].sort((a, b) =>
+            [...filteredByStatus].sort((a, b) =>
                 a.name?.localeCompare(b.name ?? "", "pt-BR", { sensitivity: "base" })
             ),
-        [filteredByArchive]
+        [filteredByStatus]
     );
 
     const totalItems = sortedVisitors.length;
@@ -60,31 +78,32 @@ export default function VisitorTable({
         return sortedVisitors.slice(start, start + itemsPerPage);
     }, [sortedVisitors, currentPage]);
 
-    const handleNext = () =>
-        currentPage < totalPages && setCurrentPage((p) => p + 1);
-    const handlePrevious = () =>
-        currentPage > 1 && setCurrentPage((p) => p - 1);
+    const handleNext = () => {
+        if (currentPage < totalPages) setCurrentPage(p => p + 1);
+    };
+
+    const handlePrevious = () => {
+        if (currentPage > 1) setCurrentPage(p => p - 1);
+    };
 
     async function handleFollowupClick(v: any) {
         const updated = await handleFollowup(v);
         if (updated) {
-            setVisitors((prev) =>
-                prev.map((x) => (x.id === v.id ? updated : x))
-            );
+            setVisitors(prev => prev.map(x => x.id === v.id ? updated : x));
         }
     }
 
     async function handleFinishClick(v: any) {
         const updated = await handleFinish(v);
         if (updated) {
-            setVisitors((prev) =>
-                prev.map((x) => (x.id === v.id ? updated : x))
-            );
+            setVisitors(prev => prev.map(x => x.id === v.id ? updated : x));
         }
     }
 
+    const isLoading = loading || statusLoading || pageLoading;
+
     return (
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-4">
+        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-4 md:p-4">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-3">
                 <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-center">
                     <div className="relative w-full sm:w-64">
@@ -100,14 +119,37 @@ export default function VisitorTable({
                             className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#38B2AC] text-sm text-gray-700 placeholder-gray-400"
                         />
                     </div>
+
+                    {!showArchived && (
+                        <div className="flex items-center gap-2 bg-gray-100 rounded-full px-2 py-1">
+                            {[
+                                { key: "all", label: "Todos" },
+                                { key: "pendente", label: "Pendente" },
+                                { key: "em_andamento", label: "Em andamento" },
+                                { key: "concluido", label: "Concluído" },
+                            ].map((option) => (
+                                <button
+                                    key={option.key}
+                                    onClick={() => {
+                                        setCurrentPage(1);
+                                        setStatusFilter(option.key);
+                                    }}
+                                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${statusFilter === option.key
+                                            ? "bg-[#38B2AC] text-white shadow-sm"
+                                            : "text-gray-600 hover:text-[#38B2AC]"
+                                        }`}
+                                >
+                                    {option.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-3">
                     <button
                         onClick={onToggleArchived}
-                        className={`px-4 py-2 rounded-lg border flex items-center gap-2 
-            ${showArchived ? "bg-gray-800 text-white" : "bg-white text-gray-700"}
-        `}
+                        className="px-4 py-2 rounded-lg border flex items-center gap-2 bg-white text-gray-700"
                     >
                         {showArchived ? "Ativos" : "Arquivados"}
                     </button>
@@ -124,7 +166,7 @@ export default function VisitorTable({
                 </div>
             </div>
 
-            {loading ? (
+            {isLoading ? (
                 <div className="py-6">
                     <Loading />
                 </div>
@@ -136,7 +178,9 @@ export default function VisitorTable({
                         onFollowup={handleFollowupClick}
                         onFinish={handleFinishClick}
                         processingId={processingId}
+                        showArchived={showArchived}
                     />
+
                     <div className="border-t border-gray-100 mt-2">
                         <div className="py-2 px-2">
                             <PaginationControls
@@ -152,9 +196,7 @@ export default function VisitorTable({
                 </>
             ) : (
                 <p className="text-gray-500 text-sm text-center py-8">
-                    {showArchived
-                        ? "Nenhum visitante arquivado."
-                        : "Nenhum visitante cadastrado ainda."}
+                    {showArchived ? "Nenhum visitante arquivado." : "Nenhum visitante encontrado."}
                 </p>
             )}
         </section>

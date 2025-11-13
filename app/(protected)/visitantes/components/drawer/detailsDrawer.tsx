@@ -56,14 +56,42 @@ export default function VisitorDetailsDrawer({
         }
     }
 
-    async function handleArchive() {
-        if (!confirm(`Deseja realmente arquivar o visitante "${visitor.name}"?`)) {
-            return;
-        }
+    function handleArchive() {
+        toast.custom((t) => (
+            <div
+                className={`bg-white shadow-lg border rounded-lg p-4 flex flex-col gap-3 w-72
+                ${t.visible ? "animate-enter" : "animate-leave"}`}
+            >
+                <p className="text-gray-800 font-medium">Arquivar visitante?</p>
+
+                <p className="text-sm text-gray-500 -mt-2">
+                    Deseja realmente arquivar <strong>{visitor.name}</strong>?
+                </p>
+
+                <div className="flex justify-end gap-2 mt-2">
+                    <button
+                        onClick={() => toast.dismiss(t.id)}
+                        className="px-3 py-1.5 text-sm rounded border text-gray-600 hover:bg-gray-100"
+                    >
+                        Cancelar
+                    </button>
+
+                    <button
+                        onClick={() => confirmArchive(t.id)}
+                        className="px-3 py-1.5 text-sm rounded bg-red-600 text-white hover:bg-red-700"
+                    >
+                        Arquivar
+                    </button>
+                </div>
+            </div>
+        ));
+    }
+
+    async function confirmArchive(toastId: string) {
+        toast.dismiss(toastId);
+        setArchiving(true);
 
         try {
-            setArchiving(true);
-
             const { error } = await supabase
                 .from("visitors")
                 .update({ archived: true })
@@ -87,14 +115,16 @@ export default function VisitorDetailsDrawer({
     return (
         <>
             <div
-                className={`fixed inset-0 z-50 flex justify-end transition-colors duration-300 ${isVisible ? "bg-black/40" : "bg-transparent"
-                    }`}
+                className={`fixed inset-0 z-50 flex justify-end transition-colors duration-300 ${
+                    isVisible ? "bg-black/40" : "bg-transparent"
+                }`}
             >
                 <div className="absolute inset-0 cursor-pointer" onClick={handleClose} />
 
                 <div
-                    className={`relative w-full sm:max-w-md bg-white h-full shadow-2xl transform transition-transform duration-300 ease-in-out ${isVisible ? "translate-x-0" : "translate-x-full"
-                        }`}
+                    className={`relative w-full sm:max-w-md bg-white h-full shadow-2xl transform transition-transform duration-300 ease-in-out ${
+                        isVisible ? "translate-x-0" : "translate-x-full"
+                    }`}
                 >
                     <div className="flex justify-between items-center border-b p-5 sticky top-0 bg-white z-10">
                         <h2 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
@@ -165,16 +195,16 @@ export default function VisitorDetailsDrawer({
                         <div>
                             <p className="text-sm text-gray-500">É membro?</p>
                             <p
-                                className={`font-medium flex items-center gap-2 ${visitor.is_member
-                                        ? "text-green-700"
-                                        : "text-gray-700"
-                                    }`}
+                                className={`font-medium flex items-center gap-2 ${
+                                    visitor.is_member ? "text-green-700" : "text-gray-700"
+                                }`}
                             >
                                 <UserCheck
-                                    className={`w-4 h-4 ${visitor.is_member
+                                    className={`w-4 h-4 ${
+                                        visitor.is_member
                                             ? "text-green-600"
                                             : "text-gray-500"
-                                        }`}
+                                    }`}
                                 />
                                 {visitor.is_member ? "Sim" : "Não"}
                             </p>
@@ -221,14 +251,16 @@ export default function VisitorDetailsDrawer({
                                 </button>
                             )}
 
-                            <button
-                                onClick={handleArchive}
-                                disabled={archiving}
-                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2"
-                            >
-                                <Archive className="w-4 h-4" />
-                                Arquivar
-                            </button>
+                            {!visitor.archived && (
+                                <button
+                                    onClick={handleArchive}
+                                    disabled={archiving}
+                                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2"
+                                >
+                                    <Archive className="w-4 h-4" />
+                                    Arquivar
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

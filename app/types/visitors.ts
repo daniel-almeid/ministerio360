@@ -1,6 +1,7 @@
 export type FollowupStatus = "pendente" | "em_andamento" | "concluido";
 
 export type Visitor = {
+    archived: any;
     id: string;
     name: string;
     visit_date: string;
