@@ -58,11 +58,10 @@ export function Sidebar() {
     >
       {/* Header com logo e botão */}
       <div
-        className={`relative border-b border-white/10 ${
-          isCollapsed
+        className={`relative border-b border-white/10 ${isCollapsed
             ? "flex flex-col items-center justify-center py-8"
             : "flex items-center justify-between px-5 py-6"
-        }`}
+          }`}
       >
         {/* Logo */}
         <motion.div
@@ -71,9 +70,8 @@ export function Sidebar() {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
           transition={{ duration: 0.4, ease: "easeInOut" }}
-          className={`flex items-center ${
-            isCollapsed ? "justify-center flex-col" : "gap-3"
-          }`}
+          className={`flex items-center ${isCollapsed ? "justify-center flex-col" : "gap-3"
+            }`}
         >
           <motion.div
             animate={{
@@ -88,11 +86,10 @@ export function Sidebar() {
               width={isCollapsed ? 70 : 46}
               height={isCollapsed ? 70 : 46}
               priority
-              className={`select-none transition-all duration-500 ${
-                isCollapsed
+              className={`select-none transition-all duration-500 ${isCollapsed
                   ? "rounded-2xl shadow-lg mb-2"
                   : "rounded-lg shadow-md"
-              }`}
+                }`}
               unoptimized
             />
           </motion.div>
@@ -153,10 +150,9 @@ export function Sidebar() {
               <Link
                 href={href}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-lg mx-2 transition-all duration-300 
-                  ${
-                    isActive
-                      ? "bg-[#38B2AC] text-white shadow-md"
-                      : "hover:bg-[#2C5282] text-[#81E6D9]"
+                  ${isActive
+                    ? "bg-[#38B2AC] text-white shadow-md"
+                    : "hover:bg-[#2C5282] text-[#81E6D9]"
                   }
                   ${isCollapsed ? "justify-center" : ""}
                 `}

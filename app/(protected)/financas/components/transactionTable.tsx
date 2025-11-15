@@ -1,5 +1,6 @@
 "use client";
 
+import { th } from "date-fns/locale";
 import { ArrowDownCircle, ArrowUpCircle, Calendar, Pencil, Trash } from "lucide-react";
 
 export function TransactionTable({ data, onEdit, onDelete }: any) {

@@ -4,13 +4,21 @@ import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "../../../../lib/supabaseClient";
-import { fetchScales } from "../../../../lib/scalesService";
-import ModalNewScale from "../modalNewScale";
-import DrawerScaleDetails from "../drawerScaleDetails";
+import { fetchScales } from "../services/scalesService";
+import ModalNewScale from "./modals/modalNewScale";
+import DrawerScaleDetails from "./drawer/drawerScaleDetails";
 import { Calendar, Users, Eye } from "lucide-react";
 
+type Scale = {
+    id: string;
+    date: string;
+    event: string;
+    responsible: string;
+    ministries: { id: string; name: string }[];
+};
+
 export default function ScaleSection() {
-    const [scales, setScales] = useState<any[]>([]);
+    const [scales, setScales] = useState<Scale[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedScaleId, setSelectedScaleId] = useState<string | null>(null);
@@ -20,7 +28,11 @@ export default function ScaleSection() {
 
         const channel = supabase
             .channel("scales-changes")
-            .on("postgres_changes", { event: "*", schema: "public", table: "scales" }, loadScales)
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "scales" },
+                loadScales
+            )
             .subscribe();
 
         return () => {
@@ -47,7 +59,6 @@ export default function ScaleSection() {
                 </button>
             </div>
 
-            {/* table */}
             {loading ? (
                 <p className="text-gray-500 text-center py-8">Carregando escalas...</p>
             ) : scales.length === 0 ? (
@@ -89,7 +100,6 @@ export default function ScaleSection() {
                                     key={item.id}
                                     className="hover:bg-[#F9FAFB] transition-all duration-200"
                                 >
-
                                     <td className="px-4 py-3 text-gray-800 font-medium whitespace-nowrap">
                                         <div className="flex items-center gap-2">
                                             <Calendar className="w-4 h-4 text-[#38B2AC]" />
@@ -103,7 +113,7 @@ export default function ScaleSection() {
 
                                     <td className="px-4 py-3">
                                         <div className="flex flex-wrap gap-2">
-                                            {item.ministries.map((m: any) => (
+                                            {item.ministries?.map((m) => (
                                                 <span
                                                     key={m.id}
                                                     className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold text-[#319795] bg-[#E6FFFA]"
@@ -135,12 +145,10 @@ export default function ScaleSection() {
                 </div>
             )}
 
-            {/* Modal */}
             {isModalOpen && (
                 <ModalNewScale onClose={() => setIsModalOpen(false)} onSuccess={loadScales} />
             )}
 
-            {/* Drawer */}
             {selectedScaleId && (
                 <DrawerScaleDetails
                     scaleId={selectedScaleId}

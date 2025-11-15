@@ -1,25 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo } from 'react';
-import { supabase } from '../../../../lib/supabaseClient';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import ModalNewEvent from '../modalNewEvent';
-import { CalendarDays, MapPin, Users } from 'lucide-react';
-
-type Event = {
-  id: string;
-  title: string;
-  date: string;
-  time: string;
-  location?: string | null;
-  ministries?: { name: string }[];
-};
-
-type Ministry = {
-  id: string;
-  name: string;
-};
+import { CalendarDays, MapPin, Users } from "lucide-react";
+import ModalNewEvent from "./modals/modalNewEvent";
+import { useEvents } from "../hook/useEvents";
+import { Ministry } from "../../../types/agenda";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { useState } from "react";
 
 type Props = {
   ministries: Ministry[];
@@ -27,67 +14,17 @@ type Props = {
 };
 
 export default function EventSection({ ministries, onRefreshMinistries }: Props) {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [filterMinistry, setFilterMinistry] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const {
+    events,
+    loading,
+    filterMinistry,
+    setFilterMinistry,
+    grouped,
+    nextEvent,
+    load,
+  } = useEvents(ministries, onRefreshMinistries);
 
-  useEffect(() => {
-    loadEvents();
-
-    const channel = supabase
-      .channel('events-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, loadEvents)
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  async function loadEvents() {
-    setLoading(true);
-
-    const { data, error } = await supabase
-      .from('events')
-      .select(`
-        id,
-        title,
-        date,
-        time,
-        location,
-        event_ministries ( ministries ( name ) )
-      `)
-      .order('date', { ascending: true });
-
-    if (error) {
-      console.error('Erro ao carregar eventos:', error.message);
-      setEvents([]);
-    } else {
-      const mapped = (data || []).map((ev: any) => ({
-        ...ev,
-        ministries: ev.event_ministries?.map((em: any) => em.ministries)?.filter(Boolean) || [],
-      }));
-      setEvents(mapped);
-    }
-
-    setLoading(false);
-    onRefreshMinistries();
-  }
-
-  const filteredEvents = useMemo(() => {
-    if (!filterMinistry) return events;
-    return events.filter((e) => e.ministries?.some((m) => m.name === filterMinistry));
-  }, [events, filterMinistry]);
-
-  const groupedEvents = useMemo(() => {
-    return filteredEvents.reduce<Record<string, Event[]>>((groups, ev) => {
-      const monthKey = format(new Date(ev.date), 'MMMM yyyy', { locale: ptBR });
-      if (!groups[monthKey]) groups[monthKey] = [];
-      groups[monthKey].push(ev);
-      return groups;
-    }, {});
-  }, [filteredEvents]);
+  const [isOpen, setIsOpen] = useState(false);
 
   function isSoon(date: string) {
     const today = new Date();
@@ -96,19 +33,12 @@ export default function EventSection({ ministries, onRefreshMinistries }: Props)
     return diffDays >= 0 && diffDays <= 3;
   }
 
-  const nextEvent = useMemo(() => {
-    const upcoming = events
-      .filter((e) => new Date(e.date) >= new Date())
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    return upcoming[0];
-  }, [events]);
-
   return (
     <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-semibold text-gray-700">Próximos eventos</h3>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => setIsOpen(true)}
           className="px-4 py-2 bg-[#38B2AC] text-white rounded-lg hover:bg-[#319795] transition-all shadow-sm text-sm font-medium"
         >
           + Novo Evento
@@ -141,15 +71,17 @@ export default function EventSection({ ministries, onRefreshMinistries }: Props)
               <p className="text-lg font-bold text-gray-800">{nextEvent.title}</p>
               <p className="text-base text-gray-700 flex items-center gap-2 mt-1">
                 <CalendarDays className="w-5 h-5 text-[#38B2AC]" />
-                {format(new Date(nextEvent.date), 'dd/MM/yyyy', { locale: ptBR })} —{' '}
+                {format(new Date(nextEvent.date), "dd/MM/yyyy", { locale: ptBR })} —{" "}
                 {nextEvent.time?.slice(0, 5)}
               </p>
+
               {nextEvent.location && (
                 <p className="text-sm text-gray-600 flex items-center gap-1 mt-1">
                   <MapPin className="w-4 h-4 text-[#38B2AC]" />
                   {nextEvent.location}
                 </p>
               )}
+
               <div className="flex flex-wrap gap-2 mt-3">
                 {nextEvent.ministries?.length ? (
                   nextEvent.ministries.map((m) => (
@@ -168,7 +100,7 @@ export default function EventSection({ ministries, onRefreshMinistries }: Props)
             </div>
           )}
 
-          {Object.entries(groupedEvents).map(([month, monthEvents]) => (
+          {Object.entries(grouped).map(([month, monthEvents]) => (
             <div key={month} className="mb-6">
               <h4 className="font-semibold text-gray-600 mb-3 capitalize flex items-center gap-2 text-base">
                 <CalendarDays className="w-5 h-5 text-[#38B2AC]" />
@@ -179,11 +111,10 @@ export default function EventSection({ ministries, onRefreshMinistries }: Props)
                 {monthEvents.map((event) => (
                   <li
                     key={event.id}
-                    className={`p-5 rounded-xl border transition-all duration-200 ${
-                      isSoon(event.date)
-                        ? 'bg-green-50 border-green-200'
-                        : 'hover:bg-gray-50 border-gray-100'
-                    }`}
+                    className={`p-5 rounded-xl border transition-all duration-200 ${isSoon(event.date)
+                      ? "bg-green-50 border-green-200"
+                      : "hover:bg-gray-50 border-gray-100"
+                      }`}
                   >
                     <div className="flex justify-between items-start gap-4">
                       <div className="space-y-1">
@@ -192,9 +123,10 @@ export default function EventSection({ ministries, onRefreshMinistries }: Props)
                         </p>
                         <p className="text-base text-gray-700 flex items-center gap-2">
                           <CalendarDays className="w-5 h-5 text-[#38B2AC]" />
-                          {format(new Date(event.date), 'dd/MM/yyyy', { locale: ptBR })} —{' '}
+                          {format(new Date(event.date), "dd/MM/yyyy", { locale: ptBR })} —{" "}
                           {event.time?.slice(0, 5)}
                         </p>
+
                         {event.location && (
                           <p className="text-sm text-gray-600 flex items-center gap-1">
                             <MapPin className="w-4 h-4 text-[#38B2AC]" />
@@ -204,7 +136,7 @@ export default function EventSection({ ministries, onRefreshMinistries }: Props)
                       </div>
 
                       <div className="flex flex-wrap gap-2 justify-end">
-                        {event.ministries && event.ministries.length > 0 ? (
+                        {event.ministries?.length ? (
                           event.ministries.map((m) => (
                             <span
                               key={m.name}
@@ -229,12 +161,8 @@ export default function EventSection({ ministries, onRefreshMinistries }: Props)
         <p className="text-gray-500 text-sm text-center py-8">Nenhum evento cadastrado ainda.</p>
       )}
 
-      {isModalOpen && (
-        <ModalNewEvent
-          eventData={null}
-          onClose={() => setIsModalOpen(false)}
-          onSuccess={loadEvents}
-        />
+      {isOpen && (
+        <ModalNewEvent eventData={null} onClose={() => setIsOpen(false)} onSuccess={load} />
       )}
     </section>
   );
