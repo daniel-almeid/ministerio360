@@ -1,6 +1,8 @@
-import { supabase } from '../../../../lib/supabaseClient';
+"use client";
 
-type CreateScaleInput = {
+import { supabase } from "../../../../lib/supabaseClient";
+
+export type CreateScaleInput = {
     date: string;
     event: string;
     responsible: string;
@@ -29,12 +31,15 @@ export async function fetchScales() {
     );
 }
 
-export async function createScale(payload: CreateScaleInput) {
+export async function createScale(payload: CreateScaleInput, churchId: string) {
+    const isoDate = `${payload.date}T12:00:00`;
+
     const { error } = await supabase.from("scales").insert({
-        date: payload.date,
+        date: isoDate,
         event_name: payload.event,
         responsible: payload.responsible,
         ministries: payload.ministries,
+        church_id: churchId,
     });
 
     if (error) throw new Error(error.message);

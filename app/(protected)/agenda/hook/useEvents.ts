@@ -1,83 +1,50 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { supabase } from "../../../../lib/supabaseClient";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { useEffect, useState } from "react";
+import { fetchEvents } from "../services/eventsService";
 import { EventItem, Ministry } from "../../../types/agenda";
+import { parseISO, format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-export function useEvents(initialMinistries: Ministry[], onRefreshMinistries: () => void) {
+export function useEvents(ministries: Ministry[], onRefresh: () => void) {
     const [events, setEvents] = useState<EventItem[]>([]);
-    const [filterMinistry, setFilterMinistry] = useState("");
     const [loading, setLoading] = useState(true);
+    const [filterMinistry, setFilterMinistry] = useState("");
+    const [grouped, setGrouped] = useState<Record<string, EventItem[]>>({});
+    const [nextEvent, setNextEvent] = useState<EventItem | null>(null);
 
     useEffect(() => {
         load();
-
-        let channel: any;
-
-        async function setupRealtime() {
-            channel = supabase
-                .channel("events-changes")
-                .on("postgres_changes", { event: "*", schema: "public", table: "events" }, load)
-                .subscribe();
-        }
-
-        setupRealtime();
-
-        return () => {
-            if (channel) supabase.removeChannel(channel);
-        };
-    }, []);
+    }, [filterMinistry]);
 
     async function load() {
         setLoading(true);
+        const data = await fetchEvents();
 
-        const { data, error } = await supabase
-            .from("events")
-            .select(`
-        id,
-        title,
-        date,
-        time,
-        location,
-        event_ministries ( ministries(id,name) )
-    `)
-            .order("date");
+        let list: EventItem[] = data;
 
-        if (error) {
-            console.error("Erro ao carregar eventos:", error.message);
-            setEvents([]);
-        } else {
-            const mapped = data?.map((ev: any) => ({
-                ...ev,
-                ministries: ev.event_ministries?.map((m: any) => m?.ministries).filter(Boolean) || [],
-            }));
-            setEvents(mapped);
+        if (filterMinistry) {
+            list = data.filter((ev: any) =>
+                ev.ministries?.some((m: any) => m.name === filterMinistry),
+            );
         }
 
+        const now = new Date();
+        const upcoming = list.filter((ev) => parseISO(ev.date) >= now);
+        setNextEvent(upcoming.length > 0 ? upcoming[0] : null);
+
+        const groups: Record<string, EventItem[]> = {};
+
+        list.forEach((ev) => {
+            const month = format(parseISO(ev.date), "MMMM yyyy", { locale: ptBR });
+            if (!groups[month]) groups[month] = [];
+            groups[month].push(ev);
+        });
+
+        setGrouped(groups);
+        setEvents(list);
         setLoading(false);
-        onRefreshMinistries();
     }
-
-    const filtered = useMemo(() => {
-        if (!filterMinistry) return events;
-        return events.filter((e) => e.ministries?.some((m) => m.name === filterMinistry));
-    }, [events, filterMinistry]);
-
-    const grouped = useMemo(() => {
-        return filtered.reduce<Record<string, EventItem[]>>((acc, ev) => {
-            const key = format(new Date(ev.date), "MMMM yyyy", { locale: ptBR });
-            (acc[key] ||= []).push(ev);
-            return acc;
-        }, {});
-    }, [filtered]);
-
-    const nextEvent = useMemo(() => {
-        return [...events]
-            .filter((e) => new Date(e.date) >= new Date())
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
-    }, [events]);
 
     return {
         events,

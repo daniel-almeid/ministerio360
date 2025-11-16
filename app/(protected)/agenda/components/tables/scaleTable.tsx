@@ -1,92 +1,88 @@
 "use client";
 
-import { Calendar, Users, Eye } from "lucide-react";
-import { format } from "date-fns";
+import { CalendarDays, Users } from "lucide-react";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ScaleItem } from "../../../../types/agenda";
 
 type Props = {
     scales: ScaleItem[];
-    onView: (id: string) => void;
+    loading: boolean;
+    openModal: () => void;
+    setSelectedScaleId: (id: string) => void;
 };
 
-export default function ScaleTable({ scales, onView }: Props) {
+export default function ScaleTable({ scales, loading, openModal, setSelectedScaleId }: Props) {
+    function isSoon(date: string) {
+        const today = new Date();
+        const target = parseISO(date);
+        const diff = (target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+        return diff >= 0 && diff <= 3;
+    }
+
     return (
-        <div className="overflow-x-auto max-h-[340px] rounded-xl">
-            <table className="w-full border-collapse table-fixed">
-                <colgroup>
-                    <col style={{ width: "12%" }} />
-                    <col style={{ width: "25%" }} />
-                    <col style={{ width: "33%" }} />
-                    <col style={{ width: "20%" }} />
-                    <col style={{ width: "10%" }} />
-                </colgroup>
+        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-semibold text-gray-700">Escala Semanal</h3>
+                <button
+                    onClick={openModal}
+                    className="px-4 py-2 bg-[#38B2AC] text-white rounded-lg hover:bg-[#319795]"
+                >
+                    + Nova Escala
+                </button>
+            </div>
 
-                <thead className="bg-gray-50/60 border-b border-gray-100 text-gray-500 sticky top-0 z-10">
-                    <tr>
-                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
-                            Data
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
-                            Evento
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
-                            Ministérios
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
-                            Responsável
-                        </th>
-                        <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">
-                            Ações
-                        </th>
-                    </tr>
-                </thead>
+            {loading ? (
+                <p className="text-gray-500 text-center py-8 text-sm">Carregando...</p>
+            ) : (
+                <div className="max-h-[280px] overflow-y-auto pr-2 custom-scrollbar scroll-smooth">
+                    {scales.map((scale) => (
+                        <div
+                            key={scale.id}
+                            className={`p-6 mb-4 rounded-xl border ${
+                                isSoon(scale.date)
+                                    ? "bg-green-50 border-green-200"
+                                    : "hover:bg-gray-50 border-gray-100"
+                            }`}
+                        >
+                            <p className="text-lg font-bold text-gray-800">
+                                {scale.event}
+                            </p>
 
-                <tbody className="divide-y divide-gray-100">
-                    {scales.map((item) => (
-                        <tr key={item.id} className="hover:bg-[#F9FAFB] transition-all duration-200">
-                            <td className="px-4 py-3 text-gray-800 font-medium whitespace-nowrap">
-                                <div className="flex items-center gap-2">
-                                    <Calendar className="w-4 h-4 text-[#38B2AC]" />
-                                    {format(new Date(item.date), "dd/MM", { locale: ptBR })}
-                                </div>
-                            </td>
+                            <p className="text-sm text-gray-700 flex items-center gap-2 mt-1">
+                                <CalendarDays className="w-5 h-5 text-[#38B2AC]" />
+                                {format(parseISO(scale.date), "dd/MM/yyyy", { locale: ptBR })}
+                            </p>
 
-                            <td className="px-4 py-3 text-gray-700 font-medium truncate">
-                                {item.event}
-                            </td>
+                            <p className="text-sm text-gray-600 mt-1">
+                                <span className="font-semibold">Responsável:</span>{" "}
+                                {scale.responsible || "-"}
+                            </p>
 
-                            <td className="px-4 py-3">
-                                <div className="flex flex-wrap gap-2">
-                                    {item.ministries?.map((m) => (
-                                        <span
-                                            key={m.id}
-                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold text-[#319795] bg-[#E6FFFA]"
-                                        >
-                                            <Users className="w-3 h-3" />
-                                            {m.name}
-                                        </span>
-                                    ))}
-                                </div>
-                            </td>
+                            <div className="flex flex-wrap gap-2 mt-3">
+                                {scale.ministries?.map((m) => (
+                                    <span
+                                        key={m.id}
+                                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm border bg-[#E6FFFA] text-[#2C7A7B] border-[#81E6D9]"
+                                    >
+                                        <Users className="w-3 h-3" />
+                                        {m.name}
+                                    </span>
+                                ))}
+                            </div>
 
-                            <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
-                                {item.responsible}
-                            </td>
-
-                            <td className="px-4 py-3 text-center">
+                            <div className="flex justify-end mt-4">
                                 <button
-                                    onClick={() => onView(item.id)}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-[#319795] bg-[#E6FFFA] rounded-lg hover:bg-[#B2F5EA] transition-all"
+                                    onClick={() => setSelectedScaleId(scale.id)}
+                                    className="px-4 py-1.5 rounded-lg bg-[#38B2AC] text-white text-sm hover:bg-[#319795]"
                                 >
-                                    <Eye className="w-4 h-4" />
                                     Ver
                                 </button>
-                            </td>
-                        </tr>
+                            </div>
+                        </div>
                     ))}
-                </tbody>
-            </table>
-        </div>
+                </div>
+            )}
+        </section>
     );
 }

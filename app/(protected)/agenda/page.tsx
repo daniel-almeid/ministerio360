@@ -9,7 +9,11 @@ export default function AgendaPage() {
     const [ministries, setMinistries] = useState<any[]>([]);
 
     async function load() {
-        const { data } = await supabase.from("ministries").select("id, name").order("name");
+        const { data } = await supabase
+            .from("ministries")
+            .select("id, name")
+            .order("name");
+
         setMinistries(data || []);
     }
 
@@ -18,9 +22,7 @@ export default function AgendaPage() {
     }, []);
 
     return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-semibold text-gray-700">Eventos & Escalas</h2>
-
+        <div className="flex flex-col space-y-6 max-h-[calc(100vh-110px)] overflow-y-auto custom-scrollbar pr-1">
             <EventSection ministries={ministries} onRefreshMinistries={load} />
             <ScaleSection />
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "../../../../lib/supabaseClient";
 import { fetchScales } from "../services/scalesService";
@@ -64,7 +64,7 @@ export default function ScaleSection() {
             ) : scales.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">Nenhuma escala cadastrada.</p>
             ) : (
-                <div className="overflow-x-auto max-h-[340px] rounded-xl">
+                <div className="max-h-[340px] overflow-y-auto pr-2 custom-scrollbar scroll-smooth rounded-xl">
                     <table className="w-full border-collapse table-fixed">
                         <colgroup>
                             <col style={{ width: "12%" }} />
@@ -76,21 +76,11 @@ export default function ScaleSection() {
 
                         <thead className="bg-gray-50/60 border-b border-gray-100 text-gray-500 sticky top-0 z-10">
                             <tr>
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
-                                    Data
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
-                                    Evento
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
-                                    Ministérios
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
-                                    Responsável
-                                </th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">
-                                    Ações
-                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Data</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Evento</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Ministérios</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Responsável</th>
+                                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">Ações</th>
                             </tr>
                         </thead>
 
@@ -103,7 +93,7 @@ export default function ScaleSection() {
                                     <td className="px-4 py-3 text-gray-800 font-medium whitespace-nowrap">
                                         <div className="flex items-center gap-2">
                                             <Calendar className="w-4 h-4 text-[#38B2AC]" />
-                                            {format(new Date(item.date), "dd/MM", { locale: ptBR })}
+                                            {format(parseISO(item.date), "dd/MM", { locale: ptBR })}
                                         </div>
                                     </td>
 

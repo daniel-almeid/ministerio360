@@ -6,6 +6,7 @@ export type Ministry = {
 export type Member = {
     id: string;
     name: string;
+    ministry_id: string;
 };
 
 export type EventMinistry = {
