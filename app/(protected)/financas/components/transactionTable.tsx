@@ -12,7 +12,7 @@ export function TransactionTable({ data, onEdit, onDelete }: any) {
                         {["Tipo", "Categoria", "Valor", "Pessoa / Motivo", "Data", "Ações"].map((h) => (
                             <th
                                 key={h}
-                                className={`px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide ${
+                                className={`px-5 py-3 text-xs font-semibold text-black-500 uppercase tracking-wide ${
                                     h === "Ações" ? "text-center" : "text-left"
                                 }`}
                             >

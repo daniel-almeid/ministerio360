@@ -28,7 +28,7 @@ type Transaction = {
 export function useDashboardData() {
     const [currentMonthIncome, setCurrentMonthIncome] = useState(0);
     const [currentMonthExpenses, setCurrentMonthExpenses] = useState(0);
-    const [recentVisitors, setRecentVisitors] = useState<Visitor[]>([]);
+    const [visitors, setVisitors] = useState<Visitor[]>([]); // <--- atualizado
     const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
     const [monthlyTransactions, setMonthlyTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState({
@@ -52,10 +52,11 @@ export function useDashboardData() {
                 const [
                     income,
                     expenses,
-                    visitors,
+                    allVisitors,
                     events,
                     allTransactions,
                 ] = await Promise.all([
+
                     supabase
                         .from('transactions')
                         .select('amount')
@@ -73,8 +74,7 @@ export function useDashboardData() {
                     supabase
                         .from('visitors')
                         .select('id, name, visit_date, phone, email')
-                        .order('visit_date', { ascending: false })
-                        .limit(5),
+                        .order('visit_date', { ascending: false }),
 
                     supabase
                         .from('events')
@@ -90,16 +90,19 @@ export function useDashboardData() {
                         .lte('created_at', end.toISOString()),
                 ]);
 
-                // Process results
                 setCurrentMonthIncome(
                     income.data?.reduce((acc, cur) => acc + Number(cur.amount), 0) ?? 0
                 );
                 setCurrentMonthExpenses(
                     expenses.data?.reduce((acc, cur) => acc + Number(cur.amount), 0) ?? 0
                 );
-                setRecentVisitors(visitors.data ?? []);
+
+                setVisitors(allVisitors.data ?? []);
+
                 setUpcomingEvents(events.data ?? []);
+
                 setMonthlyTransactions(allTransactions.data ?? []);
+
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
             } finally {
@@ -113,7 +116,7 @@ export function useDashboardData() {
     return {
         currentMonthIncome,
         currentMonthExpenses,
-        recentVisitors,
+        visitors,
         upcomingEvents,
         monthlyTransactions,
         loading,

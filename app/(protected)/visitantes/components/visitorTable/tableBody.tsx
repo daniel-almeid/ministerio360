@@ -41,14 +41,14 @@ export function TableBody({
                         ].map((h) => (
                             <th
                                 key={h}
-                                className="px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left"
+                                className="px-5 py-2.5 text-xs font-semibold text-black-500 uppercase tracking-wide text-left"
                             >
                                 {h}
                             </th>
                         ))}
 
                         {!showArchived && (
-                            <th className="px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">
+                            <th className="px-5 py-2.5 text-xs font-semibold text-black-500 uppercase tracking-wide text-center">
                                 Ações
                             </th>
                         )}
@@ -57,8 +57,10 @@ export function TableBody({
 
                 <tbody className="divide-y divide-gray-100">
                     {visitors.map((v: any) => (
-                        <tr key={v.id} className="hover:bg-[#F9FAFB] transition-all">
-
+                        <tr
+                            key={v.id}
+                            className="hover:bg-[#F9FAFB] transition-all"
+                        >
                             <td className="px-5 py-3 font-medium text-gray-800">
                                 <div className="flex items-center gap-2">
                                     <Info className="w-4 h-4 text-[#38B2AC]" />
@@ -69,7 +71,13 @@ export function TableBody({
                             <td className="px-5 py-3 text-gray-700 whitespace-nowrap">
                                 <div className="flex items-center gap-2">
                                     <Calendar className="w-4 h-4 text-[#38B2AC]" />
-                                    {new Date(v.visit_date).toLocaleDateString("pt-BR")}
+
+                                    {v.visit_date
+                                        ? v.visit_date
+                                              .split("-")
+                                              .reverse()
+                                              .join("/")
+                                        : "-"}
                                 </div>
                             </td>
 
@@ -99,7 +107,9 @@ export function TableBody({
                                             <span>{v.phone}</span>
                                         </div>
                                     ) : (
-                                        <span className="text-gray-400 italic">Sem telefone</span>
+                                        <span className="text-gray-400 italic">
+                                            Sem telefone
+                                        </span>
                                     )}
 
                                     {v.email ? (
@@ -108,7 +118,9 @@ export function TableBody({
                                             <span>{v.email}</span>
                                         </div>
                                     ) : (
-                                        <div className="text-gray-400 italic text-xs">Sem e-mail</div>
+                                        <div className="text-gray-400 italic text-xs">
+                                            Sem e-mail
+                                        </div>
                                     )}
                                 </div>
                             </td>
@@ -129,6 +141,7 @@ export function TableBody({
                             {!showArchived && (
                                 <td className="px-5 py-3 text-center">
                                     <div className="flex justify-center gap-3">
+
                                         {v.followup_status === "pendente" && (
                                             <button
                                                 onClick={() => onFollowup(v)}

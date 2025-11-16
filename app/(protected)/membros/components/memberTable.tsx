@@ -96,7 +96,7 @@ export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick }
                                         (header) => (
                                             <th
                                                 key={header}
-                                                className={`px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide ${header === "Ações" ? "text-center" : "text-left"
+                                                className={`px-5 py-2.5 text-xs font-semibold text-black-500 uppercase tracking-wide ${header === "Ações" ? "text-center" : "text-left"
                                                     }`}
                                             >
                                                 {header}

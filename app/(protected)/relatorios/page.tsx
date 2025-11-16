@@ -17,9 +17,6 @@ export default function RelatoriosPage() {
     const [totalMembrosAtivos, setTotalMembrosAtivos] = useState<number>(0);
     const [totalVisitantesMes, setTotalVisitantesMes] = useState<number>(0);
 
-    // ==========================
-    // FUNÇÕES DE CARREGAMENTO
-    // ==========================
     async function carregarRelatorioFinanceiro() {
         setLoadingFinanceiro(true);
 
@@ -117,7 +114,6 @@ export default function RelatoriosPage() {
         });
         doc.text(`Período: ${nomeMes}`, 14, 26);
 
-        // Seção Financeira
         doc.setFontSize(14);
         doc.text("Relatório Financeiro", 14, 38);
 
@@ -144,7 +140,6 @@ export default function RelatoriosPage() {
             styles: { fontSize: 10 },
         });
 
-        // Seção de Membros
         const posY = (doc as any).lastAutoTable.finalY + 10;
         doc.setFontSize(14);
         doc.text("Relatório de Membros", 14, posY);
@@ -182,7 +177,6 @@ export default function RelatoriosPage() {
                 </p>
             </header>
 
-            {/* Seção Financeira */}
             <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-semibold text-gray-700">

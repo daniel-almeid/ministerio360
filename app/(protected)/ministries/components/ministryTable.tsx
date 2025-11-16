@@ -71,7 +71,7 @@ export default function MinistryTable({ reloadFlag, onEdit, onDelete, onNewClick
                                     {["Nome", "Descrição", "Criado em", "Ações"].map((header) => (
                                         <th
                                             key={header}
-                                            className={`px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide ${
+                                            className={`px-5 py-3 text-xs font-semibold text-black-500 uppercase tracking-wide ${
                                                 header === "Ações" ? "text-center" : "text-left"
                                             }`}
                                         >
