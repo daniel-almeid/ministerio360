@@ -11,7 +11,7 @@ export default function ScaleFormFields({ form, setForm }: Props) {
                 className="border p-2 rounded-lg"
                 required
                 value={form.date}
-                onChange={(e) => setForm({ date: e.target.value })}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
             />
 
             <input
@@ -19,7 +19,7 @@ export default function ScaleFormFields({ form, setForm }: Props) {
                 placeholder="Responsável"
                 required
                 value={form.responsible}
-                onChange={(e) => setForm({ responsible: e.target.value })}
+                onChange={(e) => setForm({ ...form, responsible: e.target.value })}
             />
 
             <input
@@ -27,7 +27,7 @@ export default function ScaleFormFields({ form, setForm }: Props) {
                 placeholder="Evento"
                 required
                 value={form.event}
-                onChange={(e) => setForm({ event: e.target.value })}
+                onChange={(e) => setForm({ ...form, event: e.target.value })}
             />
         </div>
     );

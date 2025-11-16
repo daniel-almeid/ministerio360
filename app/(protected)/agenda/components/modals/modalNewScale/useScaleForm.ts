@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import toast from "react-hot-toast";
 import { Ministry, Member } from "../../../../../types/agenda";
 
-export function useScaleForm(onSuccess: () => void, onClose: () => void) {
+export function useScaleForm(onSuccess: () => void, onClose: () => void, scaleData?: any) {
     const [form, setFormState] = useState({
         date: "",
         event: "",
@@ -22,6 +22,19 @@ export function useScaleForm(onSuccess: () => void, onClose: () => void) {
     useEffect(() => {
         load();
     }, []);
+
+    useEffect(() => {
+        if (!scaleData) return;
+
+        setFormState((prev) => ({
+            ...prev,
+            date: scaleData.date?.slice(0, 10) || "",
+            event: scaleData.event || "",
+            responsible: scaleData.responsible || "",
+            ministriesSelected: scaleData.ministries?.map((m: any) => m.id) || [],
+            assignments: {}
+        }));
+    }, [scaleData]);
 
     async function load() {
         const { data: mins } = await supabase.from("ministries").select("id, name").order("name");
@@ -72,6 +85,46 @@ export function useScaleForm(onSuccess: () => void, onClose: () => void) {
 
         const isoDate = form.date ? `${form.date}T12:00:00` : null;
 
+        if (scaleData) {
+            const { error } = await supabase
+                .from("scales")
+                .update({
+                    date: isoDate,
+                    event_name: form.event,
+                    responsible: form.responsible,
+                    ministries: selectedMin
+                })
+                .eq("id", scaleData.id);
+
+            if (error) {
+                toast.error("Erro ao atualizar escala");
+                setSaving(false);
+                return;
+            }
+
+            await supabase.from("scale_assignments").delete().eq("scale_id", scaleData.id);
+
+            const rows: any[] = [];
+            Object.entries(form.assignments).forEach(([ministryId, ids]) => {
+                ids.forEach((memberId) => {
+                    rows.push({
+                        scale_id: scaleData.id,
+                        ministry_id: ministryId,
+                        member_id: memberId,
+                        church_id: churchId
+                    });
+                });
+            });
+
+            if (rows.length > 0) await supabase.from("scale_assignments").insert(rows);
+
+            toast.success("Escala atualizada");
+            onSuccess();
+            onClose();
+            setSaving(false);
+            return;
+        }
+
         const { data: scale, error } = await supabase
             .from("scales")
             .insert({
@@ -90,11 +143,10 @@ export function useScaleForm(onSuccess: () => void, onClose: () => void) {
             return;
         }
 
-        const insertRows: any[] = [];
-
+        const rows: any[] = [];
         Object.entries(form.assignments).forEach(([ministryId, ids]) => {
             ids.forEach((memberId) => {
-                insertRows.push({
+                rows.push({
                     scale_id: scale.id,
                     ministry_id: ministryId,
                     member_id: memberId,
@@ -103,9 +155,7 @@ export function useScaleForm(onSuccess: () => void, onClose: () => void) {
             });
         });
 
-        if (insertRows.length > 0) {
-            await supabase.from("scale_assignments").insert(insertRows);
-        }
+        if (rows.length > 0) await supabase.from("scale_assignments").insert(rows);
 
         toast.success("Escala criada");
         onSuccess();

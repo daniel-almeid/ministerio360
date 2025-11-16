@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Users } from "lucide-react";
+import { CalendarDays, Users, Eye, Pencil, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ScaleItem } from "../../../../types/agenda";
@@ -8,11 +8,21 @@ import { ScaleItem } from "../../../../types/agenda";
 type Props = {
     scales: ScaleItem[];
     loading: boolean;
-    openModal: () => void;
-    setSelectedScaleId: (id: string) => void;
+
+    openNew: () => void;
+    openView: (s: ScaleItem) => void;
+    openEdit: (s: ScaleItem) => void;
+    openDelete: (s: ScaleItem) => void;
 };
 
-export default function ScaleTable({ scales, loading, openModal, setSelectedScaleId }: Props) {
+export default function ScaleTable({
+    scales,
+    loading,
+    openNew,
+    openView,
+    openEdit,
+    openDelete,
+}: Props) {
     function isSoon(date: string) {
         const today = new Date();
         const target = parseISO(date);
@@ -24,8 +34,9 @@ export default function ScaleTable({ scales, loading, openModal, setSelectedScal
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-semibold text-gray-700">Escala Semanal</h3>
+
                 <button
-                    onClick={openModal}
+                    onClick={openNew}
                     className="px-4 py-2 bg-[#38B2AC] text-white rounded-lg hover:bg-[#319795]"
                 >
                     + Nova Escala
@@ -39,11 +50,10 @@ export default function ScaleTable({ scales, loading, openModal, setSelectedScal
                     {scales.map((scale) => (
                         <div
                             key={scale.id}
-                            className={`p-6 mb-4 rounded-xl border ${
-                                isSoon(scale.date)
+                            className={`p-6 mb-4 rounded-xl border ${isSoon(scale.date)
                                     ? "bg-green-50 border-green-200"
                                     : "hover:bg-gray-50 border-gray-100"
-                            }`}
+                                }`}
                         >
                             <p className="text-lg font-bold text-gray-800">
                                 {scale.event}
@@ -71,12 +81,26 @@ export default function ScaleTable({ scales, loading, openModal, setSelectedScal
                                 ))}
                             </div>
 
-                            <div className="flex justify-end mt-4">
+                            <div className="flex justify-end mt-4 gap-2">
                                 <button
-                                    onClick={() => setSelectedScaleId(scale.id)}
-                                    className="px-4 py-1.5 rounded-lg bg-[#38B2AC] text-white text-sm hover:bg-[#319795]"
+                                    onClick={() => openView(scale)}
+                                    className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs flex items-center gap-1"
                                 >
-                                    Ver
+                                    <Eye className="w-4 h-4" /> Ver
+                                </button>
+
+                                <button
+                                    onClick={() => openEdit(scale)}
+                                    className="px-3 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-teal-700 text-xs flex items-center gap-1"
+                                >
+                                    <Pencil className="w-4 h-4" /> Editar
+                                </button>
+
+                                <button
+                                    onClick={() => openDelete(scale)}
+                                    className="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs flex items-center gap-1"
+                                >
+                                    <Trash2 className="w-4 h-4" /> Excluir
                                 </button>
                             </div>
                         </div>

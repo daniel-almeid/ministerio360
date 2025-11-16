@@ -7,24 +7,29 @@ import ScaleSection from "./components/scaleSection";
 
 export default function AgendaPage() {
     const [ministries, setMinistries] = useState<any[]>([]);
+    const [loadingMinistries, setLoadingMinistries] = useState(true);
 
-    async function load() {
-        const { data } = await supabase
+    async function loadMinistries() {
+        setLoadingMinistries(true);
+
+        const { data, error } = await supabase
             .from("ministries")
             .select("id, name")
             .order("name");
 
-        setMinistries(data || []);
+        if (!error) setMinistries(data || []);
+
+        setLoadingMinistries(false);
     }
 
     useEffect(() => {
-        load();
+        loadMinistries();
     }, []);
 
     return (
         <div className="flex flex-col space-y-6 max-h-[calc(100vh-110px)] overflow-y-auto custom-scrollbar pr-1">
-            <EventSection ministries={ministries} onRefreshMinistries={load} />
-            <ScaleSection />
+            <EventSection ministries={ministries} onRefreshMinistries={loadMinistries} />
+            <ScaleSection ministries={ministries} />
         </div>
     );
 }

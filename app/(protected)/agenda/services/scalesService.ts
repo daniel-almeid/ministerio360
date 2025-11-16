@@ -1,6 +1,6 @@
 "use client";
 
-import { supabase } from "../../../../lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 export type CreateScaleInput = {
     date: string;
@@ -43,6 +43,26 @@ export async function createScale(payload: CreateScaleInput, churchId: string) {
     });
 
     if (error) throw new Error(error.message);
-
     return true;
+}
+
+export async function updateScale(id: string, payload: CreateScaleInput) {
+    const isoDate = `${payload.date}T12:00:00`;
+
+    const { error } = await supabase
+        .from("scales")
+        .update({
+            date: isoDate,
+            event_name: payload.event,
+            responsible: payload.responsible,
+            ministries: payload.ministries,
+        })
+        .eq("id", id);
+
+    return { error };
+}
+
+export async function deleteScale(id: string) {
+    const { error } = await supabase.from("scales").delete().eq("id", id);
+    return { error };
 }
