@@ -7,6 +7,7 @@ import { ModalDeleteTransaction } from "./components/modals/modalDeleteTransacti
 import { TransactionTable } from "./components/transactionTable";
 import { PaginationControls } from "../../../components/shared/paginationControls";
 import { useTransactions } from "./hook/useTransactions";
+import Loading from "@/components/shared/loading";
 
 export default function FinancasPage() {
   const {
@@ -28,6 +29,14 @@ export default function FinancasPage() {
   const [openModal, setOpenModal] = useState(false);
   const [editTransaction, setEditTransaction] = useState<any | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[70vh]">
+        <Loading />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -64,9 +73,7 @@ export default function FinancasPage() {
           </div>
         </div>
 
-        {loading ? (
-          <p className="text-gray-500 text-center py-8 text-sm">Carregando...</p>
-        ) : transactions.length === 0 ? (
+        {transactions.length === 0 ? (
           <p className="text-gray-500 text-center py-8 text-sm">
             Nenhuma transação encontrada neste período.
           </p>
@@ -77,6 +84,7 @@ export default function FinancasPage() {
               onEdit={setEditTransaction}
               onDelete={(id: string) => setConfirmingId(id)}
             />
+
             <PaginationControls
               currentPage={currentPage}
               totalPages={totalPages}

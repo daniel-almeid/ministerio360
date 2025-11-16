@@ -1,12 +1,13 @@
-'use client';
+"use client";
 
 import { useDashboardData } from '../dashboard/hooks/useDashboardData';
 import { DashboardMetrics } from '../dashboard/components/dashboardMetrics';
 import { DashboardEvents } from '../dashboard/components/dashboardEvents';
 import { DashboardVisitors } from '../dashboard/components/dashboardVisitors';
+import { DashboardFinanceChart } from '../dashboard/components/dashboardFinanceChart';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { DashboardFinanceChart } from '../dashboard/components/dashboardFinanceChart';
+import Loading from "@/components/shared/loading";
 
 export default function DashboardPage() {
     const {
@@ -24,6 +25,19 @@ export default function DashboardPage() {
         const formattedDate = format(new Date(event.date), 'dd/MM', { locale: ptBR });
         return `${event.title} (${formattedDate})`;
     };
+
+    const isLoading =
+        loading.finance ||
+        loading.events ||
+        loading.visitors;
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center min-h-[70vh]">
+                <Loading />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
