@@ -1,6 +1,5 @@
 "use client";
 
-import { th } from "date-fns/locale";
 import { ArrowDownCircle, ArrowUpCircle, Calendar, Pencil, Trash } from "lucide-react";
 
 export function TransactionTable({ data, onEdit, onDelete }: any) {
@@ -21,9 +20,13 @@ export function TransactionTable({ data, onEdit, onDelete }: any) {
                         ))}
                     </tr>
                 </thead>
+
                 <tbody className="divide-y divide-gray-100">
                     {data.map((t: any) => (
-                        <tr key={t.id} className="hover:bg-[#F9FAFB] transition-all duration-200">
+                        <tr
+                            key={t.id}
+                            className="hover:bg-[#F9FAFB] transition-all duration-200"
+                        >
                             <td className="px-5 py-4 flex items-center gap-2 text-[15px] font-medium">
                                 {t.type === "entrada" ? (
                                     <>
@@ -37,27 +40,37 @@ export function TransactionTable({ data, onEdit, onDelete }: any) {
                                     </>
                                 )}
                             </td>
-                            <td className="px-5 py-4 text-gray-700 capitalize">{t.category}</td>
+
+                            <td className="px-5 py-4 text-gray-700 capitalize">
+                                {t.category}
+                            </td>
+
                             <td className="px-5 py-4 font-semibold">
                                 R$ {Number(t.amount).toFixed(2).replace(".", ",")}
                             </td>
-                            <td className="px-5 py-4 text-gray-700 capitalize">{t.person_name || "-"}</td>
+
+                            <td className="px-5 py-4 text-gray-700 capitalize">
+                                {t.person_name || "-"}
+                            </td>
+
                             <td className="px-5 py-4 flex items-center gap-2 text-gray-600 text-sm">
                                 <Calendar className="w-4 h-4 text-[#38B2AC]" />
                                 {new Date(t.created_at).toLocaleDateString("pt-BR")}
                             </td>
+
                             <td className="px-5 py-4 text-center">
-                                <div className="flex justify-center gap-3 text-gray-600">
+                                <div className="flex justify-center gap-3">
                                     <button
                                         onClick={() => onEdit(t)}
-                                        className="hover:text-[#38B2AC]"
+                                        className="text-emerald-600 hover:text-emerald-700 transition"
                                         title="Editar"
                                     >
                                         <Pencil className="w-4 h-4" />
                                     </button>
+
                                     <button
                                         onClick={() => onDelete(t.id)}
-                                        className="hover:text-red-500"
+                                        className="text-red-600 hover:text-red-700 transition"
                                         title="Excluir"
                                     >
                                         <Trash className="w-4 h-4" />
