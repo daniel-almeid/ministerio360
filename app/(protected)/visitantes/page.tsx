@@ -22,7 +22,7 @@ export default function VisitantesPage() {
     const [selectedVisitor, setSelectedVisitor] = useState<any | null>(null);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-0.5 pb-0.5">
             <h2 className="text-2xl font-semibold text-gray-700">Visitantes</h2>
 
             <VisitorTable

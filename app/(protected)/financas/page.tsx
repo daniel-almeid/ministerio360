@@ -39,7 +39,7 @@ export default function FinancasPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-0.5 pb-0.5">
       <h2 className="text-2xl font-semibold text-gray-700">Finanças</h2>
 
       <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">

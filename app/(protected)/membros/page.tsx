@@ -16,7 +16,7 @@ export default function MembersPage() {
     const handleReload = () => setReloadFlag(!reloadFlag);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-0.5 pb-0.5">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-semibold text-gray-700">Membros</h2>
             </div>

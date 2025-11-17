@@ -18,6 +18,13 @@ export function TableBody({
     processingId,
     showArchived,
 }: any) {
+
+    const sortedVisitors = [...visitors].sort((a, b) => {
+        const dateA = new Date(a.visit_date).getTime();
+        const dateB = new Date(b.visit_date).getTime();
+        return dateB - dateA;
+    });
+
     return (
         <div className="overflow-x-auto">
             <table className="w-full border-collapse text-sm">
@@ -56,7 +63,7 @@ export function TableBody({
                 </thead>
 
                 <tbody className="divide-y divide-gray-100">
-                    {visitors.map((v: any) => (
+                    {sortedVisitors.map((v: any) => (
                         <tr
                             key={v.id}
                             className="hover:bg-[#F9FAFB] transition-all"
@@ -74,9 +81,9 @@ export function TableBody({
 
                                     {v.visit_date
                                         ? v.visit_date
-                                              .split("-")
-                                              .reverse()
-                                              .join("/")
+                                            .split("-")
+                                            .reverse()
+                                            .join("/")
                                         : "-"}
                                 </div>
                             </td>
@@ -146,11 +153,10 @@ export function TableBody({
                                             <button
                                                 onClick={() => onFollowup(v)}
                                                 disabled={processingId === v.id}
-                                                className={`flex items-center gap-1 text-sm font-medium transition ${
-                                                    processingId === v.id
+                                                className={`flex items-center gap-1 text-sm font-medium transition ${processingId === v.id
                                                         ? "text-gray-400 cursor-not-allowed"
                                                         : "text-emerald-600 hover:text-emerald-700"
-                                                }`}
+                                                    }`}
                                             >
                                                 <MessageSquare className="w-4 h-4" />
                                                 Iniciar
@@ -161,11 +167,10 @@ export function TableBody({
                                             <button
                                                 onClick={() => onFinish(v)}
                                                 disabled={processingId === v.id}
-                                                className={`flex items-center gap-1 text-sm font-medium transition ${
-                                                    processingId === v.id
+                                                className={`flex items-center gap-1 text-sm font-medium transition ${processingId === v.id
                                                         ? "text-gray-400 cursor-not-allowed"
                                                         : "text-blue-600 hover:text-blue-700"
-                                                }`}
+                                                    }`}
                                             >
                                                 <CheckCircle className="w-4 h-4" />
                                                 Finalizar

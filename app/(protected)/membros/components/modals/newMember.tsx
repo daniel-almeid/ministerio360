@@ -73,13 +73,15 @@ export default function MemberModal({ member, onClose, onSuccess }: Props) {
                             />
                         </div>
 
-                        <label className="text-sm text-gray-600 mb-1">Data de Nascimento</label>
-                        <input
-                            type="date"
-                            value={form.birth_date}
-                            onChange={(e) => setForm({ ...form, birth_date: e.target.value })}
-                            className="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#38B2AC] outline-none"
-                        />
+                        <div className="flex flex-col">
+                            <label className="text-sm text-gray-600 mb-1">Data de Nascimento</label>
+                            <input
+                                type="date"
+                                value={form.birth_date}
+                                onChange={(e) => setForm({ ...form, birth_date: e.target.value })}
+                                className="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#38B2AC] outline-none cursor-pointer"
+                            />
+                        </div>
 
                         <div className="flex items-center gap-2 mt-5 md:mt-7">
                             <input

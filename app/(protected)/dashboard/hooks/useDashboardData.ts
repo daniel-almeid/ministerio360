@@ -11,12 +11,20 @@ type Visitor = {
     email?: string;
 };
 
+type EventMinistry = {
+    ministry: {
+        id: string;
+        name: string;
+    };
+};
+
 type Event = {
     id: string;
     title: string;
     date: string;
     time?: string;
     location?: string;
+    ministries?: { id: string; name: string }[];
 };
 
 type Transaction = {
@@ -28,7 +36,7 @@ type Transaction = {
 export function useDashboardData() {
     const [currentMonthIncome, setCurrentMonthIncome] = useState(0);
     const [currentMonthExpenses, setCurrentMonthExpenses] = useState(0);
-    const [visitors, setVisitors] = useState<Visitor[]>([]); // <--- atualizado
+    const [visitors, setVisitors] = useState<Visitor[]>([]);
     const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
     const [monthlyTransactions, setMonthlyTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState({
@@ -53,10 +61,9 @@ export function useDashboardData() {
                     income,
                     expenses,
                     allVisitors,
-                    events,
+                    eventsData,
                     allTransactions,
                 ] = await Promise.all([
-
                     supabase
                         .from('transactions')
                         .select('amount')
@@ -78,7 +85,16 @@ export function useDashboardData() {
 
                     supabase
                         .from('events')
-                        .select('id, title, date, time, location')
+                        .select(`
+                            id,
+                            title,
+                            date,
+                            time,
+                            location,
+                            ministries:event_ministries(
+                                ministry:ministries(id, name)
+                            )
+                        `)
                         .gte('date', new Date().toISOString())
                         .order('date', { ascending: true })
                         .limit(5),
@@ -93,13 +109,23 @@ export function useDashboardData() {
                 setCurrentMonthIncome(
                     income.data?.reduce((acc, cur) => acc + Number(cur.amount), 0) ?? 0
                 );
+
                 setCurrentMonthExpenses(
                     expenses.data?.reduce((acc, cur) => acc + Number(cur.amount), 0) ?? 0
                 );
 
                 setVisitors(allVisitors.data ?? []);
 
-                setUpcomingEvents(events.data ?? []);
+                const formattedEvents =
+                    eventsData.data?.map((ev) => ({
+                        ...ev,
+                        ministries:
+                            ev.ministries?.flatMap((m: any) =>
+                                Array.isArray(m.ministry) ? m.ministry : [m.ministry]
+                            ) || [],
+                    })) ?? [];
+
+                setUpcomingEvents(formattedEvents);
 
                 setMonthlyTransactions(allTransactions.data ?? []);
 

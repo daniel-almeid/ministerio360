@@ -30,7 +30,7 @@ export default function VisitorModal({ onClose, onSuccess, visitor }: VisitorMod
         visit_date: visitor.visit_date
           ? new Date(visitor.visit_date).toISOString().split("T")[0]
           : "",
-        phone: visitor.phone || "",
+        phone: visitor.phone ? visitor.phone.replace(/^55/, "") : "",
         email: visitor.email || "",
         notes: visitor.notes || "",
         is_member: !!visitor.is_member,
@@ -57,10 +57,17 @@ export default function VisitorModal({ onClose, onSuccess, visitor }: VisitorMod
       return;
     }
 
+    const rawPhone = formData.phone.replace(/\D/g, "");
+    const phoneWithCountry = rawPhone
+      ? rawPhone.startsWith("55")
+        ? rawPhone
+        : `55${rawPhone}`
+      : null;
+
     const payload = {
       name: formData.name.trim(),
       visit_date: formData.visit_date,
-      phone: formData.phone || null,
+      phone: phoneWithCountry,
       email: formData.email || null,
       notes: formData.notes || null,
       is_member: formData.is_member,
@@ -142,6 +149,7 @@ export default function VisitorModal({ onClose, onSuccess, visitor }: VisitorMod
             <input
               type="text"
               name="phone"
+              placeholder="(DDD) 00000-0000"
               value={formData.phone}
               onChange={handleChange}
               className="w-full border rounded-lg px-3 py-2 focus:ring-[#38B2AC] focus:outline-none"
