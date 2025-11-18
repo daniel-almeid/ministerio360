@@ -44,20 +44,18 @@ export function DashboardEvents({ events, loading }: DashboardEventsProps) {
                         return (
                             <li
                                 key={event.id}
-                                className={`flex justify-between items-center py-4 px-2 rounded-xl transition-all duration-200 ${
-                                    isNext
+                                className={`flex justify-between items-center py-4 px-2 rounded-xl transition-all duration-200 ${isNext
                                         ? 'bg-[#E6FFFA]/80 border-l-4 border-[#38B2AC]'
                                         : 'hover:bg-gray-50'
-                                }`}
+                                    }`}
                             >
                                 <div className="flex flex-col">
                                     <span className="text-[15px] font-semibold text-gray-800">
                                         {event.title}
                                     </span>
 
-                                    <div className="flex flex-col gap-1 mt-1 text-sm text-gray-600">
-
-                                        <div className="flex items-center gap-3">
+                                    <div className="flex flex-col gap-1 mt-1 text-gray-700">
+                                        <div className="flex items-center gap-4 text-[15px] font-medium">
                                             <div className="flex items-center gap-1">
                                                 <Calendar className="w-4 h-4 text-[#38B2AC]" />
                                                 {format(new Date(event.date), 'dd/MM/yyyy', { locale: ptBR })}
@@ -71,7 +69,7 @@ export function DashboardEvents({ events, loading }: DashboardEventsProps) {
                                             )}
 
                                             {event.location && (
-                                                <div className="flex items-center gap-1 text-gray-500">
+                                                <div className="flex items-center gap-1 text-gray-600 text-sm">
                                                     <MapPin className="w-4 h-4 text-[#38B2AC]" />
                                                     {event.location}
                                                 </div>
@@ -79,7 +77,7 @@ export function DashboardEvents({ events, loading }: DashboardEventsProps) {
                                         </div>
 
                                         {event.ministries && event.ministries.length > 0 && (
-                                            <div className="flex items-center gap-1 text-gray-700 text-xs mt-1">
+                                            <div className="flex items-center gap-1 text-[13px] font-medium text-gray-700 mt-1">
                                                 <Users className="w-4 h-4 text-[#38B2AC]" />
                                                 <span>
                                                     {event.ministries.map((m) => m.name).join(', ')}
@@ -90,7 +88,7 @@ export function DashboardEvents({ events, loading }: DashboardEventsProps) {
                                 </div>
 
                                 {isNext && (
-                                    <span className="text-xs font-medium text-[#38B2AC] bg-[#E6FFFA] px-3 py-1 rounded-full">
+                                    <span className="text-xs font-medium text-[#38B2AC] bg-[#E6FFFA] px-3 py-1 rounded-full whitespace-nowrap">
                                         Próximo evento
                                     </span>
                                 )}
