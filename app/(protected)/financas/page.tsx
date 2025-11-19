@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ModalEditTransaction } from "./components/modals/modalEditTransaction";
 import { ModalNewTransaction } from "./components/modals/modalNewTransition";
 import { ModalDeleteTransaction } from "./components/modals/modalDeleteTransaction";
-import { TransactionTable } from "./components/transactionTable";
+import { TransactionTable } from "./components/transactionTable/transactionTable";
 import { PaginationControls } from "../../../components/shared/paginationControls";
 import { useTransactions } from "./hook/useTransactions";
 import Loading from "@/components/shared/loading";
@@ -14,6 +14,7 @@ export default function FinancasPage() {
     transactions,
     paginatedData,
     loading,
+    pageChanging,
     filter,
     setFilter,
     selectedMonth,
@@ -24,11 +25,19 @@ export default function FinancasPage() {
     handlePrevious,
     confirmDelete,
     loadTransactions,
+    itemsPerPage,
   } = useTransactions();
 
   const [openModal, setOpenModal] = useState(false);
   const [editTransaction, setEditTransaction] = useState<any | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [currentPage]);
 
   if (loading) {
     return (
@@ -40,7 +49,7 @@ export default function FinancasPage() {
 
   return (
     <div className="space-y-0.5 pb-0.5">
-      <h2 className="text-2xl font-semibold text-gray-700">Finanças</h2>
+      <h2 className="text-2xl font-semibold text-gray-700"></h2>
 
       <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
@@ -79,8 +88,15 @@ export default function FinancasPage() {
           </p>
         ) : (
           <>
+            {pageChanging && (
+              <div className="md:hidden flex justify-center items-center py-6">
+                <Loading />
+              </div>
+            )}
+
             <TransactionTable
               data={paginatedData}
+              pageChanging={pageChanging}
               onEdit={setEditTransaction}
               onDelete={(id: string) => setConfirmingId(id)}
             />
@@ -91,7 +107,7 @@ export default function FinancasPage() {
               totalItems={transactions.length}
               onNext={handleNext}
               onPrev={handlePrevious}
-              itemsPerPage={10}
+              itemsPerPage={itemsPerPage}
             />
           </>
         )}

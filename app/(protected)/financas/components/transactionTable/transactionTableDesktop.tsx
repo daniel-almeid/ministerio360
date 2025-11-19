@@ -1,19 +1,31 @@
 "use client";
 
-import { ArrowDownCircle, ArrowUpCircle, Calendar, Pencil, Trash } from "lucide-react";
+import {
+    ArrowDownCircle,
+    ArrowUpCircle,
+    Calendar,
+    Pencil,
+    Trash,
+} from "lucide-react";
 
-export function TransactionTable({ data, onEdit, onDelete }: any) {
+export function TransactionTableDesktop({ data, onEdit, onDelete }: any) {
     return (
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
             <table className="w-full border-collapse">
                 <thead className="bg-gray-50/60 border-b border-gray-100">
                     <tr>
-                        {["Tipo", "Categoria", "Valor", "Pessoa / Motivo", "Data", "Ações"].map((h) => (
+                        {[
+                            "Tipo",
+                            "Categoria",
+                            "Valor",
+                            "Pessoa / Motivo",
+                            "Data",
+                            "Ações",
+                        ].map((h) => (
                             <th
                                 key={h}
-                                className={`px-5 py-3 text-xs font-semibold text-black-500 uppercase tracking-wide ${
-                                    h === "Ações" ? "text-center" : "text-left"
-                                }`}
+                                className={`px-5 py-3 text-xs font-semibold uppercase tracking-wide ${h === "Ações" ? "text-center" : "text-left"
+                                    } text-gray-600`}
                             >
                                 {h}
                             </th>
@@ -63,7 +75,6 @@ export function TransactionTable({ data, onEdit, onDelete }: any) {
                                     <button
                                         onClick={() => onEdit(t)}
                                         className="text-emerald-600 hover:text-emerald-700 transition"
-                                        title="Editar"
                                     >
                                         <Pencil className="w-4 h-4" />
                                     </button>
@@ -71,7 +82,6 @@ export function TransactionTable({ data, onEdit, onDelete }: any) {
                                     <button
                                         onClick={() => onDelete(t.id)}
                                         className="text-red-600 hover:text-red-700 transition"
-                                        title="Excluir"
                                     >
                                         <Trash className="w-4 h-4" />
                                     </button>
