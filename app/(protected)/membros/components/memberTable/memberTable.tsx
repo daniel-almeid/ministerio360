@@ -85,17 +85,21 @@ export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick }
                 </div>
             ) : paginatedMembers.length > 0 ? (
                 <>
-                    <MemberTableDesktop
-                        members={paginatedMembers}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                    />
+                    <div className="hidden md:block">
+                        <MemberTableDesktop
+                            members={paginatedMembers}
+                            onEdit={onEdit}
+                            onDelete={onDelete}
+                        />
+                    </div>
 
-                    <MemberTableMobile
-                        members={paginatedMembers}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                    />
+                    <div className="md:hidden">
+                        <MemberTableMobile
+                            members={paginatedMembers}
+                            onEdit={onEdit}
+                            onDelete={onDelete}
+                        />
+                    </div>
 
                     <div className="border-t border-gray-100 mt-2">
                         <div className="py-2 px-2">

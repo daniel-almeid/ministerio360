@@ -1,19 +1,15 @@
 "use client";
 
-import { EventItem, Ministry } from "../../../../../types/agenda";
-import { CalendarDays, MapPin, Eye, Pencil, Trash2 } from "lucide-react";
+import { EventItem } from "../../../../../types/agenda";
+import { CalendarDays, MapPin, Pencil, Trash2, Users } from "lucide-react";
 import { parseISO, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export function EventTableDesktop({
     grouped,
     nextEvent,
-    openView,
     openEdit,
     openDelete,
-    filterMinistry,
-    setFilterMinistry,
-    ministries,
 }: any) {
 
     function isSoon(date: string) {
@@ -26,6 +22,7 @@ export function EventTableDesktop({
     return (
         <div className="hidden md:block">
             <div className="max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+
                 {nextEvent && (
                     <div className="p-6 mb-7 border-l-4 border-[#38B2AC] bg-[#E6FFFA] rounded-xl">
                         <p className="text-lg font-bold text-gray-800">{nextEvent.title}</p>
@@ -36,10 +33,24 @@ export function EventTableDesktop({
                         </p>
 
                         {nextEvent.location && (
-                            <p className="text-sm text-gray-600 flex items-center gap-1">
+                            <p className="text-sm text-gray-600 flex items-center gap-1 mt-1">
                                 <MapPin className="w-4 h-4 text-[#38B2AC]" />
                                 {nextEvent.location}
                             </p>
+                        )}
+
+                        {nextEvent.ministries?.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                                {nextEvent.ministries.map((m: any) => (
+                                    <span
+                                        key={m.id}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold text-[#319795] bg-[#E6FFFA] border border-[#81E6D9]"
+                                    >
+                                        <Users className="w-3 h-3" />
+                                        {m.name}
+                                    </span>
+                                ))}
+                            </div>
                         )}
                     </div>
                 )}
@@ -49,38 +60,65 @@ export function EventTableDesktop({
                         <h4 className="font-semibold text-gray-600 mb-3 capitalize">{month}</h4>
 
                         <ul className="space-y-2">
-                            {events.map((event: EventItem) => (
-                                <li
-                                    key={event.id}
-                                    className={`p-5 rounded-xl border relative ${isSoon(event.date)
-                                            ? "bg-green-50 border-green-200"
-                                            : "hover:bg-gray-50 border-gray-100"
-                                        }`}
-                                >
-                                    <p className="text-lg font-semibold text-gray-800">{event.title}</p>
+                            {events.map((event: EventItem) => {
+                                const ministries = event.ministries ?? [];
 
-                                    <p className="text-sm text-gray-700 flex items-center gap-2">
-                                        <CalendarDays className="w-5 h-5 text-[#38B2AC]" />
-                                        {format(parseISO(event.date), "dd/MM/yyyy", { locale: ptBR })} — {event.time?.slice(0, 5)}
-                                    </p>
+                                return (
+                                    <li
+                                        key={event.id}
+                                        className={`p-5 rounded-xl border bg-white shadow-sm ${isSoon(event.date)
+                                            ? "border-green-200 bg-green-50"
+                                            : "border-gray-100 hover:bg-gray-50"
+                                            }`}
+                                    >
+                                        <p className="text-lg font-semibold text-gray-800">
+                                            {event.title}
+                                        </p>
 
-                                    <div className="flex gap-2 justify-end mt-4">
-                                        <button
-                                            onClick={() => openEdit(event)}
-                                            className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-teal-700"
-                                        >
-                                            <Pencil className="w-4 h-4" /> Editar
-                                        </button>
+                                        <p className="text-sm text-gray-700 flex items-center gap-2 mt-1">
+                                            <CalendarDays className="w-5 h-5 text-[#38B2AC]" />
+                                            {format(parseISO(event.date), "dd/MM/yyyy", { locale: ptBR })} — {event.time?.slice(0, 5)}
+                                        </p>
 
-                                        <button
-                                            onClick={() => openDelete(event)}
-                                            className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-600"
-                                        >
-                                            <Trash2 className="w-4 h-4" /> Excluir
-                                        </button>
-                                    </div>
-                                </li>
-                            ))}
+                                        {event.location && (
+                                            <p className="text-sm text-gray-600 flex items-center gap-1">
+                                                <MapPin className="w-4 h-4 text-[#38B2AC]" />
+                                                {event.location}
+                                            </p>
+                                        )}
+
+                                        {ministries.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 mt-3">
+                                                {ministries.map((m: any) => (
+                                                    <span
+                                                        key={m.id}
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold text-[#319795] bg-[#E6FFFA] border border-[#81E6D9]"
+                                                    >
+                                                        <Users className="w-3 h-3" />
+                                                        {m.name}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        <div className="flex justify-end gap-2 mt-4">
+                                            <button
+                                                onClick={() => openEdit(event)}
+                                                className="px-3 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-teal-700 text-xs flex items-center gap-1"
+                                            >
+                                                <Pencil className="w-4 h-4" /> Editar
+                                            </button>
+
+                                            <button
+                                                onClick={() => openDelete(event)}
+                                                className="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs flex items-center gap-1"
+                                            >
+                                                <Trash2 className="w-4 h-4" /> Excluir
+                                            </button>
+                                        </div>
+                                    </li>
+                                );
+                            })}
                         </ul>
                     </div>
                 ))}

@@ -108,7 +108,6 @@ export default function VisitorTable({
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-3">
 
                 <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-center">
-
                     <div className="relative w-full sm:w-64">
                         <Search className="absolute left-3 top-2.5 text-gray-400 w-5 h-5" />
                         <input
@@ -124,14 +123,7 @@ export default function VisitorTable({
                     </div>
 
                     {!showArchived && (
-                        <div
-                            className="
-                                flex items-center 
-                                bg-gray-100 rounded-full
-                                gap-2 px-1.5 py-2
-                                md:gap-2 md:px-2 md:py-1    /* DESKTOP */
-                            "
-                        >
+                        <div className="flex items-center bg-gray-100 rounded-full gap-1 px-1 py-1">
                             {[
                                 { key: "all", label: "Todos" },
                                 { key: "pendente", label: "Pendente" },
@@ -144,17 +136,11 @@ export default function VisitorTable({
                                         setCurrentPage(1);
                                         setStatusFilter(option.key);
                                     }}
-                                    className={`
-                                        rounded-full font-medium transition-all
-
-                                        text-xs px-2 py-1              /* MOBILE */
-                                        md:text-sm md:px-4 md:py-1.5   /* DESKTOP */
-
-                                        ${statusFilter === option.key
+                                    className={`px-1 py-1.5 rounded-full text-sm font-medium transition-all ${
+                                        statusFilter === option.key
                                             ? "bg-[#38B2AC] text-white shadow-sm"
                                             : "text-gray-600 hover:text-[#38B2AC]"
-                                        }
-                                    `}
+                                    }`}
                                 >
                                     {option.label}
                                 </button>
@@ -189,36 +175,38 @@ export default function VisitorTable({
                 </div>
             ) : paginatedVisitors.length > 0 ? (
                 <>
-                    <VisitorTableDesktop
-                        visitors={paginatedVisitors}
-                        onSelect={onSelect}
-                        onFollowup={handleFollowupClick}
-                        onFinish={handleFinishClick}
-                        processingId={processingId}
-                        showArchived={showArchived}
-                    />
+                    <div className="hidden md:block">
+                        <VisitorTableDesktop
+                            visitors={paginatedVisitors}
+                            onSelect={onSelect}
+                            onFollowup={handleFollowupClick}
+                            onFinish={handleFinishClick}
+                            processingId={processingId}
+                            showArchived={showArchived}
+                        />
+                    </div>
 
-                    <VisitorTableMobile
-                        visitors={paginatedVisitors}
-                        onSelect={onSelect}
-                        onFollowup={handleFollowupClick}
-                        onFinish={handleFinishClick}
-                        processingId={processingId}
-                        showArchived={showArchived}
-                        isLoading={isLoading}
-                    />
+                    <div className="md:hidden">
+                        <VisitorTableMobile
+                            visitors={paginatedVisitors}
+                            onSelect={onSelect}
+                            onFollowup={handleFollowupClick}
+                            onFinish={handleFinishClick}
+                            processingId={processingId}
+                            showArchived={showArchived}
+                            isLoading={isLoading}
+                        />
+                    </div>
 
-                    <div className="border-t border-gray-100 mt-2">
-                        <div className="py-2 px-2">
-                            <PaginationControls
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                totalItems={totalItems}
-                                onNext={handleNext}
-                                onPrev={handlePrevious}
-                                itemsPerPage={itemsPerPage}
-                            />
-                        </div>
+                    <div className="border-t border-gray-100 mt-2 py-2 px-2">
+                        <PaginationControls
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={totalItems}
+                            onNext={handleNext}
+                            onPrev={handlePrevious}
+                            itemsPerPage={itemsPerPage}
+                        />
                     </div>
                 </>
             ) : (

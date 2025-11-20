@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect } from 'react';
 import { useMinistries } from '../../hook/useMinistries';
@@ -66,17 +66,21 @@ export default function MinistryTable({ reloadFlag, onEdit, onDelete, onNewClick
                 </div>
             ) : ministries.length > 0 ? (
                 <>
-                    <MinistryTableDesktop
-                        ministries={ministries}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                    />
+                    <div className="hidden md:block">
+                        <MinistryTableDesktop
+                            ministries={ministries}
+                            onEdit={onEdit}
+                            onDelete={onDelete}
+                        />
+                    </div>
 
-                    <MinistryTableMobile
-                        ministries={ministries}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                    />
+                    <div className="md:hidden">
+                        <MinistryTableMobile
+                            ministries={ministries}
+                            onEdit={onEdit}
+                            onDelete={onDelete}
+                        />
+                    </div>
 
                     <div className="pt-6 pb-2">
                         <PaginationControls
