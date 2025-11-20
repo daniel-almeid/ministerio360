@@ -4,7 +4,6 @@ import { useMemo, useState, useEffect } from "react";
 import { Search, PlusCircle } from "lucide-react";
 import { PaginationControls } from "@/components/shared/paginationControls";
 import Loading from "@/components/shared/loading";
-
 import { useFollowup } from "./useFollowup";
 import { VisitorTableDesktop } from "./visitorTableDesktop";
 import { VisitorTableMobile } from "./visitorTableMobile";
@@ -151,10 +150,9 @@ export default function VisitorTable({
                                         text-xs px-2 py-1              /* MOBILE */
                                         md:text-sm md:px-4 md:py-1.5   /* DESKTOP */
 
-                                        ${
-                                            statusFilter === option.key
-                                                ? "bg-[#38B2AC] text-white shadow-sm"
-                                                : "text-gray-600 hover:text-[#38B2AC]"
+                                        ${statusFilter === option.key
+                                            ? "bg-[#38B2AC] text-white shadow-sm"
+                                            : "text-gray-600 hover:text-[#38B2AC]"
                                         }
                                     `}
                                 >

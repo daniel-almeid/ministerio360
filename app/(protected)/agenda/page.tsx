@@ -37,7 +37,11 @@ export default function AgendaPage() {
 
     return (
         <div className="flex flex-col space-y-6 max-h-[calc(100vh-110px)] overflow-y-auto custom-scrollbar pr-1">
-            <EventSection ministries={ministries} onRefreshMinistries={loadMinistries} />
+            <EventSection 
+                ministries={ministries} 
+                onRefreshMinistries={loadMinistries} 
+            />
+
             <ScaleSection ministries={ministries} />
         </div>
     );

@@ -8,6 +8,7 @@ import DrawerScaleDetails from "./drawer/drawerScaleDetails";
 import { Calendar, Users, Eye, Pencil, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ScaleTableMobile } from "./tables/tableScale/scaleTableMobile";
 
 type Props = {
     ministries: any[];
@@ -50,61 +51,83 @@ export default function ScaleSection({ ministries }: Props) {
             ) : scales.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">Nenhuma escala cadastrada.</p>
             ) : (
-                <div className="max-h-[340px] overflow-y-auto pr-2 custom-scrollbar scroll-smooth rounded-xl">
-                    <table className="w-full border-collapse table-fixed">
-                        <thead className="bg-gray-50/60 border-b border-gray-100 text-gray-500 sticky top-0 z-10">
-                            <tr>
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Data</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Evento</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Ministérios</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Responsável</th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">Ações</th>
-                            </tr>
-                        </thead>
-
-                        <tbody className="divide-y divide-gray-100">
-                            {scales.map((item) => (
-                                <tr key={item.id} className="hover:bg-[#F9FAFB] transition-all duration-200">
-                                    <td className="px-4 py-3 text-gray-800 font-medium whitespace-nowrap">
-                                        <div className="flex items-center gap-2">
-                                            <Calendar className="w-4 h-4 text-[#38B2AC]" />
-                                            {format(parseISO(item.date), "dd/MM", { locale: ptBR })}
-                                        </div>
-                                    </td>
-
-                                    <td className="px-4 py-3 text-gray-700 font-medium truncate">{item.event}</td>
-
-                                    <td className="px-4 py-3">
-                                        <div className="flex flex-wrap gap-2">
-                                            {item.ministries?.map((m) => (
-                                                <span key={m.id} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold text-[#319795] bg-[#E6FFFA]">
-                                                    <Users className="w-3 h-3" />
-                                                    {m.name}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </td>
-
-                                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{item.responsible}</td>
-
-                                    <td className="px-4 py-3 text-center flex gap-2 justify-center">
-                                        <button onClick={() => openView(item)} className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100">
-                                            <Eye className="w-4 h-4" />
-                                        </button>
-
-                                        <button onClick={() => openEdit(item)} className="p-2 rounded-lg bg-teal-50 border border-teal-200 text-teal-700 hover:bg-teal-100">
-                                            <Pencil className="w-4 h-4" />
-                                        </button>
-
-                                        <button onClick={() => openDelete(item)} className="p-2 rounded-lg bg-red-50 border border-red-200 text-red-600 hover:bg-red-100">
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </td>
+                <>
+                    {/* DESKTOP */}
+                    <div className="hidden md:block max-h-[340px] overflow-y-auto pr-2 custom-scrollbar scroll-smooth rounded-xl">
+                        <table className="w-full border-collapse table-fixed">
+                            <thead className="bg-gray-50/60 border-b border-gray-100 text-gray-500 sticky top-0 z-10">
+                                <tr>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Data</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Evento</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Ministérios</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Responsável</th>
+                                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">Ações</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+
+                            <tbody className="divide-y divide-gray-100">
+                                {scales.map((item) => (
+                                    <tr key={item.id} className="hover:bg-[#F9FAFB] transition-all duration-200">
+                                        <td className="px-4 py-3 text-gray-800 font-medium whitespace-nowrap">
+                                            <div className="flex items-center gap-2">
+                                                <Calendar className="w-4 h-4 text-[#38B2AC]" />
+                                                {format(parseISO(item.date), "dd/MM", { locale: ptBR })}
+                                            </div>
+                                        </td>
+
+                                        <td className="px-4 py-3 text-gray-700 font-medium truncate">{item.event}</td>
+
+                                        <td className="px-4 py-3">
+                                            <div className="flex flex-wrap gap-2">
+                                                {item.ministries?.map((m) => (
+                                                    <span key={m.id} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold text-[#319795] bg-[#E6FFFA]">
+                                                        <Users className="w-3 h-3" />
+                                                        {m.name}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </td>
+
+                                        <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                                            {item.responsible}
+                                        </td>
+
+                                        <td className="px-4 py-3 text-center flex gap-2 justify-center">
+                                            <button
+                                                onClick={() => openView(item)}
+                                                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                            </button>
+
+                                            <button
+                                                onClick={() => openEdit(item)}
+                                                className="p-2 rounded-lg bg-teal-50 border border-teal-200 text-teal-700 hover:bg-teal-100"
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </button>
+
+                                            <button
+                                                onClick={() => openDelete(item)}
+                                                className="p-2 rounded-lg bg-red-50 border border-red-200 text-red-600 hover:bg-red-100"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* MOBILE */}
+                    <ScaleTableMobile
+                        scales={scales}
+                        openView={openView}
+                        openEdit={openEdit}
+                        openDelete={openDelete}
+                    />
+                </>
             )}
 
             {showNew && (
