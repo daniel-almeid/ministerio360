@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import MinistryList from './components/ministryTable';
+import MinistryList from './components/ministryTable/ministryTable';
 import ModalNewMinistry from './components/modals/newMinistry';
 import ModalDeleteMinistry from './components/modals/deleteMinistry';
 import ModalEditMinistry from './components/modals/editMinistry';
-import { PlusCircle } from 'lucide-react';
 
 export default function MinistriesPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);

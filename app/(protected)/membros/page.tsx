@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import MemberTable from './components/memberTable';
+import MemberTable from './components/memberTable/memberTable';
 import NewMemberModal from './components/modals/newMember';
 import EditMemberModal from './components/modals/editMember';
 import DeleteMemberModal from './components/modals/deleteMember';
