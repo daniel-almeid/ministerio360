@@ -40,7 +40,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-0.5 pb-0.5">
             <DashboardMetrics
                 currentMonthIncome={currentMonthIncome}
                 currentMonthExpenses={currentMonthExpenses}

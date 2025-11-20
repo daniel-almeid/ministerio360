@@ -4,7 +4,7 @@ import { Calendar, Info, Pencil, Trash } from "lucide-react";
 
 export function MinistryTableDesktop({ ministries, onEdit, onDelete }: any) {
     return (
-        <div className="hidden md:block overflow-x-auto">
+        <div className="max-h-130 overflow-y-auto custom-scrollbar">
             <table className="w-full border-collapse">
                 <thead className="bg-gray-50/60 border-b border-gray-100">
                     <tr>

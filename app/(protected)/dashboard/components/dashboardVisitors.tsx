@@ -40,7 +40,6 @@ export function DashboardVisitors({ visitors, loading }: DashboardVisitorsProps)
                 Visitantes recentes (últimas 2 semanas)
             </h3>
 
-            {/* LOADING */}
             {loading ? (
                 <p className="text-gray-500 text-center py-8 text-sm">
                     Carregando visitantes...
@@ -51,9 +50,9 @@ export function DashboardVisitors({ visitors, loading }: DashboardVisitorsProps)
                 </p>
             ) : (
                 <>
-                    {/* ===================== DESKTOP (tabela) ===================== */}
+                    {/* DESKTOP */}
                     <div className="hidden md:block overflow-x-auto">
-                        <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                        <div className="max-h-70 overflow-y-auto custom-scrollbar">
                             <table className="w-full border-collapse">
                                 <thead className="bg-gray-50/60 border-b border-gray-100 sticky top-0 z-10">
                                     <tr>
@@ -111,7 +110,7 @@ export function DashboardVisitors({ visitors, loading }: DashboardVisitorsProps)
                         </div>
                     </div>
 
-                    {/* ===================== MOBILE (cards) ===================== */}
+                    {/* MOBILE */}
                     <div className="md:hidden max-h-60 overflow-y-auto custom-scrollbar pr-1 space-y-4">
                         {recentVisitors.map((v) => (
                             <div

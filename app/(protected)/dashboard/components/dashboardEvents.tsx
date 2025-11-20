@@ -21,11 +21,14 @@ interface DashboardEventsProps {
 export function DashboardEvents({ events, loading }: DashboardEventsProps) {
     const today = new Date();
 
-    function isNextEvent(eventDate: string) {
-        const date = new Date(eventDate);
-        const diffDays = (date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-        return diffDays >= 0 && diffDays <= 3;
-    }
+    const orderedFutureEvents = events
+        .filter(e => new Date(e.date) >= today)
+        .sort(
+            (a, b) =>
+                new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+
+    const nextRealEventId = orderedFutureEvents[0]?.id;
 
     return (
         <section className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
@@ -40,14 +43,16 @@ export function DashboardEvents({ events, loading }: DashboardEventsProps) {
             ) : (
                 <ul className="divide-y divide-gray-100 max-h-60 overflow-y-auto custom-scrollbar pr-1">
                     {events.map((event) => {
-                        const isNext = isNextEvent(event.date);
+                        const isNext = event.id === nextRealEventId;
+
                         return (
                             <li
                                 key={event.id}
-                                className={`flex justify-between items-center py-4 px-2 rounded-xl transition-all duration-200 ${isNext
-                                        ? 'bg-[#E6FFFA]/80 border-l-4 border-[#38B2AC]'
-                                        : 'hover:bg-gray-50'
-                                    }`}
+                                className={`flex justify-between items-center py-4 px-2 rounded-xl transition-all duration-200 ${
+                                    isNext
+                                        ? "bg-[#E6FFFA]/80 border-l-4 border-[#38B2AC]"
+                                        : "hover:bg-gray-50"
+                                }`}
                             >
                                 <div className="flex flex-col">
                                     <span className="text-[15px] font-semibold text-gray-800">
@@ -58,7 +63,7 @@ export function DashboardEvents({ events, loading }: DashboardEventsProps) {
                                         <div className="flex items-center gap-4 text-[15px] font-medium">
                                             <div className="flex items-center gap-1">
                                                 <Calendar className="w-4 h-4 text-[#38B2AC]" />
-                                                {format(new Date(event.date), 'dd/MM/yyyy', { locale: ptBR })}
+                                                {format(new Date(event.date), "dd/MM/yyyy", { locale: ptBR })}
                                             </div>
 
                                             {event.time && (
@@ -80,7 +85,7 @@ export function DashboardEvents({ events, loading }: DashboardEventsProps) {
                                             <div className="flex items-center gap-1 text-[13px] font-medium text-gray-700 mt-1">
                                                 <Users className="w-4 h-4 text-[#38B2AC]" />
                                                 <span>
-                                                    {event.ministries.map((m) => m.name).join(', ')}
+                                                    {event.ministries.map((m) => m.name).join(", ")}
                                                 </span>
                                             </div>
                                         )}

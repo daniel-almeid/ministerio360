@@ -4,7 +4,7 @@ import { Calendar, User, Phone, Pencil, Trash } from "lucide-react";
 
 export function MemberTableDesktop({ members, onEdit, onDelete }: any) {
     return (
-        <div className="hidden md:block overflow-x-auto">
+        <div className="max-h-140 overflow-y-auto custom-scrollbar">
             <table className="w-full border-collapse text-sm">
                 <thead className="bg-gray-50/60 border-b border-gray-100">
                     <tr>
