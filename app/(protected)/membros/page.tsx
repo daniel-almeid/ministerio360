@@ -23,11 +23,11 @@ export default function MembersPage() {
 
             <MemberTable
                 reloadFlag={reloadFlag}
-                onEdit={(m) => {
+                onEdit={(m: any) => {
                     setSelectedMember(m);
                     setShowEditModal(true);
                 }}
-                onDelete={(m) => {
+                onDelete={(m: any) => {
                     setSelectedMember(m);
                     setShowDeleteModal(true);
                 }}
