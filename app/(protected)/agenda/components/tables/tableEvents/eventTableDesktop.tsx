@@ -25,23 +25,6 @@ export function EventTableDesktop({
 
     return (
         <div className="hidden md:block">
-            <div className="flex items-center gap-3 mb-6">
-                <label className="text-gray-600 text-sm">Filtrar por ministério:</label>
-
-                <select
-                    value={filterMinistry}
-                    onChange={(e) => setFilterMinistry(e.target.value)}
-                    className="border rounded-lg px-3 py-2 text-sm"
-                >
-                    <option value="">Todos</option>
-                    {ministries.map((m: Ministry) => (
-                        <option key={m.id} value={m.name}>
-                            {m.name}
-                        </option>
-                    ))}
-                </select>
-            </div>
-
             <div className="max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                 {nextEvent && (
                     <div className="p-6 mb-7 border-l-4 border-[#38B2AC] bg-[#E6FFFA] rounded-xl">
@@ -82,13 +65,6 @@ export function EventTableDesktop({
                                     </p>
 
                                     <div className="flex gap-2 justify-end mt-4">
-                                        <button
-                                            onClick={() => openView(event)}
-                                            className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-gray-200"
-                                        >
-                                            <Eye className="w-4 h-4" /> Ver
-                                        </button>
-
                                         <button
                                             onClick={() => openEdit(event)}
                                             className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-teal-700"

@@ -46,7 +46,7 @@ export function CustomSelect({
             </button>
 
             {open && (
-                <div className="absolute mt-2 w-full bg-white shadow-lg rounded-lg border border-gray-200 z-50 max-h-56 overflow-auto animate-fadeIn">
+                <div className="absolute mt-2 w-full bg-white shadow-lg rounded-lg border border-gray-200 z-50 max-h-56 overflow-auto custom-scrollbar animate-fadeIn">
                     {options.map((opt) => (
                         <div
                             key={opt}
