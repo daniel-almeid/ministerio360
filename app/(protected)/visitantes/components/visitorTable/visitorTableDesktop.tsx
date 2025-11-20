@@ -10,7 +10,7 @@ import {
     Mail,
 } from "lucide-react";
 
-export function TableBody({
+export function VisitorTableDesktop({
     visitors,
     onSelect,
     onFollowup,
@@ -18,44 +18,22 @@ export function TableBody({
     processingId,
     showArchived,
 }: any) {
-
-    const sortedVisitors = [...visitors].sort((a, b) => {
-        const dateA = new Date(a.visit_date).getTime();
-        const dateB = new Date(b.visit_date).getTime();
-        return dateB - dateA;
-    });
-
     return (
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
             <table className="w-full border-collapse text-sm">
-                <colgroup>
-                    <col style={{ width: "25%" }} />
-                    <col style={{ width: "15%" }} />
-                    <col style={{ width: "15%" }} />
-                    <col style={{ width: "20%" }} />
-                    <col style={{ width: "15%" }} />
-                    {!showArchived && <col style={{ width: "10%" }} />}
-                </colgroup>
-
                 <thead className="bg-gray-50/60 border-b border-gray-100">
                     <tr>
-                        {[
-                            "Nome",
-                            "Data da visita",
-                            "Status Follow-up",
-                            "Contato",
-                            "É membro?",
-                        ].map((h) => (
+                        {["Nome", "Data da visita", "Status Follow-up", "Contato", "É membro?"].map((h) => (
                             <th
                                 key={h}
-                                className="px-5 py-2.5 text-xs font-semibold text-black-500 uppercase tracking-wide text-left"
+                                className="px-5 py-2.5 text-xs font-semibold uppercase text-gray-600 tracking-wide text-left"
                             >
                                 {h}
                             </th>
                         ))}
 
                         {!showArchived && (
-                            <th className="px-5 py-2.5 text-xs font-semibold text-black-500 uppercase tracking-wide text-center">
+                            <th className="px-5 py-2.5 text-xs font-semibold uppercase text-gray-600 tracking-wide text-center">
                                 Ações
                             </th>
                         )}
@@ -63,11 +41,8 @@ export function TableBody({
                 </thead>
 
                 <tbody className="divide-y divide-gray-100">
-                    {sortedVisitors.map((v: any) => (
-                        <tr
-                            key={v.id}
-                            className="hover:bg-[#F9FAFB] transition-all"
-                        >
+                    {visitors.map((v: any) => (
+                        <tr key={v.id} className="hover:bg-[#F9FAFB] transition-all">
                             <td className="px-5 py-3 font-medium text-gray-800">
                                 <div className="flex items-center gap-2">
                                     <Info className="w-4 h-4 text-[#38B2AC]" />
@@ -78,13 +53,7 @@ export function TableBody({
                             <td className="px-5 py-3 text-gray-700 whitespace-nowrap">
                                 <div className="flex items-center gap-2">
                                     <Calendar className="w-4 h-4 text-[#38B2AC]" />
-
-                                    {v.visit_date
-                                        ? v.visit_date
-                                            .split("-")
-                                            .reverse()
-                                            .join("/")
-                                        : "-"}
+                                    {v.visit_date ? v.visit_date.split("-").reverse().join("/") : "-"}
                                 </div>
                             </td>
 
@@ -114,9 +83,7 @@ export function TableBody({
                                             <span>{v.phone}</span>
                                         </div>
                                     ) : (
-                                        <span className="text-gray-400 italic">
-                                            Sem telefone
-                                        </span>
+                                        <span className="text-gray-400 italic">Sem telefone</span>
                                     )}
 
                                     {v.email ? (
@@ -125,9 +92,7 @@ export function TableBody({
                                             <span>{v.email}</span>
                                         </div>
                                     ) : (
-                                        <div className="text-gray-400 italic text-xs">
-                                            Sem e-mail
-                                        </div>
+                                        <div className="text-gray-400 italic text-xs">Sem e-mail</div>
                                     )}
                                 </div>
                             </td>
@@ -148,7 +113,6 @@ export function TableBody({
                             {!showArchived && (
                                 <td className="px-5 py-3 text-center">
                                     <div className="flex justify-center gap-3">
-
                                         {v.followup_status === "pendente" && (
                                             <button
                                                 onClick={() => onFollowup(v)}
