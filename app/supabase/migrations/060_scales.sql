@@ -1,5 +1,5 @@
 -- ==========================================================
--- 🔹 TABELA: SCALES (Isolamento total por igreja)
+-- TABELA: SCALES (Isolamento total por igreja)
 -- ==========================================================
 create table if not exists public.scales (
   id uuid primary key default gen_random_uuid(),
@@ -15,7 +15,7 @@ create index if not exists idx_scales_church_id
 on public.scales(church_id);
 
 -- ==========================================================
--- 🔹 TRIGGERS
+-- TRIGGERS
 -- ==========================================================
 drop trigger if exists trg_scales_updated_at on public.scales;
 create trigger trg_scales_updated_at
@@ -30,13 +30,13 @@ for each row
 execute function public.set_church_id();
 
 -- ==========================================================
--- 🔹 RLS (Isolamento entre igrejas)
+-- RLS (Isolamento entre igrejas)
 -- ==========================================================
 alter table public.scales enable row level security;
 alter table public.scales force row level security;
 
 -- ==========================================================
--- 🔹 LIMPEZA COMPLETA DE POLÍTICAS ANTIGAS
+--  LIMPEZA COMPLETA DE POLÍTICAS ANTIGAS
 -- ==========================================================
 drop policy if exists "scales_rls" on public.scales;
 drop policy if exists "Allow read for all" on public.scales;
@@ -63,7 +63,7 @@ drop policy if exists "scales_select_all" on public.scales;
 drop policy if exists "scales_ins_all" on public.scales;
 
 -- ==========================================================
--- 🔹 POLÍTICAS CORRETAS E FINAIS
+-- POLÍTICAS CORRETAS E FINAIS
 -- ==========================================================
 create policy "select_scales_by_church"
 on public.scales
@@ -91,7 +91,7 @@ to authenticated
 using (church_id = public.current_church_id());
 
 -- ==========================================================
--- 🔹 PERMISSÕES E RELOAD
+-- PERMISSÕES E RELOAD
 -- ==========================================================
 revoke all on public.scales from anon;
 grant select, insert, update, delete on public.scales to authenticated;

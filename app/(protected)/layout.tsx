@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
 import "../../app/globals.css";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { Poppins } from "next/font/google";
 import { Sidebar } from "../../components/shared/sidebar/sidebar";
 import { Header } from "../../components/shared/header/header";
@@ -15,26 +15,64 @@ const poppins = Poppins({
   display: "swap",
 });
 
-export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
+export default function ProtectedLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
+  const pathname = usePathname();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkSession = async () => {
+    const validateAccess = async () => {
       const { data } = await supabase.auth.getSession();
-      const churchId = data.session?.user?.app_metadata?.church_id;
+      const session = data.session;
 
+      // Sem sessão → login
+      if (!session) {
+        router.push("/login");
+        return;
+      }
+
+      const churchId = session.user?.app_metadata?.church_id;
+      const plan = session.user?.app_metadata?.plan_slug || "free";
+
+      // Isso vamos usar depois quando houver webhook
+      const active = session.user?.app_metadata?.subscription_active ?? false;
+
+      // Se churchId não existe → logout total
       if (!churchId) {
         await supabase.auth.signOut();
-        localStorage.clear();
-        sessionStorage.clear();
-        indexedDB.deleteDatabase("supabase-auth");
-        indexedDB.deleteDatabase("Supabase");
         router.push("/login");
+        return;
       }
+
+      // Nunca bloquear a própria página de planos
+      if (pathname === "/planos") {
+        setLoading(false);
+        return;
+      }
+
+      // Se plano é pago mas assinatura ainda não foi concluída
+      if (plan !== "free" && active === false) {
+        router.push("/planos");
+        return;
+      }
+
+      setLoading(false);
     };
 
-    checkSession();
-  }, [router]);
+    validateAccess();
+  }, [router, pathname]);
+
+  if (loading) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center text-gray-700">
+        Carregando...
+      </div>
+    );
+  }
 
   return (
     <div
@@ -45,15 +83,11 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
         flex flex-col md:flex-row
       `}
     >
-
       <Sidebar />
 
       <div className="flex-1 flex flex-col">
         <Header />
-
-        <main className="p-4 md:p-6 flex-1">
-          {children}
-        </main>
+        <main className="p-4 md:p-6 flex-1">{children}</main>
       </div>
     </div>
   );

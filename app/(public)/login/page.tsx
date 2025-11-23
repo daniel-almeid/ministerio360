@@ -1,21 +1,20 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
-import { supabase } from '../../../lib/supabaseClient';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { supabase } from "../../../lib/supabaseClient";
 
 export default function LoginPage() {
     const router = useRouter();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
     const [remember, setRemember] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [error, setError] = useState("");
 
-    // Carrega e-mail salvo localmente
     useEffect(() => {
-        const savedEmail = localStorage.getItem('rememberedEmail');
+        const savedEmail = localStorage.getItem("rememberedEmail");
         if (savedEmail) {
             setEmail(savedEmail);
             setRemember(true);
@@ -24,87 +23,55 @@ export default function LoginPage() {
 
     async function handleLogin(e: React.FormEvent) {
         e.preventDefault();
-        setError('');
+        setError("");
         setLoading(true);
 
         try {
-            // Garante que nenhuma sessão antiga interfira
-            await supabase.auth.signOut();
-            localStorage.clear();
-            sessionStorage.clear();
-            indexedDB.deleteDatabase('supabase-auth');
-            indexedDB.deleteDatabase('Supabase');
-
-            // Login
             const { data, error: loginError } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
 
             if (loginError) {
-                console.error('Erro no login:', loginError);
-                setError(
-                    loginError.message.includes('Invalid login credentials')
-                        ? 'E-mail ou senha incorretos.'
-                        : loginError.message.includes('Email not confirmed')
-                            ? 'Confirme seu e-mail antes de acessar.'
-                            : 'Erro ao entrar: ' + loginError.message
-                );
+                setError("E-mail ou senha incorretos.");
+                setLoading(false);
+                return;
+            }
+
+            if (loginError) {
+                setError("E-mail ou senha incorretos.");
                 return;
             }
 
             if (!data?.user) {
-                setError('Falha ao autenticar usuário.');
+                setError("Falha ao autenticar.");
                 return;
             }
 
-            // Atualiza o claim church_id via função RPC
-            console.log('🔁 Atualizando claim church_id via RPC...');
-            const { error: rpcError } = await supabase.rpc('refresh_church_claim', {
-                p_user_id: data.user.id,
-            });
+            await supabase.rpc("refresh_church_claim", { p_user_id: data.user.id });
 
-            if (rpcError) {
-                console.error('Erro ao atualizar claim:', rpcError.message);
-            } else {
-                console.log('✅ Claim church_id atualizado com sucesso.');
-            }
-
-            // Recarrega a sessão (gera novo JWT)
-            console.log('🔄 Recarregando sessão...');
-            const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
-
-            if (refreshError) {
-                console.warn('⚠️ Erro ao atualizar sessão:', refreshError.message);
-            } else if (refreshed?.session) {
+            const { data: newSession } = await supabase.auth.refreshSession();
+            if (newSession?.session) {
                 await supabase.auth.setSession({
-                    access_token: refreshed.session.access_token,
-                    refresh_token: refreshed.session.refresh_token,
+                    access_token: newSession.session.access_token,
+                    refresh_token: newSession.session.refresh_token,
                 });
-                console.log('✅ Sessão atualizada e sincronizada no client global.');
             }
 
-            // Confirma se o JWT já contém church_id
             const { data: sessionData } = await supabase.auth.getSession();
-            const churchId = sessionData?.session?.user?.app_metadata?.church_id;
+            const plan = sessionData.session?.user?.app_metadata?.plan_slug || "free";
 
-            if (churchId) {
-                console.log('✅ church_id confirmado no JWT:', churchId);
-            } else {
-                console.warn('⚠️ JWT ainda sem claim church_id — recarregando...');
-                window.location.reload();
+            if (remember) localStorage.setItem("rememberedEmail", email);
+            else localStorage.removeItem("rememberedEmail");
+
+            if (plan !== "free") {
+                router.push("/planos");
                 return;
             }
 
-            // Lembra o e-mail se o usuário quiser
-            if (remember) localStorage.setItem('rememberedEmail', email);
-            else localStorage.removeItem('rememberedEmail');
-
-            // Redireciona
-            router.push('/dashboard');
-        } catch (err: any) {
-            console.error('Erro inesperado:', err.message);
-            setError('Erro inesperado. Tente novamente.');
+            router.push("/dashboard");
+        } catch {
+            setError("Erro inesperado.");
         } finally {
             setLoading(false);
         }
@@ -113,56 +80,44 @@ export default function LoginPage() {
     return (
         <div className="relative min-h-screen flex items-center justify-center bg-linear-to-br from-gray-200 to-gray-200 px-6 overflow-hidden">
             {loading && (
-                <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
+                <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="flex flex-col items-center space-y-4">
                         <Loader2 className="animate-spin text-[#38B2AC] w-10 h-10" />
-                        <p className="text-gray-700 font-medium animate-pulse">
-                            Entrando...
-                        </p>
+                        <p className="text-gray-700 font-medium animate-pulse">Entrando...</p>
                     </div>
                 </div>
             )}
 
             <form
                 onSubmit={handleLogin}
-                className={`w-full max-w-lg p-12 md:p-20 space-y-10 rounded-2xl bg-white/70 backdrop-blur-sm border border-gray-300/50 shadow-md transition-all duration-300 ${loading ? 'opacity-60 pointer-events-none' : 'opacity-100'
-                    }`}
+                className="w-full max-w-lg p-12 md:p-20 space-y-10 rounded-2xl bg-white/70 backdrop-blur-sm border border-gray-300/50 shadow-md"
             >
-
                 <div className="text-center mb-8">
                     <h1 className="text-5xl font-extrabold text-gray-800 tracking-tight">
                         Ministério<span className="text-[#38B2AC]">360</span>
                     </h1>
-                    <p className="text-gray-600 text-base mt-3">
-                        Acesse sua conta para continuar
-                    </p>
+                    <p className="text-gray-600 text-base mt-3">Acesse sua conta</p>
                 </div>
 
                 <div className="space-y-6">
                     <div>
-                        <label className="block text-base font-medium text-gray-700 mb-2">
-                            E-mail
-                        </label>
+                        <label className="block text-base font-medium text-gray-700 mb-2">E-mail</label>
                         <input
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-5 py-4 text-lg border rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#38B2AC] focus:border-transparent placeholder-gray-400 bg-white/90"
-                            placeholder="Digite seu e-mail"
+                            className="w-full px-5 py-4 text-lg border rounded-xl"
                             required
                         />
                     </div>
 
                     <div>
-                        <label className="block text-base font-medium text-gray-700 mb-2">
-                            Senha
-                        </label>
+                        <label className="block text-base font-medium text-gray-700 mb-2">Senha</label>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-5 py-4 text-lg border rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#38B2AC] focus:border-transparent placeholder-gray-400 bg-white/90"
-                            placeholder="Digite sua senha"
+                            className="w-full px-5 py-4 text-lg border rounded-xl"
                             required
                         />
                     </div>
@@ -173,60 +128,31 @@ export default function LoginPage() {
                             type="checkbox"
                             checked={remember}
                             onChange={(e) => setRemember(e.target.checked)}
-                            className="w-5 h-5 accent-[#38B2AC] cursor-pointer"
+                            className="w-5 h-5 accent-[#38B2AC]"
                         />
-                        <label
-                            htmlFor="remember"
-                            className="text-gray-700 select-none cursor-pointer"
-                        >
+                        <label htmlFor="remember" className="text-gray-700 cursor-pointer">
                             Lembrar meus dados
                         </label>
                     </div>
                 </div>
 
-                {error && (
-                    <p className="text-base text-red-500 text-center font-medium mt-2">
-                        {error}
-                    </p>
-                )}
+                {error && <p className="text-base text-red-500 text-center">{error}</p>}
 
-                <div className="space-y-4">
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className={`w-full flex items-center justify-center gap-2 text-white py-4 text-lg rounded-xl font-semibold transition-all duration-200 disabled:opacity-60 shadow-sm ${loading
-                            ? 'bg-linear-to-r from-[#38B2AC] to-[#319795] animate-pulse'
-                            : 'bg-[#38B2AC] hover:bg-[#319795]'
-                            }`}
-                    >
-                        {loading ? (
-                            <>
-                                <Loader2 className="animate-spin h-6 w-6" />
-                                Entrando...
-                            </>
-                        ) : (
-                            'Entrar'
-                        )}
-                    </button>
+                <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full flex items-center justify-center gap-2 text-white py-4 text-lg rounded-xl bg-[#38B2AC]"
+                >
+                    {loading ? <Loader2 className="animate-spin h-6 w-6" /> : "Entrar"}
+                </button>
 
-                    <button
-                        type="button"
-                        onClick={() => router.push('/register')}
-                        className="w-full flex items-center justify-center gap-2 border border-[#38B2AC] text-[#38B2AC] hover:bg-[#E6FFFA] py-4 text-lg rounded-xl font-semibold transition-all duration-200"
-                    >
-                        Criar conta
-                    </button>
-                </div>
-
-                <div className="text-center mt-6">
-                    <button
-                        type="button"
-                        className="text-base text-[#38B2AC] hover:text-[#2C7A7B] transition-colors"
-                        onClick={() => alert('Função de recuperação de senha em breve.')}
-                    >
-                        Esqueceu sua senha?
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    onClick={() => router.push("/register")}
+                    className="w-full mt-4 py-4 border border-[#38B2AC] text-[#38B2AC] rounded-xl"
+                >
+                    Criar conta
+                </button>
 
                 <p className="text-center text-sm text-gray-500 mt-10">
                     © {new Date().getFullYear()} Ministério360

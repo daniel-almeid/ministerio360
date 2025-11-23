@@ -1,27 +1,31 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
+import { usePathname } from "next/navigation";
 import { X, Home, Users, Calendar, DollarSign, BarChart3, Settings, UserPlus, Church } from "lucide-react";
 
 const links = [
-    { href: "/dashboard", label: "Dashboard", icon: Home },
-    { href: "/financas", label: "Finanças", icon: DollarSign },
-    { href: "/ministries", label: "Ministérios", icon: Church },
-    { href: "/membros", label: "Membros", icon: Users },
-    { href: "/visitantes", label: "Visitantes", icon: UserPlus },
-    { href: "/agenda", label: "Agenda & Escalas", icon: Calendar },
-    { href: "/relatorios", label: "Relatórios", icon: BarChart3 },
-    { href: "/configuracoes", label: "Configurações", icon: Settings },
+    { href: "/dashboard", label: "Dashboard", icon: Home, plan: "free" },
+    { href: "/financas", label: "Finanças", icon: DollarSign, plan: "free" },
+    { href: "/ministries", label: "Ministérios", icon: Church, plan: "premium" },
+    { href: "/membros", label: "Membros", icon: Users, plan: "free" },
+    { href: "/visitantes", label: "Visitantes", icon: UserPlus, plan: "standard" },
+    { href: "/agenda", label: "Agenda & Escalas", icon: Calendar, plan: "premium" },
+    { href: "/relatorios", label: "Relatórios", icon: BarChart3, plan: "standard" },
+    { href: "/configuracoes", label: "Configurações", icon: Settings, plan: "free" },
 ];
 
 export function SidebarMobile({
     isMobileOpen,
-    setIsMobileOpen
+    setIsMobileOpen,
+    handleProtectedClick
 }: {
     isMobileOpen: boolean;
     setIsMobileOpen: (v: boolean) => void;
+    handleProtectedClick: (
+        requiredPlan: "free" | "standard" | "premium",
+        callback: () => void
+    ) => void;
 }) {
     const pathname = usePathname();
 
@@ -52,25 +56,31 @@ export function SidebarMobile({
                 </div>
 
                 <nav className="flex-1 space-y-1 mt-3">
-                    {links.map(({ href, label, icon: Icon }) => {
+                    {links.map(({ href, label, icon: Icon, plan }) => {
                         const isActive = pathname === href;
 
                         return (
-                            <Link
+                            <button
                                 key={href}
-                                href={href}
-                                onClick={() => setIsMobileOpen(false)}
-                                className={`
-                  flex items-center gap-3 px-4 py-2.5 rounded-lg mx-2 transition-all 
-                  ${isActive
+                                onClick={() =>
+                                    handleProtectedClick(
+                                        plan as "free" | "standard" | "premium",
+                                        () => {
+                                            setIsMobileOpen(false);
+                                            window.location.href = href;
+                                        }
+                                    )
+                                }
+                                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg mx-2 transition-all 
+                                    ${isActive
                                         ? "bg-[#38B2AC] text-white shadow-md"
                                         : "hover:bg-[#2C5282] text-[#81E6D9]"
                                     }
-                `}
+                                `}
                             >
                                 <Icon size={22} />
                                 <span className="font-medium text-[15px]">{label}</span>
-                            </Link>
+                            </button>
                         );
                     })}
                 </nav>

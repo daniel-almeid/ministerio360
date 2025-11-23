@@ -21,22 +21,24 @@ import {
 } from "lucide-react";
 
 const links = [
-    { href: "/dashboard", label: "Dashboard", icon: Home },
-    { href: "/financas", label: "Finanças", icon: DollarSign },
-    { href: "/ministries", label: "Ministérios", icon: Church },
-    { href: "/membros", label: "Membros", icon: Users },
-    { href: "/visitantes", label: "Visitantes", icon: UserPlus },
-    { href: "/agenda", label: "Agenda & Escalas", icon: Calendar },
-    { href: "/relatorios", label: "Relatórios", icon: BarChart3 },
-    { href: "/configuracoes", label: "Configurações", icon: Settings },
+    { href: "/dashboard", label: "Dashboard", icon: Home, plan: "free" },
+    { href: "/financas", label: "Finanças", icon: DollarSign, plan: "free" },
+    { href: "/ministries", label: "Ministérios", icon: Church, plan: "premium" },
+    { href: "/membros", label: "Membros", icon: Users, plan: "free" },
+    { href: "/visitantes", label: "Visitantes", icon: UserPlus, plan: "standard" },
+    { href: "/agenda", label: "Agenda & Escalas", icon: Calendar, plan: "premium" },
+    { href: "/relatorios", label: "Relatórios", icon: BarChart3, plan: "standard" },
+    { href: "/configuracoes", label: "Configurações", icon: Settings, plan: "free" },
 ];
 
 export function SidebarDesktop({
     isCollapsed,
-    setIsCollapsed
+    setIsCollapsed,
+    handleProtectedClick
 }: {
     isCollapsed: boolean;
     setIsCollapsed: (v: boolean) => void;
+    handleProtectedClick: (requiredPlan: "free" | "standard" | "premium", callback: () => void) => void;
 }) {
     const pathname = usePathname();
 
@@ -55,18 +57,20 @@ export function SidebarDesktop({
             className="hidden md:flex h-screen bg-[#1E3A5F] text-white flex-col shadow-lg overflow-hidden"
         >
             <div
-                className={`relative border-b border-white/10 ${isCollapsed
-                    ? "flex flex-col items-center justify-center py-8"
-                    : "flex items-center justify-between px-5 py-6"
-                    }`}
+                className={`relative border-b border-white/10 ${
+                    isCollapsed
+                        ? "flex flex-col items-center justify-center py-8"
+                        : "flex items-center justify-between px-5 py-6"
+                }`}
             >
                 <motion.div
                     key={isCollapsed ? "logo-large" : "logo-normal"}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.4, ease: "easeInOut" }}
-                    className={`flex items-center ${isCollapsed ? "flex-col justify-center" : "gap-3"
-                        }`}
+                    className={`flex items-center ${
+                        isCollapsed ? "flex-col justify-center" : "gap-3"
+                    }`}
                 >
                     <motion.div
                         animate={{
@@ -82,10 +86,11 @@ export function SidebarDesktop({
                             height={isCollapsed ? 70 : 46}
                             priority
                             unoptimized
-                            className={`select-none transition-all duration-500 ${isCollapsed
-                                ? "rounded-2xl shadow-lg mb-2"
-                                : "rounded-lg shadow-md"
-                                }`}
+                            className={`select-none transition-all duration-500 ${
+                                isCollapsed
+                                    ? "rounded-2xl shadow-lg mb-2"
+                                    : "rounded-lg shadow-md"
+                            }`}
                         />
                     </motion.div>
 
@@ -130,7 +135,7 @@ export function SidebarDesktop({
                 }}
                 className="flex-1 mt-4 space-y-1"
             >
-                {links.map(({ href, label, icon: Icon }) => {
+                {links.map(({ href, label, icon: Icon, plan }) => {
                     const isActive = pathname === href;
 
                     return (
@@ -140,16 +145,21 @@ export function SidebarDesktop({
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.3 }}
                         >
-                            <Link
-                                href={href}
+                            <button
+                                onClick={() =>
+                                    handleProtectedClick(plan as any, () => {
+                                        window.location.href = href;
+                                    })
+                                }
                                 className={`
-                  flex items-center gap-3 px-4 py-2.5 rounded-lg mx-2 transition-all
-                  ${isActive
+                                    w-full text-left
+                                    flex items-center gap-3 px-4 py-2.5 rounded-lg mx-2 transition-all
+                                    ${isActive
                                         ? "bg-[#38B2AC] text-white shadow-md"
                                         : "hover:bg-[#2C5282] text-[#81E6D9]"
                                     }
-                  ${isCollapsed ? "justify-center" : ""}
-                `}
+                                    ${isCollapsed ? "justify-center" : ""}
+                                `}
                             >
                                 <Icon size={22} />
                                 <AnimatePresence mode="wait">
@@ -166,7 +176,7 @@ export function SidebarDesktop({
                                         </motion.span>
                                     )}
                                 </AnimatePresence>
-                            </Link>
+                            </button>
                         </motion.div>
                     );
                 })}
