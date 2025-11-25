@@ -3,7 +3,7 @@
 import { Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { Church, User, LogOut } from "lucide-react";
+import { Church, User, LogOut, CreditCard } from "lucide-react";
 import { Menu, Transition } from "@headlessui/react";
 import toast from "react-hot-toast";
 
@@ -58,6 +58,7 @@ export function HeaderProfileMenu({
                     </div>
 
                     <div className="py-2">
+
                         <Menu.Item>
                             {({ active }) => (
                                 <button
@@ -65,6 +66,28 @@ export function HeaderProfileMenu({
                                     className={`${active ? "bg-gray-50" : ""} flex items-center w-full px-5 py-2.5 text-[15px] text-gray-700 gap-2`}
                                 >
                                     <User size={18} /> Perfil da Igreja
+                                </button>
+                            )}
+                        </Menu.Item>
+
+                        <Menu.Item>
+                            {({ active }) => (
+                                <button
+                                    onClick={() => router.push("/planos")}
+                                    className={`${active ? "bg-gray-50" : ""} flex items-center w-full px-5 py-2.5 text-[15px] text-gray-700 gap-2`}
+                                >
+                                    <CreditCard size={18} /> Planos
+                                </button>
+                            )}
+                        </Menu.Item>
+
+                        <Menu.Item>
+                            {({ active }) => (
+                                <button
+                                    onClick={() => router.push("/planos/assinatura")}
+                                    className={`${active ? "bg-gray-50" : ""} flex items-center w-full px-5 py-2.5 text-[15px] text-gray-700 gap-2`}
+                                >
+                                    <CreditCard size={18} /> Minha assinatura
                                 </button>
                             )}
                         </Menu.Item>

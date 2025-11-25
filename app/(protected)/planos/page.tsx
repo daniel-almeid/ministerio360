@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import Loading from "@/components/shared/loading";
 import PlanCard from "./components/planCard";
 
 export default function PlanosPage() {
@@ -13,18 +14,19 @@ export default function PlanosPage() {
     }, []);
 
     async function loadPlan() {
-        const { data } = await supabase.auth.getSession();
-        const slug = data.session?.user?.app_metadata?.plan_slug || "free";
+        // aguarda o usuário final carregar
+        const { data: userData } = await supabase.auth.getUser();
+
+        const slug =
+            userData?.user?.app_metadata?.plan_slug
+            ?? "free";
+
         setPlanSlug(slug);
         setLoading(false);
     }
 
     if (loading) {
-        return (
-            <div className="flex justify-center items-center min-h-[60vh] text-gray-600">
-                Carregando...
-            </div>
-        );
+        return <Loading />;
     }
 
     return (
@@ -40,37 +42,46 @@ export default function PlanosPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                 <PlanCard
                     slug="free"
-                    name="Free"
+                    name="Grátis"
                     price="R$ 0/mês"
                     features={[
                         "Dashboard",
-                        "Controle financeiro",
                         "Cadastro de membros",
+                        "Cadastro financeiro",
+                        "Relatórios simples",
                     ]}
                     active={planSlug === "free"}
                 />
 
                 <PlanCard
                     slug="standard"
-                    name="Standard"
+                    name="Padrão"
                     price="R$ 49,90/mês"
                     features={[
-                        "Tudo do plano Free",
+                        "Dashboard",
+                        "Cadastro de membros",
                         "Cadastro de visitantes",
-                        "Follow-up",
-                        "Relatórios",
+                        "Acompanhamento de visitantes",
+                        "Cadastro financeiro",
+                        "Relatórios simples",
                     ]}
                     active={planSlug === "standard"}
                 />
 
                 <PlanCard
                     slug="premium"
-                    name="Premium"
+                    name="Premium+"
                     price="R$ 89,90/mês"
                     features={[
-                        "Tudo do Standard",
-                        "Cadastro de Ministérios",
-                        "Eventos e Escalas",
+                        "Dashboard",
+                        "Cadastro de membros",
+                        "Cadastro de visitantes",
+                        "Acompanhamento de visitantes",
+                        "Cadastro financeiro",
+                        "Cadastro de ministérios",
+                        "Cadastro de eventos",
+                        "Cadastro de escalas",
+                        "Relatórios",
                         "Suporte prioritário",
                     ]}
                     active={planSlug === "premium"}

@@ -32,24 +32,16 @@ export default function LoginPage() {
                 password,
             });
 
-            if (loginError) {
+            if (loginError || !data?.user) {
                 setError("E-mail ou senha incorretos.");
                 setLoading(false);
                 return;
             }
 
-            if (loginError) {
-                setError("E-mail ou senha incorretos.");
-                return;
-            }
-
-            if (!data?.user) {
-                setError("Falha ao autenticar.");
-                return;
-            }
-
+            // Atualiza claims no JWT
             await supabase.rpc("refresh_church_claim", { p_user_id: data.user.id });
 
+            // Atualiza sessão local com claims novos
             const { data: newSession } = await supabase.auth.refreshSession();
             if (newSession?.session) {
                 await supabase.auth.setSession({
@@ -58,18 +50,26 @@ export default function LoginPage() {
                 });
             }
 
+            // Pega claims atualizados
             const { data: sessionData } = await supabase.auth.getSession();
-            const plan = sessionData.session?.user?.app_metadata?.plan_slug || "free";
+            const user = sessionData.session?.user;
+
+            const plan = user?.app_metadata?.plan_slug || "free";
+            const active = user?.app_metadata?.subscription_active ?? false;
 
             if (remember) localStorage.setItem("rememberedEmail", email);
             else localStorage.removeItem("rememberedEmail");
 
-            if (plan !== "free") {
+            // Regra REVISADA:
+            // Se plano é pago mas assinatura NÃO está ativa → página de planos
+            if (plan !== "free" && active === false) {
                 router.push("/planos");
                 return;
             }
 
+            // Caso contrário → dashboard normal
             router.push("/dashboard");
+
         } catch {
             setError("Erro inesperado.");
         } finally {
