@@ -8,9 +8,21 @@ type Props = {
     price: string;
     features: string[];
     active: boolean;
+    churchId: string | null;
+    currentPlan: string;
+    scheduledToPlan: string | null;
 };
 
-export default function PlanCard({ slug, name, price, features, active }: Props) {
+export default function PlanCard({
+    slug,
+    name,
+    price,
+    features,
+    active,
+    churchId,
+    currentPlan,
+    scheduledToPlan
+}: Props) {
     return (
         <div
             className={`border rounded-2xl p-8 shadow-md flex flex-col justify-between transition ${
@@ -28,7 +40,13 @@ export default function PlanCard({ slug, name, price, features, active }: Props)
                 </ul>
             </div>
 
-            <SubscribeButton slug={slug} active={active} />
+            <SubscribeButton
+                slug={slug}
+                active={active}
+                churchId={churchId}
+                currentPlan={currentPlan}
+                scheduledToPlan={scheduledToPlan}
+            />
         </div>
     );
 }

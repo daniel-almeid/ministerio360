@@ -5,42 +5,53 @@ import { supabase } from "@/lib/supabaseClient";
 
 export function usePlan() {
     const [loading, setLoading] = useState(true);
-    const [plan, setPlan] = useState<string>("free");
-    const [subscriptionActive, setSubscriptionActive] = useState<boolean>(true);
+    const [currentPlan, setCurrentPlan] = useState<string>("free");
+    const [churchId, setChurchId] = useState<string | null>(null);
+    const [scheduledChange, setScheduledChange] = useState<any>(null);
 
     useEffect(() => {
-        async function loadPlan() {
-            setLoading(true);
+        load();
+    }, []);
 
-            const { data: sessionData } = await supabase.auth.getSession();
-            const slug = sessionData.session?.user?.app_metadata?.plan_slug || "free";
-            setPlan(slug);
+    async function load() {
+        setLoading(true);
 
-            if (slug === "free") {
-                setSubscriptionActive(true);
-                setLoading(false);
-                return;
-            }
+        const { data: sessionData } = await supabase.auth.getSession();
+        const user = sessionData.session?.user;
 
-            const { data: sub } = await supabase
-                .from("subscriptions")
-                .select("status")
-                .eq("church_id", sessionData.session?.user?.app_metadata?.church_id)
-                .single();
+        const slug = user?.app_metadata?.plan_slug ?? "free";
+        const cId = user?.app_metadata?.church_id ?? null;
 
-            setSubscriptionActive(sub?.status === "authorized");
-            setLoading(false);
+        setCurrentPlan(slug);
+        setChurchId(cId);
+
+        if (cId) {
+            const { data } = await supabase
+                .from("subscription_changes")
+                .select("*")
+                .eq("church_id", cId)
+                .eq("status", "pending")
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            setScheduledChange(data);
         }
 
-        loadPlan();
-    }, []);
+        setLoading(false);
+    }
+
+    function isCurrent(slug: string) {
+        return currentPlan === slug;
+    }
 
     return {
         loading,
-        plan,
-        subscriptionActive,
-        isPremium: plan === "premium",
-        isStandard: plan === "standard",
-        isPaidPlan: plan !== "free",
+        currentPlan,
+        churchId,
+        scheduledChange,
+        scheduledToPlan: scheduledChange?.to_plan ?? null,
+        hasScheduledChange: !!scheduledChange,
+        isCurrent
     };
 }

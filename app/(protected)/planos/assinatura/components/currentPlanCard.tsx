@@ -8,7 +8,9 @@ type Props = {
     price: number;
     planSlug: PlanSlug;
     isActive: boolean;
+    isCancelledButActive: boolean;
     formattedNextPayment: string | null;
+    formattedExpiresOn: string | null;
 };
 
 export default function CurrentPlanCard({
@@ -16,8 +18,35 @@ export default function CurrentPlanCard({
     price,
     planSlug,
     isActive,
+    isCancelledButActive,
     formattedNextPayment,
+    formattedExpiresOn,
 }: Props) {
+    const showStatus = planSlug !== "free";
+
+    let badgeText = "";
+    let badgeClass = "";
+    let icon: "active" | "warning" | null = null;
+    let helperText: string | null = null;
+
+    if (isActive) {
+        badgeText = "Assinatura ativa";
+        badgeClass =
+            "bg-emerald-50 text-emerald-700 border-emerald-200";
+        icon = "active";
+        if (formattedNextPayment) {
+            helperText = `Próxima cobrança em ${formattedNextPayment}`;
+        }
+    } else if (isCancelledButActive) {
+        badgeText = "Assinatura cancelada";
+        badgeClass =
+            "bg-amber-50 text-amber-700 border-amber-200";
+        icon = "warning";
+        if (formattedExpiresOn) {
+            helperText = `Seu plano permanece ativo até ${formattedExpiresOn}`;
+        }
+    }
+
     return (
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -45,28 +74,22 @@ export default function CurrentPlanCard({
                 </div>
             </div>
 
-            {planSlug !== "free" && (
+            {showStatus && (
                 <div className="flex flex-col items-start md:items-end gap-2">
                     <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${
-                            isActive
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : "bg-red-50 text-red-700 border-red-200"
-                        }`}
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${badgeClass}`}
                     >
-                        {isActive ? (
+                        {icon === "active" && (
                             <BadgeCheck className="w-3 h-3 mr-1" />
-                        ) : (
+                        )}
+                        {icon === "warning" && (
                             <AlertTriangle className="w-3 h-3 mr-1" />
                         )}
-                        {isActive ? "Assinatura ativa" : "Assinatura inativa"}
+                        {badgeText}
                     </span>
 
-                    {formattedNextPayment && (
-                        <p className="text-xs text-gray-500">
-                            Renovação automática em{" "}
-                            <span className="font-semibold">{formattedNextPayment}</span>
-                        </p>
+                    {helperText && (
+                        <p className="text-xs text-gray-500">{helperText}</p>
                     )}
                 </div>
             )}

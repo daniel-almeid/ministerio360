@@ -1,33 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { usePlan } from "./hook/usePlan";
 import Loading from "@/components/shared/loading";
 import PlanCard from "./components/planCard";
 
 export default function PlanosPage() {
-    const [planSlug, setPlanSlug] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
+    const {
+        loading,
+        currentPlan,
+        churchId,
+        scheduledToPlan,
+        isCurrent
+    } = usePlan();
 
-    useEffect(() => {
-        loadPlan();
-    }, []);
-
-    async function loadPlan() {
-        // aguarda o usuário final carregar
-        const { data: userData } = await supabase.auth.getUser();
-
-        const slug =
-            userData?.user?.app_metadata?.plan_slug
-            ?? "free";
-
-        setPlanSlug(slug);
-        setLoading(false);
-    }
-
-    if (loading) {
-        return <Loading />;
-    }
+    if (loading) return <Loading />;
 
     return (
         <div className="max-w-6xl mx-auto px-6 py-14 space-y-10">
@@ -48,9 +34,12 @@ export default function PlanosPage() {
                         "Dashboard",
                         "Cadastro de membros",
                         "Cadastro financeiro",
-                        "Relatórios simples",
+                        "Relatórios simples"
                     ]}
-                    active={planSlug === "free"}
+                    active={isCurrent("free")}
+                    churchId={churchId}
+                    currentPlan={currentPlan}
+                    scheduledToPlan={scheduledToPlan}
                 />
 
                 <PlanCard
@@ -63,9 +52,12 @@ export default function PlanosPage() {
                         "Cadastro de visitantes",
                         "Acompanhamento de visitantes",
                         "Cadastro financeiro",
-                        "Relatórios simples",
+                        "Relatórios simples"
                     ]}
-                    active={planSlug === "standard"}
+                    active={isCurrent("standard")}
+                    churchId={churchId}
+                    currentPlan={currentPlan}
+                    scheduledToPlan={scheduledToPlan}
                 />
 
                 <PlanCard
@@ -82,9 +74,12 @@ export default function PlanosPage() {
                         "Cadastro de eventos",
                         "Cadastro de escalas",
                         "Relatórios",
-                        "Suporte prioritário",
+                        "Suporte prioritário"
                     ]}
-                    active={planSlug === "premium"}
+                    active={isCurrent("premium")}
+                    churchId={churchId}
+                    currentPlan={currentPlan}
+                    scheduledToPlan={scheduledToPlan}
                 />
             </div>
         </div>
