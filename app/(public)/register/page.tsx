@@ -203,7 +203,7 @@ export default function RegisterPage() {
               >
                 <div>
                   <h3 className="text-2xl font-bold text-gray-800 mb-1">
-                    {p === "free" ? "Free" : p === "standard" ? "Standard" : "Premium"}
+                    {p === "free" ? "Grátis" : p === "standard" ? "Padrão" : "Premium"}
                   </h3>
 
                   <p className="text-sm text-gray-600 mb-3">
@@ -289,18 +289,24 @@ export default function RegisterPage() {
 
             {showDetails === "standard" && (
               <ul className="space-y-2 text-gray-700">
-                <li>• Tudo do plano Free e mais um pouco</li>
+                <li>• Dashboard</li>
+                <li>• Cadastro de membros</li>
                 <li>• Cadastro de visitantes</li>
-                <li>• Acompanhamento de visitantes</li>
+                <li>• Cadastro financeiro</li>
                 <li>• Relatórios</li>
               </ul>
             )}
 
             {showDetails === "premium" && (
               <ul className="space-y-2 text-gray-700">
-                <li>• Tudo do plano Standard</li>
+                <li>• Dashboard</li>
+                <li>• Cadastro de membros</li>
+                <li>• Cadastro de visitantes</li>
+                <li>• Cadastro financeiro</li>
                 <li>• Cadastro de ministérios</li>
-                <li>• Tela de eventos e escalas</li>
+                <li>• Cadastro de eventos</li>
+                <li>• Cadastro de escalas</li>
+                <li>• Relatórios</li>
                 <li>• Suporte prioritário</li>
               </ul>
             )}

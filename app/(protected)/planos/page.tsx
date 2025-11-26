@@ -45,7 +45,7 @@ export default function PlanosPage() {
                 <PlanCard
                     slug="standard"
                     name="Padrão"
-                    price="R$ 49,90/mês"
+                    price="R$ 1,00/mês (teste)"
                     features={[
                         "Dashboard",
                         "Cadastro de membros",
@@ -63,7 +63,7 @@ export default function PlanosPage() {
                 <PlanCard
                     slug="premium"
                     name="Premium+"
-                    price="R$ 89,90/mês"
+                    price="R$ 1,00/mês (teste)"
                     features={[
                         "Dashboard",
                         "Cadastro de membros",

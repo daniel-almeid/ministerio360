@@ -7,7 +7,7 @@ async function main() {
             auto_recurring: {
                 frequency: 1,
                 frequency_type: "months",
-                transaction_amount: 1.00,
+                transaction_amount: 1.0,
                 currency_id: "BRL"
             },
             back_url: "https://seu-dominio.com/assinatura/retorno",

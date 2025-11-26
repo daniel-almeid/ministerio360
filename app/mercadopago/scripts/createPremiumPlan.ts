@@ -1,4 +1,4 @@
-import { mpClient } from "../client.js";
+import { mpClient } from "../client";
 
 async function createPremiumPlan() {
   try {
