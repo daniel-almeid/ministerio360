@@ -39,11 +39,13 @@ export default function PlanComparison({ plans, currentSlug }: Props) {
                                         </span>
                                     )}
                                 </div>
+
                                 <p className="text-sm text-gray-600">
                                     {plan.price === 0
                                         ? "Gratuito"
                                         : `R$ ${plan.price.toFixed(2)} / mês`}
                                 </p>
+
                                 <ul className="mt-2 space-y-1 text-xs text-gray-600">
                                     {plan.features.map((f) => (
                                         <li key={f} className="flex gap-1">
