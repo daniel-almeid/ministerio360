@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { HelpCircle } from "lucide-react";
+import ConfirmCancelModal from "./modal/confirmCancel";
 
 type Props = {
     hasPaidPlan: boolean;
@@ -9,8 +11,21 @@ type Props = {
 };
 
 export default function FooterActions({ hasPaidPlan, onCancel }: Props) {
+    const [showModal, setShowModal] = useState(false);
+
+    function handleConfirm() {
+        setShowModal(false);
+        onCancel();
+    }
+
     return (
         <>
+            <ConfirmCancelModal
+                open={showModal}
+                onClose={() => setShowModal(false)}
+                onConfirm={handleConfirm}
+            />
+
             <div className="h-px bg-gray-200" />
 
             <div className="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
@@ -18,7 +33,7 @@ export default function FooterActions({ hasPaidPlan, onCancel }: Props) {
                     {hasPaidPlan ? (
                         <>
                             <button
-                                onClick={onCancel}
+                                onClick={() => setShowModal(true)}
                                 className="w-full sm:w-auto px-4 py-2 bg-red-500 text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-red-600 transition shadow-sm"
                             >
                                 Cancelar assinatura

@@ -34,13 +34,16 @@ export default function AssinaturaPage() {
             </h1>
 
             <div className="bg-white shadow-lg border border-gray-200 rounded-2xl p-8 md:p-10 space-y-8">
-                <CurrentPlanCard
-                    currentPlan={currentPlan}
-                    price={price}
-                    planSlug={planSlug}
-                    isActive={isActive}
-                    formattedNextPayment={formattedNextPayment}
-                />
+                {currentPlan && (
+                    <CurrentPlanCard
+                        key={planSlug}
+                        currentPlan={currentPlan}
+                        price={price}
+                        planSlug={planSlug}
+                        isActive={isActive}
+                        formattedNextPayment={formattedNextPayment}
+                    />
+                )}
 
                 <BillingCycle
                     hasPaidPlan={hasPaidPlan}

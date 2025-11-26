@@ -40,10 +40,6 @@ export default function RegisterPage() {
       email,
       password,
       options: {
-        data: {
-          church_name: name,
-          plan_slug: plan,
-        },
         emailRedirectTo: `${window.location.origin}/login`,
       },
     });
@@ -53,6 +49,16 @@ export default function RegisterPage() {
       setLoading(false);
       return;
     }
+
+    await fetch("/api/create-church-profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: data?.user?.id,
+        church_name: name,
+        plan_slug: plan,
+      }),
+    });
 
     setSuccess(true);
 
@@ -98,9 +104,8 @@ export default function RegisterPage() {
 
       <form
         onSubmit={handleRegister}
-        className={`w-full max-w-5xl p-12 md:p-20 space-y-12 rounded-2xl bg-white/80 backdrop-blur-md border border-gray-300/50 shadow-xl transition-all ${
-          loading ? "opacity-60 pointer-events-none" : "opacity-100"
-        }`}
+        className={`w-full max-w-5xl p-12 md:p-20 space-y-12 rounded-2xl bg-white/80 backdrop-blur-md border border-gray-300/50 shadow-xl transition-all ${loading ? "opacity-60 pointer-events-none" : "opacity-100"
+          }`}
       >
         <button
           type="button"
@@ -129,7 +134,6 @@ export default function RegisterPage() {
               placeholder="Exemplo: Igreja Vida Nova"
               required
             />
-            <p className="text-sm text-gray-500 mt-1">Esse é o nome que aparecerá no sistema.</p>
           </div>
 
           <div>
@@ -142,7 +146,6 @@ export default function RegisterPage() {
               placeholder="seuemail@exemplo.com"
               required
             />
-            <p className="text-sm text-gray-500 mt-1">Usado para login e recuperação de senha.</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
@@ -159,7 +162,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-12 text-gray-600 hover:text-gray-800"
+                className="absolute right-4 top-12 text-gray-600"
               >
                 {showPassword ? <EyeOff /> : <Eye />}
               </button>
@@ -178,7 +181,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-4 top-12 text-gray-600 hover:text-gray-800"
+                className="absolute right-4 top-12 text-gray-600"
               >
                 {showConfirmPassword ? <EyeOff /> : <Eye />}
               </button>
@@ -195,9 +198,8 @@ export default function RegisterPage() {
             {["free", "standard", "premium"].map((p) => (
               <div
                 key={p}
-                className={`rounded-2xl border p-6 flex flex-col justify-between shadow-md transition ${
-                  plan === p ? "border-teal-500 bg-teal-50" : "border-gray-300 bg-white"
-                }`}
+                className={`rounded-2xl border p-6 flex flex-col justify-between shadow-md transition ${plan === p ? "border-teal-500 bg-teal-50" : "border-gray-300 bg-white"
+                  }`}
               >
                 <div>
                   <h3 className="text-2xl font-bold text-gray-800 mb-1">
@@ -208,8 +210,8 @@ export default function RegisterPage() {
                     {p === "free"
                       ? "Recursos básicos"
                       : p === "standard"
-                      ? "Funcionalidades avançadas"
-                      : "Acesso completo"}
+                        ? "Funcionalidades avançadas"
+                        : "Acesso completo"}
                   </p>
 
                   <p className="text-3xl font-extrabold text-gray-800 mb-4">
@@ -222,9 +224,8 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setPlan(p)}
-                    className={`w-full py-2 rounded-xl font-semibold ${
-                      plan === p ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-700"
-                    }`}
+                    className={`w-full py-2 rounded-xl font-semibold ${plan === p ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-700"
+                      }`}
                   >
                     Selecionar
                   </button>
@@ -253,9 +254,8 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={loading}
-          className={`w-full flex items-center justify-center gap-2 text-white py-4 text-lg rounded-xl font-semibold transition shadow-sm ${
-            loading ? "bg-linear-to-r from-teal-500 to-teal-400 animate-pulse" : "bg-teal-500 hover:bg-teal-600"
-          }`}
+          className={`w-full flex items-center justify-center gap-2 text-white py-4 text-lg rounded-xl font-semibold transition shadow-sm ${loading ? "bg-linear-to-r from-teal-500 to-teal-400 animate-pulse" : "bg-teal-500 hover:bg-teal-600"
+            }`}
         >
           {loading ? (
             <>

@@ -1,5 +1,8 @@
-create extension if not exists "pgcrypto";D
---  TABELA PRINCIPAL: church_profileD
+create extension if not exists "pgcrypto";
+
+-- ============================================================
+--  TABELA PRINCIPAL: church_profiles
+-- ============================================================
 
 create table if not exists public.church_profiles (
   id uuid primary key default gen_random_uuid(),
@@ -26,8 +29,11 @@ drop trigger if exists trg_church_profiles_updated_at on public.church_profiles;
 create trigger trg_church_profiles_updated_at
 before update on public.church_profiles
 for each row execute function public.set_updated_at();
-D
---  FK PARA TABELA planD
+
+
+-- ============================================================
+--  FK PARA TABELA plans
+-- ============================================================
 
 alter table public.church_profiles
 drop constraint if exists fk_church_profiles_plan_slug;
@@ -38,8 +44,11 @@ add constraint fk_church_profiles_plan_slug
   references public.plans(plan_slug)
   on update cascade
   on delete restrict;
-D
---  RLD
+
+
+-- ============================================================
+--  RLS
+-- ============================================================
 
 alter table public.church_profiles enable row level security;
 
@@ -77,13 +86,19 @@ for update
 to authenticated
 using (auth.uid() = '289d49c4-8db0-49e2-b527-af90809f3be8')
 with check (auth.uid() = '289d49c4-8db0-49e2-b527-af90809f3be8');
-D
--- ℹ️ PERMISSÕED
+
+
+-- ============================================================
+-- ℹ️ PERMISSÕES
+-- ============================================================
 
 revoke all on public.church_profiles from anon;
 grant select, insert, update, delete on public.church_profiles to authenticated;
-D
---  FUNÇÕES AUXILIARED
+
+
+-- ============================================================
+--  FUNÇÕES AUXILIARES
+-- ============================================================
 
 -- obtém church_id atual
 create or replace function public.current_church_id()
@@ -105,7 +120,9 @@ $$;
 grant execute on function public.current_church_id() to authenticated;
 
 
+--------------------------------------------------------------
 -- Atualiza claims quando church_profiles muda
+--------------------------------------------------------------
 
 create or replace function public.refresh_church_claim(p_user_id uuid)
 returns json
@@ -141,8 +158,11 @@ end;
 $$;
 
 grant execute on function public.refresh_church_claim(uuid) to authenticated;
-D
+
+
+-- ============================================================
 --  CRIAR PERFIL AUTOMÁTICO PARA NOVO USUÁRIO
+-- ============================================================
 
 create or replace function public.handle_new_user()
 returns trigger
@@ -180,6 +200,8 @@ after insert on auth.users
 for each row
 execute function public.handle_new_user();
 
+
+-- ============================================================
 -- RELOAD
 
 notify pgrst, 'reload schema';

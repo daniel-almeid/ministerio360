@@ -1,32 +1,10 @@
--- =========================================================
--- EXTENSÕES E FUNÇÕES GLOBAIS
--- =========================================================
-create extension if not exists "pgcrypto";
-
--- =========================================================
--- FUNÇÃO: Atualiza automaticamente o campo updated_at
--- =========================================================
-create or replace function public.set_updated_at()
-returns trigger
-language plpgsql
-as $$
-begin
-  new.updated_at := now();
-  return new;
-end;
-$$;
-
--- =========================================================
--- FUNÇÃO CENTRAL: Retorna o church_id atual de forma segura
--- =========================================================
 create or replace function public.current_church_id()
 returns uuid
 language sql
 stable
-set search_path = public
 as $$
   select coalesce(
-    nullif(current_setting('request.jwt.claim.church_id', true), '')::uuid,
+    nullif(auth.jwt() ->> 'church_id', '')::uuid,
     (
       select id
       from public.church_profiles
@@ -38,29 +16,89 @@ $$;
 
 grant execute on function public.current_church_id() to authenticated;
 
--- =========================================================
--- FUNÇÃO: Define church_id automaticamente em inserts
--- =========================================================
-create or replace function public.set_church_id()
-returns trigger
+create or replace function public.refresh_plan_claim(p_user_id uuid)
+returns json
 language plpgsql
+security definer
+set search_path = public, auth
 as $$
+declare
+  v_plan_slug text;
 begin
-  if new.church_id is null then
-    new.church_id := public.current_church_id();
+  select plan_slug into v_plan_slug
+  from public.church_profiles
+  where user_id = p_user_id;
+
+  if v_plan_slug is null then
+    return json_build_object('status', 'error', 'message', 'plan_slug não encontrado');
   end if;
 
-  if new.church_id is null then
-    raise exception 'Não foi possível definir o church_id para o registro.';
+  update auth.users
+  set raw_app_meta_data = jsonb_set(
+    coalesce(raw_app_meta_data, '{}'::jsonb),
+    '{plan_slug}',
+    to_jsonb(v_plan_slug)
+  )
+  where id = p_user_id;
+
+  return json_build_object('status', 'success', 'plan_slug', v_plan_slug);
+end;
+$$;
+
+grant execute on function public.refresh_plan_claim(uuid) to authenticated;
+
+create or replace function public.refresh_church_claim(p_user_id uuid)
+returns json
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  v_church_id uuid;
+  v_plan_slug text;
+begin
+  select id, plan_slug
+  into v_church_id, v_plan_slug
+  from public.church_profiles
+  where user_id = p_user_id;
+
+  if v_church_id is null then
+    return json_build_object('status', 'error', 'message', 'church_profile não encontrado');
   end if;
+
+  update auth.users
+  set raw_app_meta_data = raw_app_meta_data
+    || jsonb_build_object('church_id', v_church_id)
+    || jsonb_build_object('plan_slug', v_plan_slug)
+  where id = p_user_id;
+
+  return json_build_object('status', 'success', 'church_id', v_church_id, 'plan_slug', v_plan_slug);
+end;
+$$;
+
+grant execute on function public.refresh_church_claim(uuid) to authenticated;
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  v_church_id uuid;
+begin
+  insert into public.church_profiles (user_id, name)
+  values (new.id, coalesce(new.raw_user_meta_data->>'church_name', 'Igreja sem nome'))
+  returning id into v_church_id;
+
+  perform public.refresh_church_claim(new.id);
 
   return new;
 end;
 $$;
 
-grant execute on function public.set_church_id() to authenticated;
-
--- =========================================================
--- UTILIDADE: Recarregar schema manualmente
--- =========================================================
--- notify pgrst, 'reload schema';
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+after insert on auth.users
+for each row
+execute function public.handle_new_user();
