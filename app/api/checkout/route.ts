@@ -1,14 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Supabase URL ou ANON KEY não configurados");
-}
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export async function POST(req: Request) {
   try {
@@ -41,7 +37,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const checkoutUrl = `https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=${plan.mp_plan_id}`;
+    const checkoutUrl =
+      `https://www.mercadopago.com.br/subscriptions/checkout` +
+      `?preapproval_plan_id=${plan.mp_plan_id}`;
 
     return NextResponse.json({
       status: "success",
@@ -49,10 +47,7 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     return NextResponse.json(
-      {
-        error: "Erro interno ao gerar checkout",
-        details: String(err),
-      },
+      { error: "Erro interno", details: String(err) },
       { status: 500 }
     );
   }
