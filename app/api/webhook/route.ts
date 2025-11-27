@@ -1,40 +1,44 @@
-// app/api/webhook/mercadopago/route.ts ou api/webhook/mercadopago/route.ts
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const mpToken = process.env.MP_ACCESS_TOKEN!;
-
-if (!supabaseUrl || !serviceRoleKey) {
-  throw new Error("SUPABASE_SERVICE_ROLE_KEY ou URL do Supabase não configurados");
-}
-if (!mpToken) {
-  throw new Error("MP_ACCESS_TOKEN não configurado");
-}
-
-const adminSupabase = createClient(supabaseUrl, serviceRoleKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-});
-
 export async function POST(req: Request) {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const mpToken = process.env.MP_ACCESS_TOKEN;
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      return NextResponse.json(
+        { error: "SUPABASE_SERVICE_ROLE_KEY ou URL do Supabase não configurados" },
+        { status: 500 }
+      );
+    }
+
+    if (!mpToken) {
+      return NextResponse.json(
+        { error: "MP_ACCESS_TOKEN não configurado" },
+        { status: 500 }
+      );
+    }
+
+    const adminSupabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+
     const body = await req.json();
     const mpTopic = body.type;
 
-    if (!mpTopic) {
+    if (!mpTopic)
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
-    }
 
-    // Nos interessa apenas eventos de preapproval (assinaturas)
-    if (mpTopic !== "preapproval") {
+    if (mpTopic !== "preapproval")
       return NextResponse.json({ received: true });
-    }
 
     const preapprovalId = body.data?.id;
+
     if (!preapprovalId) {
       return NextResponse.json(
         { error: "Missing preapproval id" },
@@ -42,13 +46,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // Busca os dados completos da assinatura
     const mpRes = await fetch(
       `https://api.mercadopago.com/preapproval/${preapprovalId}`,
       {
-        headers: {
-          Authorization: `Bearer ${mpToken}`,
-        },
+        headers: { Authorization: `Bearer ${mpToken}` },
       }
     );
 
@@ -61,10 +62,9 @@ export async function POST(req: Request) {
     }
 
     const pre = await mpRes.json();
-
-    const status: string = pre.status;
-    const planId: string | undefined = pre.preapproval_plan_id;
-    const email: string | undefined = pre.payer_email;
+    const status = pre.status;
+    const planId = pre.preapproval_plan_id;
+    const email = pre.payer_email;
 
     if (!email || !planId) {
       return NextResponse.json(
@@ -73,7 +73,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Busca usuário pelo e-mail
     const { data: usersData, error: usersError } =
       await adminSupabase.auth.admin.listUsers();
 
@@ -85,6 +84,7 @@ export async function POST(req: Request) {
     }
 
     const user = usersData.users.find((u) => u.email === email);
+
     if (!user) {
       return NextResponse.json(
         { error: "User not found for email " + email },
@@ -94,7 +94,6 @@ export async function POST(req: Request) {
 
     const userId = user.id;
 
-    // Descobre qual plano interno esse preapproval_plan_id representa
     const { data: plan, error: planError } = await adminSupabase
       .from("plans")
       .select("plan_slug")
@@ -102,7 +101,10 @@ export async function POST(req: Request) {
       .single();
 
     if (planError || !plan) {
-      return NextResponse.json({ error: "Plan not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Plan not found for mp_plan_id " + planId },
+        { status: 404 }
+      );
     }
 
     if (status === "authorized" || status === "active") {
