@@ -2,10 +2,23 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import axios from "axios";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const mpToken = process.env.MP_ACCESS_TOKEN!;
+
+if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY ou URL não configurados");
+}
+if (!mpToken) {
+    throw new Error("MP_ACCESS_TOKEN não configurado");
+}
+
+const adminSupabase = createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+    },
+});
 
 export async function POST(req: Request) {
     try {
@@ -16,61 +29,85 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
         }
 
+        // Interessam apenas eventos de assinatura
         if (mpTopic !== "preapproval") {
             return NextResponse.json({ received: true });
         }
 
         const preapprovalId = body.data?.id;
         if (!preapprovalId) {
-            return NextResponse.json({ error: "Missing preapproval id" }, { status: 400 });
+            return NextResponse.json(
+                { error: "Missing preapproval id" },
+                { status: 400 }
+            );
         }
 
+        // Busca detalhes da assinatura no Mercado Pago
         const mpRes = await axios.get(
             `https://api.mercadopago.com/preapproval/${preapprovalId}`,
             {
                 headers: {
-                    Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+                    Authorization: `Bearer ${mpToken}`,
                 },
             }
         );
 
         const pre = mpRes.data;
-
-        const status = pre.status;
-        const planId = pre.preapproval_plan_id;
-        const email = pre.payer_email;
+        const status: string = pre.status;
+        const planId: string = pre.preapproval_plan_id;
+        const email: string | undefined = pre.payer_email;
 
         if (!email || !planId) {
-            return NextResponse.json({ error: "Missing email or plan" }, { status: 400 });
+            return NextResponse.json(
+                { error: "Missing email or preapproval_plan_id" },
+                { status: 400 }
+            );
         }
 
-        const { data: user } = await supabase
-            .from("auth.users")
-            .select("id, email")
-            .eq("email", email)
-            .single();
+        // Localiza usuário pelo e-mail (auth.users)
+        const { data: usersData, error: usersError } =
+            await adminSupabase.auth.admin.listUsers();
+
+        if (usersError) {
+            return NextResponse.json(
+                { error: "Error fetching users", details: usersError.message },
+                { status: 500 }
+            );
+        }
+
+        const user = usersData.users.find((u) => u.email === email);
 
         if (!user) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
+            return NextResponse.json(
+                { error: "User not found for email " + email },
+                { status: 404 }
+            );
         }
 
-        const { data: plan } = await supabase
+        const userId = user.id;
+
+        // Busca plano pelo mp_plan_id
+        const { data: plan, error: planError } = await adminSupabase
             .from("plans")
             .select("plan_slug")
             .eq("mp_plan_id", planId)
             .single();
 
-        if (!plan) {
+        if (planError || !plan) {
             return NextResponse.json({ error: "Plan not found" }, { status: 404 });
         }
 
-        if (status === "authorized") {
-            await supabase
+        // Atualiza church_profiles conforme status da assinatura
+        if (status === "authorized" || status === "active") {
+            await adminSupabase
                 .from("church_profiles")
-                .update({ plan_slug: plan.plan_slug })
-                .eq("user_id", user.id);
+                .update({
+                    plan_slug: plan.plan_slug,
+                    subscription_active: true,
+                })
+                .eq("user_id", userId);
 
-            await supabase.rpc("refresh_church_claim", { p_user_id: user.id });
+            await adminSupabase.rpc("refresh_church_claim", { p_user_id: userId });
 
             return NextResponse.json({
                 success: true,
@@ -79,12 +116,15 @@ export async function POST(req: Request) {
         }
 
         if (status === "paused" || status === "cancelled") {
-            await supabase
+            await adminSupabase
                 .from("church_profiles")
-                .update({ plan_slug: "free" })
-                .eq("user_id", user.id);
+                .update({
+                    plan_slug: "free",
+                    subscription_active: false,
+                })
+                .eq("user_id", userId);
 
-            await supabase.rpc("refresh_church_claim", { p_user_id: user.id });
+            await adminSupabase.rpc("refresh_church_claim", { p_user_id: userId });
 
             return NextResponse.json({
                 success: true,
@@ -92,6 +132,7 @@ export async function POST(req: Request) {
             });
         }
 
+        // Outros status apenas registram recebimento
         return NextResponse.json({
             received: true,
             status,

@@ -22,7 +22,9 @@ export async function GET(req: Request) {
     }
 
     const res = await axios.get(
-      `https://api.mercadopago.com/preapproval/search?payer_email=${email}`,
+      `https://api.mercadopago.com/preapproval/search?payer_email=${encodeURIComponent(
+        email
+      )}`,
       {
         headers: { Authorization: `Bearer ${mpToken}` },
       }
@@ -39,12 +41,16 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       status: subscription.status,
-      next_payment_date: subscription.auto_recurring?.next_payment_date || null,
+      next_payment_date:
+        subscription.auto_recurring?.next_payment_date || null,
       plan_id: subscription.preapproval_plan_id,
     });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to fetch subscription info", detail: String(error) },
+      {
+        error: "Failed to fetch subscription info",
+        detail: String(error),
+      },
       { status: 500 }
     );
   }
