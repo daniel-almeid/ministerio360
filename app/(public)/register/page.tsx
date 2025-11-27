@@ -41,6 +41,10 @@ export default function RegisterPage() {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/login`,
+        data: {
+          church_name: name,
+          plan_slug: plan,
+        },
       },
     });
 
@@ -49,16 +53,6 @@ export default function RegisterPage() {
       setLoading(false);
       return;
     }
-
-    await fetch("/api/create-church-profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user_id: data?.user?.id,
-        church_name: name,
-        plan_slug: plan,
-      }),
-    });
 
     setSuccess(true);
 
@@ -215,7 +209,7 @@ export default function RegisterPage() {
                   </p>
 
                   <p className="text-3xl font-extrabold text-gray-800 mb-4">
-                    {p === "free" ? "R$ 0" : p === "standard" ? "R$ 49,90" : "R$ 99,90"}
+                    {p === "free" ? "R$ 0" : p === "standard" ? "R$ 1,00" : "R$ 1,00"}
                     <span className="text-base font-medium">/mês</span>
                   </p>
                 </div>
@@ -276,7 +270,12 @@ export default function RegisterPage() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white w-full max-w-lg p-8 rounded-2xl shadow-xl space-y-6">
             <h2 className="text-3xl font-bold text-gray-800">
-              Detalhes do plano {showDetails === "free" ? "Free" : showDetails === "standard" ? "Standard" : "Premium"}
+              Detalhes do plano{" "}
+              {showDetails === "free"
+                ? "Free"
+                : showDetails === "standard"
+                  ? "Standard"
+                  : "Premium"}
             </h2>
 
             {showDetails === "free" && (
