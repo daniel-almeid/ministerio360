@@ -1,13 +1,13 @@
+// app/api/webhook/mercadopago/route.ts ou api/webhook/mercadopago/route.ts
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import axios from "axios";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const mpToken = process.env.MP_ACCESS_TOKEN!;
 
 if (!supabaseUrl || !serviceRoleKey) {
-  throw new Error("SUPABASE_SERVICE_ROLE_KEY ou URL não configurados");
+  throw new Error("SUPABASE_SERVICE_ROLE_KEY ou URL do Supabase não configurados");
 }
 if (!mpToken) {
   throw new Error("MP_ACCESS_TOKEN não configurado");
@@ -29,6 +29,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
+    // Nos interessa apenas eventos de preapproval (assinaturas)
     if (mpTopic !== "preapproval") {
       return NextResponse.json({ received: true });
     }
@@ -41,7 +42,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const mpRes = await axios.get(
+    // Busca os dados completos da assinatura
+    const mpRes = await fetch(
       `https://api.mercadopago.com/preapproval/${preapprovalId}`,
       {
         headers: {
@@ -50,9 +52,18 @@ export async function POST(req: Request) {
       }
     );
 
-    const pre = mpRes.data;
+    if (!mpRes.ok) {
+      const text = await mpRes.text();
+      return NextResponse.json(
+        { error: "Erro ao consultar preapproval no Mercado Pago", detail: text },
+        { status: 500 }
+      );
+    }
+
+    const pre = await mpRes.json();
+
     const status: string = pre.status;
-    const planId: string = pre.preapproval_plan_id;
+    const planId: string | undefined = pre.preapproval_plan_id;
     const email: string | undefined = pre.payer_email;
 
     if (!email || !planId) {
@@ -62,6 +73,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // Busca usuário pelo e-mail
     const { data: usersData, error: usersError } =
       await adminSupabase.auth.admin.listUsers();
 
@@ -82,6 +94,7 @@ export async function POST(req: Request) {
 
     const userId = user.id;
 
+    // Descobre qual plano interno esse preapproval_plan_id representa
     const { data: plan, error: planError } = await adminSupabase
       .from("plans")
       .select("plan_slug")

@@ -1,4 +1,5 @@
-import { mpClient } from "../client";
+// mercadopago/scripts/createStandardPlan.ts
+import { mpClient } from "./client";
 
 async function createStandardPlan() {
   try {
@@ -7,7 +8,7 @@ async function createStandardPlan() {
       auto_recurring: {
         frequency: 1,
         frequency_type: "months",
-        transaction_amount: 5.00,
+        transaction_amount: 5.0, // R$ 5,00
         currency_id: "BRL",
       },
       back_url: "https://ministerio360.vercel.app/planos",
@@ -23,7 +24,7 @@ async function createStandardPlan() {
     console.log("Objeto completo:", JSON.stringify(response.data, null, 2));
   } catch (error: any) {
     console.error("Erro ao criar plano Standard:");
-    console.error(error.response?.data ?? error.message);
+    console.error(error?.response?.data ?? error?.message ?? error);
   }
 }
 

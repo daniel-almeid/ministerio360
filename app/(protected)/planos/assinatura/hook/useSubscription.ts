@@ -123,29 +123,27 @@ export function useSubscription() {
     async function cancelSubscription() {
         setCancelLoading(true);
 
-        const { data: userData } = await supabase.auth.getUser();
-        const churchId = userData.user?.app_metadata?.church_id as string | undefined;
+        const session = await supabase.auth.getSession();
+        const token = session.data.session?.access_token;
 
-        if (!churchId) {
-            setCancelLoading(false);
-            return;
-        }
-
-        let periodEnd = currentPeriodEnd;
-        if (!periodEnd) {
-            const base = new Date();
-            base.setDate(base.getDate() + 30);
-            periodEnd = base.toISOString().slice(0, 10);
-        }
-
-        const { error } = await supabase.rpc("cancel_subscription", {
-            p_church_id: churchId,
-            p_current_period_end: periodEnd,
+        const res = await fetch("/api/cancel", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
         });
 
-        if (!error) {
+        const data = await res.json();
+
+        if (data.success) {
+            // atualiza estado local
             setSubscriptionActive(false);
-            setCurrentPeriodEnd(periodEnd);
+
+            // mantém expiração se quiser mostrar
+            const base = new Date();
+            base.setDate(base.getDate() + 30);
+            setCurrentPeriodEnd(base.toISOString().slice(0, 10));
+
             setCanceledAt(new Date().toISOString());
         }
 

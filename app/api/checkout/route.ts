@@ -1,3 +1,4 @@
+// app/api/checkout/route.ts ou api/checkout/route.ts
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -37,9 +38,10 @@ export async function POST(req: Request) {
       );
     }
 
+    // URL oficial de checkout de assinatura do Mercado Pago
     const checkoutUrl =
-      `https://www.mercadopago.com.br/subscriptions/checkout` +
-      `?preapproval_plan_id=${plan.mp_plan_id}`;
+      "https://www.mercadopago.com.br/subscriptions/checkout" +
+      `?preapproval_plan_id=${encodeURIComponent(plan.mp_plan_id)}`;
 
     return NextResponse.json({
       status: "success",

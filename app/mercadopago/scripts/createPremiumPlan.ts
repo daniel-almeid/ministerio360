@@ -1,4 +1,5 @@
-import { mpClient } from "../client";
+// mercadopago/scripts/createPremiumPlan.ts
+import { mpClient } from "./client";
 
 async function createPremiumPlan() {
   try {
@@ -7,7 +8,7 @@ async function createPremiumPlan() {
       auto_recurring: {
         frequency: 1,
         frequency_type: "months",
-        transaction_amount: 5.00,
+        transaction_amount: 8.0, // R$ 8,00
         currency_id: "BRL",
       },
       back_url: "https://ministerio360.vercel.app/planos",
@@ -23,7 +24,7 @@ async function createPremiumPlan() {
     console.log("Objeto completo:", JSON.stringify(response.data, null, 2));
   } catch (err: any) {
     console.error("Erro ao criar plano Premium:");
-    console.error(err.response?.data || err.message || err);
+    console.error(err?.response?.data || err?.message || err);
   }
 }
 
