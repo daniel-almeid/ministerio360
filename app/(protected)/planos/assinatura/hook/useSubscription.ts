@@ -12,17 +12,20 @@ export type PlanDef = {
     features: string[];
 };
 
+export type PaymentItem = {
+    id: string;
+    amount: number;
+    status: string;
+    created_at: string;
+    description?: string;
+};
+
 export const PLANS: PlanDef[] = [
     {
         slug: "free",
         name: "GRÁTIS",
         price: 0,
-        features: [
-            "Dashboard",
-            "Cadastro de membros",
-            "Cadastro financeiro",
-            "Relatórios simples",
-        ],
+        features: ["Dashboard", "Cadastro de membros", "Cadastro financeiro", "Relatórios simples"],
     },
     {
         slug: "standard",
@@ -78,6 +81,8 @@ export function useSubscription() {
     const [canceledAt, setCanceledAt] = useState<string | null>(null);
     const [cancelLoading, setCancelLoading] = useState(false);
 
+    const [paymentHistory, setPaymentHistory] = useState<PaymentItem[]>([]);
+
     useEffect(() => {
         load();
     }, []);
@@ -103,6 +108,14 @@ export function useSubscription() {
             setCurrentPeriodEnd(data.current_period_end);
             setCanceledAt(data.canceled_at);
         }
+
+        const { data: payments } = await supabase
+            .from("subscription_payments")
+            .select("*")
+            .eq("church_id", churchId)
+            .order("created_at", { ascending: false });
+
+        setPaymentHistory((payments ?? []) as PaymentItem[]);
 
         setLoading(false);
     }
@@ -144,9 +157,9 @@ export function useSubscription() {
     const today = new Date();
     const expiresDate = currentPeriodEnd
         ? (() => {
-              const [y, m, d] = currentPeriodEnd.split("-");
-              return new Date(Number(y), Number(m) - 1, Number(d));
-          })()
+            const [y, m, d] = currentPeriodEnd.split("-");
+            return new Date(Number(y), Number(m) - 1, Number(d));
+        })()
         : null;
 
     const isCancelledButActive =
@@ -156,6 +169,7 @@ export function useSubscription() {
         expiresDate.getTime() >= today.setHours(0, 0, 0, 0);
 
     const isActive = hasPaidPlan && subscriptionActive;
+
     const isExpired =
         !subscriptionActive &&
         hasPaidPlan &&
@@ -187,8 +201,6 @@ export function useSubscription() {
         const raw = (usedMs / totalMs) * 100;
         progressPercent = Math.min(100, Math.max(0, Math.round(raw)));
     }
-
-    const paymentHistory: any[] = [];
 
     return {
         loading,
