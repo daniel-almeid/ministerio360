@@ -20,7 +20,6 @@ const PLAN_PRICES: Record<PlanSlug, number> = {
 export default function PaymentFormModal({ open, onClose, planSlug }: Props) {
     const [loading, setLoading] = useState(false);
 
-    // Não renderiza o modal se não houver plano
     if (!open || !planSlug) return null;
 
     const price_cents = PLAN_PRICES[planSlug];
@@ -29,6 +28,11 @@ export default function PaymentFormModal({ open, onClose, planSlug }: Props) {
         setLoading(true);
 
         try {
+            // salva plano para ativação posterior
+            if (planSlug) {
+                localStorage.setItem("selected_plan", planSlug);
+            }
+
             const session = await supabase.auth.getSession();
             const jwt = session.data.session?.access_token;
             const user = session.data.session?.user;
@@ -44,7 +48,6 @@ export default function PaymentFormModal({ open, onClose, planSlug }: Props) {
                 user.user_metadata?.name ||
                 "Usuário";
 
-            // LOG DO ENVIO
             console.log("📤 ENVIANDO PARA API:", {
                 plan_slug: planSlug,
                 email: user.email,
@@ -68,7 +71,6 @@ export default function PaymentFormModal({ open, onClose, planSlug }: Props) {
 
             const data = await res.json();
 
-            // LOG DA RESPOSTA
             console.log("📥 RESPOSTA DO SERVIDOR:", data);
 
             if (!res.ok || !data?.success || !data?.checkout_url) {
@@ -76,7 +78,6 @@ export default function PaymentFormModal({ open, onClose, planSlug }: Props) {
                 return;
             }
 
-            // Redireciona para o Pagar.me
             window.location.href = data.checkout_url;
 
         } catch (err) {

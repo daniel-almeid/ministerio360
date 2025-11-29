@@ -1,6 +1,6 @@
 "use client";
 
-import { Crown, BadgeCheck, AlertTriangle } from "lucide-react";
+import { Crown } from "lucide-react";
 import type { PlanDef, PlanSlug } from "../hook/useSubscription";
 
 type Props = {
@@ -8,10 +8,8 @@ type Props = {
     price: number;
     planSlug: PlanSlug;
     isActive: boolean;
-    isCancelledButActive: boolean;
     formattedNextPayment: string | null;
     formattedExpiresOn: string | null;
-    onUpgrade?: () => void;
 };
 
 export default function CurrentPlanCard({
@@ -19,33 +17,9 @@ export default function CurrentPlanCard({
     price,
     planSlug,
     isActive,
-    isCancelledButActive,
     formattedNextPayment,
     formattedExpiresOn,
-    onUpgrade,
 }: Props) {
-    const showStatus = planSlug !== "free";
-
-    let badgeText = "";
-    let badgeClass = "";
-    let icon: "active" | "warning" | null = null;
-    let helperText: string | null = null;
-
-    if (isActive) {
-        badgeText = "Assinatura ativa";
-        badgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
-        icon = "active";
-        if (formattedNextPayment) {
-            helperText = `Próxima cobrança em ${formattedNextPayment}`;
-        }
-    } else if (isCancelledButActive) {
-        badgeText = "Assinatura cancelada";
-        badgeClass = "bg-amber-50 text-amber-700 border-amber-200";
-        icon = "warning";
-        if (formattedExpiresOn) {
-            helperText = `Seu plano permanece ativo até ${formattedExpiresOn}`;
-        }
-    }
 
     return (
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -56,56 +30,27 @@ export default function CurrentPlanCard({
 
                 <div>
                     <p className="text-sm text-gray-600">Plano atual</p>
+
                     <h2 className="text-2xl md:text-3xl font-bold text-teal-700 uppercase tracking-tight">
                         {currentPlan.name}
                     </h2>
 
-                    {price > 0 && (
+                    {price > 0 ? (
                         <p className="text-sm text-gray-500 mt-1">
                             R$ {price.toFixed(2)} / mês
                         </p>
-                    )}
-
-                    {price === 0 && (
+                    ) : (
                         <p className="text-sm text-gray-500 mt-1">
                             Plano gratuito com recursos limitados
                         </p>
                     )}
+
+                    {formattedExpiresOn && (
+                        <p className="text-sm text-gray-500 mt-1">
+                            Plano válido até <strong>{formattedExpiresOn}</strong>
+                        </p>
+                    )}
                 </div>
-            </div>
-
-            <div className="flex flex-col items-start md:items-end gap-2">
-                {showStatus && (
-                    <>
-                        <span
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${badgeClass}`}
-                        >
-                            {icon === "active" && (
-                                <BadgeCheck className="w-3 h-3 mr-1" />
-                            )}
-                            {icon === "warning" && (
-                                <AlertTriangle className="w-3 h-3 mr-1" />
-                            )}
-                            {badgeText}
-                        </span>
-
-                        {helperText && (
-                            <p className="text-xs text-gray-500">
-                                {helperText}
-                            </p>
-                        )}
-                    </>
-                )}
-
-                {onUpgrade && !isActive && (
-                    <button
-                        type="button"
-                        onClick={onUpgrade}
-                        className="mt-2 px-4 py-2 rounded-lg bg-teal-600 text-sm font-semibold text-white hover:bg-teal-700"
-                    >
-                        Fazer upgrade
-                    </button>
-                )}
             </div>
         </div>
     );

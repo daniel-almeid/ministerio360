@@ -8,7 +8,7 @@ export type PlanSlug = "free" | "standard" | "premium";
 export type PlanDef = {
     slug: PlanSlug;
     name: string;
-    price: number;
+    price: number; // mensal
     features: string[];
 };
 
@@ -17,7 +17,12 @@ export const PLANS: PlanDef[] = [
         slug: "free",
         name: "GRÁTIS",
         price: 0,
-        features: ["Dashboard", "Cadastro de membros", "Cadastro financeiro", "Relatórios simples"],
+        features: [
+            "Dashboard",
+            "Cadastro de membros",
+            "Cadastro financeiro",
+            "Relatórios simples",
+        ],
     },
     {
         slug: "standard",
@@ -45,16 +50,19 @@ export const PLANS: PlanDef[] = [
             "Cadastro de ministérios",
             "Cadastro de eventos",
             "Cadastro de escalas",
-            "Relatórios",
+            "Relatórios completos",
             "Suporte prioritário",
         ],
     },
 ];
 
+// TIPAGEM DO church_profiles
 type ProfileRow = {
     plan_slug: PlanSlug;
     subscription_active: boolean;
-    pagarme_subscription_id: string | null;
+
+    plan_expires_at: string | null;
+    current_period_end: string | null;
 };
 
 export function useSubscription() {
@@ -72,7 +80,7 @@ export function useSubscription() {
 
         const { data } = await supabase
             .from("church_profiles")
-            .select("plan_slug, subscription_active, pagarme_subscription_id")
+            .select("plan_slug, subscription_active, plan_expires_at, current_period_end")
             .eq("id", churchId)
             .single<ProfileRow>();
 
@@ -84,17 +92,54 @@ export function useSubscription() {
         load();
     }, []);
 
-    const currentPlan = useMemo(() => {
-        return PLANS.find((p) => p.slug === (profile?.plan_slug ?? "free"))!;
-    }, [profile]);
+    const planSlug = profile?.plan_slug ?? "free";
+    const currentPlan = PLANS.find((p) => p.slug === planSlug)!;
+
+    // DATAS TRATADAS
+    const expiresOn = profile?.plan_expires_at
+        ? new Date(profile.plan_expires_at)
+        : null;
+
+    const formattedExpiresOn = expiresOn
+        ? expiresOn.toLocaleDateString("pt-BR")
+        : null;
+
+    // CÁLCULO DO PERÍODO
+    const now = new Date();
+
+    let progressPercent = 0;
+    let formattedNextPayment = "";
+    let formattedLastPayment = "";
+    let hasPaidPlan = planSlug !== "free";
+
+    if (expiresOn) {
+        const start = new Date(expiresOn);
+        start.setDate(start.getDate() - 30);
+
+        const total = expiresOn.getTime() - start.getTime();
+        const used = now.getTime() - start.getTime();
+
+        progressPercent = Math.min(100, Math.max(0, (used / total) * 100));
+
+        formattedNextPayment = expiresOn.toLocaleDateString("pt-BR");
+        formattedLastPayment = start.toLocaleDateString("pt-BR");
+    }
 
     return {
         loading,
-        planSlug: profile?.plan_slug ?? "free",
-        subscriptionActive: profile?.subscription_active ?? false,
+        planSlug,
         currentPlan,
         price: currentPlan.price,
-        pagarmeSubscriptionId: profile?.pagarme_subscription_id,
+
+        // status do plano
+        isActive: profile?.subscription_active ?? false,
+        expiresOn,
+        formattedExpiresOn,
+        formattedLastPayment,
+        formattedNextPayment,
+        progressPercent,
+        hasPaidPlan,
+
         reload: load,
     };
 }

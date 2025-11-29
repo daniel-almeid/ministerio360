@@ -10,74 +10,43 @@ type Props = {
 
 export default function PlanComparison({ plans, currentSlug, onSelectPlan }: Props) {
     return (
-        <>
-            <div className="h-px bg-gray-200" />
+        <div className="grid md:grid-cols-3 gap-6">
+            {plans.map((plan: PlanDef) => (
+                <div
+                    key={plan.slug}
+                    className={`flex flex-col border rounded-2xl p-6 shadow-sm ${
+                        plan.slug === currentSlug ? "border-teal-600" : "border-gray-200"
+                    }`}
+                >
+                    <h3 className="text-lg font-bold">{plan.name}</h3>
 
-            <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-gray-700">
-                    Comparação de planos
-                </h3>
+                    <p className="mt-1 text-gray-600">
+                        {plan.price === 0 ? "Gratuito" : `R$ ${plan.price.toFixed(2)} / mês`}
+                    </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {plans.map((plan) => {
-                        const isCurrent = plan.slug === currentSlug;
+                    <ul className="mt-4 space-y-1 text-sm text-gray-700 flex-1">
+                        {plan.features.map((f: string, i: number) => (
+                            <li key={i} className="flex items-center gap-1">• {f}</li>
+                        ))}
+                    </ul>
 
-                        return (
-                            <div
-                                key={plan.slug}
-                                className={`rounded-xl border p-4 bg-gray-50 flex flex-col gap-2 ${
-                                    isCurrent
-                                        ? "border-teal-500 bg-teal-50/60"
-                                        : "border-gray-200"
-                                }`}
-                            >
-                                <div className="flex items-center justify-between">
-                                    <h4 className="text-sm font-semibold text-gray-800">
-                                        {plan.name}
-                                    </h4>
-                                    {isCurrent && (
-                                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-teal-600 text-white font-semibold">
-                                            Atual
-                                        </span>
-                                    )}
-                                </div>
-
-                                <p className="text-sm text-gray-600">
-                                    {plan.price === 0
-                                        ? "Gratuito"
-                                        : `R$ ${plan.price.toFixed(2)} / mês`}
-                                </p>
-
-                                <ul className="mt-2 space-y-1 text-xs text-gray-600">
-                                    {plan.features.map((f) => (
-                                        <li key={f} className="flex gap-1">
-                                            <span className="mt-[3px] h-1.5 w-1.5 rounded-full bg-teal-500" />
-                                            <span>{f}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-
-                                <button
-                                    type="button"
-                                    disabled={isCurrent}
-                                    onClick={() =>
-                                        !isCurrent &&
-                                        onSelectPlan &&
-                                        onSelectPlan(plan)
-                                    }
-                                    className={`mt-4 w-full px-3 py-2 rounded-lg text-sm font-semibold text-white ${
-                                        isCurrent
-                                            ? "bg-gray-400 cursor-not-allowed"
-                                            : "bg-teal-600 hover:bg-teal-700"
-                                    }`}
-                                >
-                                    {isCurrent ? "Plano atual" : "Migrar"}
-                                </button>
-                            </div>
-                        );
-                    })}
+                    {plan.slug !== currentSlug ? (
+                        <button
+                            className="mt-4 w-full py-2 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700"
+                            onClick={() => onSelectPlan?.(plan)}
+                        >
+                            Assinar
+                        </button>
+                    ) : (
+                        <button
+                            disabled
+                            className="mt-4 w-full py-2 bg-gray-300 text-gray-600 rounded-lg cursor-default"
+                        >
+                            Plano atual
+                        </button>
+                    )}
                 </div>
-            </div>
-        </>
+            ))}
+        </div>
     );
 }

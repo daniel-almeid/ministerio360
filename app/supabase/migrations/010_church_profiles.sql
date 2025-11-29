@@ -1,29 +1,56 @@
 create extension if not exists "pgcrypto";
 
--- ============================================================
---  TABELA PRINCIPAL: church_profiles
--- ============================================================
+-- ============================================================================
+--  FUNÇÃO GLOBAL: set_updated_at()
+--  Usada por triggers para atualizar updated_at automaticamente
+-- ============================================================================
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
 
+
+-- ============================================================================
+--  TABELA PRINCIPAL: church_profiles
+-- ============================================================================
 create table if not exists public.church_profiles (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null unique,
   name text not null,
   trade_name text,
+
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+
   plan_slug text not null default 'free',
-  subscription_active boolean not null default false
+  subscription_active boolean not null default false,
+
+  -- 🔥 CAMPOS NECESSÁRIOS PARA COBRANÇA MANUAL
+  plan_expires_at timestamptz,
+  next_renewal_reminder timestamptz,
+
+  -- 🔥 CAMPOS DE CICLO (já existiam)
+  current_period_end date,
+  canceled_at timestamptz
 );
 
--- garantir que trade_name exista em bases antigas
-alter table public.church_profiles
-  add column if not exists trade_name text;
+-- Garantir que colunas existam (para bancos antigos)
+alter table public.church_profiles add column if not exists trade_name text;
+alter table public.church_profiles add column if not exists plan_expires_at timestamptz;
+alter table public.church_profiles add column if not exists next_renewal_reminder timestamptz;
+alter table public.church_profiles add column if not exists current_period_end date;
+alter table public.church_profiles add column if not exists canceled_at timestamptz;
 
--- índice
 create index if not exists idx_church_profiles_user_id
 on public.church_profiles (user_id);
 
--- trigger updated_at
+
+-- Trigger para updated_at
 drop trigger if exists trg_church_profiles_updated_at on public.church_profiles;
 
 create trigger trg_church_profiles_updated_at
@@ -31,10 +58,9 @@ before update on public.church_profiles
 for each row execute function public.set_updated_at();
 
 
--- ============================================================
+-- ============================================================================
 --  FK PARA TABELA plans
--- ============================================================
-
+-- ============================================================================
 alter table public.church_profiles
 drop constraint if exists fk_church_profiles_plan_slug;
 
@@ -46,25 +72,26 @@ add constraint fk_church_profiles_plan_slug
   on delete restrict;
 
 
--- ============================================================
+-- ============================================================================
 --  RLS
--- ============================================================
-
+-- ============================================================================
 alter table public.church_profiles enable row level security;
 
 drop policy if exists select_own_church_profile on public.church_profiles;
 drop policy if exists update_own_church_profile on public.church_profiles;
+drop policy if exists insert_own_church_profile on public.church_profiles;
 drop policy if exists select_church_admin_all on public.church_profiles;
 drop policy if exists update_church_admin_all on public.church_profiles;
 
--- dono da igreja vê sua própria igreja
+
+-- Usuário pode ver seus próprios dados
 create policy select_own_church_profile
 on public.church_profiles
 for select
 to authenticated
 using (auth.uid() = user_id);
 
--- dono da igreja pode atualizar sua igreja
+-- Usuário pode atualizar seus próprios dados
 create policy update_own_church_profile
 on public.church_profiles
 for update
@@ -72,14 +99,21 @@ to authenticated
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
 
--- ADMIN MASTER vê todas
+-- Usuário pode criar o próprio perfil
+create policy insert_own_church_profile
+on public.church_profiles
+for insert
+to authenticated
+with check (auth.uid() = user_id);
+
+-- Admin master pode ver todos os perfis
 create policy select_church_admin_all
 on public.church_profiles
 for select
 to authenticated
 using (auth.uid() = '289d49c4-8db0-49e2-b527-af90809f3be8');
 
--- ADMIN MASTER pode atualizar todas
+-- Admin master pode atualizar todos os perfis
 create policy update_church_admin_all
 on public.church_profiles
 for update
@@ -88,19 +122,14 @@ using (auth.uid() = '289d49c4-8db0-49e2-b527-af90809f3be8')
 with check (auth.uid() = '289d49c4-8db0-49e2-b527-af90809f3be8');
 
 
--- ============================================================
--- ℹ️ PERMISSÕES
--- ============================================================
-
+-- Permissões
 revoke all on public.church_profiles from anon;
 grant select, insert, update, delete on public.church_profiles to authenticated;
 
 
--- ============================================================
---  FUNÇÕES AUXILIARES
--- ============================================================
-
--- obtém church_id atual
+-- ============================================================================
+--  FUNÇÃO: current_church_id()
+-- ============================================================================
 create or replace function public.current_church_id()
 returns uuid
 language sql
@@ -120,10 +149,9 @@ $$;
 grant execute on function public.current_church_id() to authenticated;
 
 
---------------------------------------------------------------
--- Atualiza claims quando church_profiles muda
---------------------------------------------------------------
-
+-- ============================================================================
+--  FUNÇÃO: refresh_church_claim()
+-- ============================================================================
 create or replace function public.refresh_church_claim(p_user_id uuid)
 returns json
 language plpgsql
@@ -138,7 +166,8 @@ begin
   select id, plan_slug, subscription_active
   into v_church_id, v_plan_slug, v_subscription_active
   from public.church_profiles
-  where user_id = p_user_id;
+  where user_id = p_user_id
+  limit 1;
 
   update auth.users
   set raw_app_meta_data =
@@ -160,10 +189,9 @@ $$;
 grant execute on function public.refresh_church_claim(uuid) to authenticated;
 
 
--- ============================================================
---  CRIAR PERFIL AUTOMÁTICO PARA NOVO USUÁRIO
--- ============================================================
-
+-- ============================================================================
+--  TRIGGER: Criar church_profile automaticamente no signup
+-- ============================================================================
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -176,6 +204,10 @@ declare
   v_church_name text;
 begin
   v_church_name := coalesce(new.raw_user_meta_data->>'church_name', 'Igreja sem nome');
+
+  if not exists (select 1 from public.plans where plan_slug = v_plan_slug) then
+    v_plan_slug := 'free';
+  end if;
 
   insert into public.church_profiles (user_id, name, trade_name, plan_slug, subscription_active)
   values (
@@ -193,6 +225,7 @@ begin
 end;
 $$;
 
+
 drop trigger if exists on_auth_user_created on auth.users;
 
 create trigger on_auth_user_created
@@ -201,7 +234,7 @@ for each row
 execute function public.handle_new_user();
 
 
--- ============================================================
--- RELOAD
-
+-- ============================================================================
+--  RELOAD PGRST
+-- ============================================================================
 notify pgrst, 'reload schema';
