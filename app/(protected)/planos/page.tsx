@@ -5,13 +5,7 @@ import Loading from "@/components/shared/loading";
 import PlanCard from "./components/planCard";
 
 export default function PlanosPage() {
-    const {
-        loading,
-        currentPlan,
-        churchId,
-        scheduledToPlan,
-        isCurrent
-    } = usePlan();
+    const { loading, currentPlan, churchId, isCurrent } = usePlan();
 
     if (loading) return <Loading />;
 
@@ -34,36 +28,34 @@ export default function PlanosPage() {
                         "Dashboard",
                         "Cadastro de membros",
                         "Cadastro financeiro",
-                        "Relatórios simples"
+                        "Relatórios simples",
                     ]}
                     active={isCurrent("free")}
                     churchId={churchId}
                     currentPlan={currentPlan}
-                    scheduledToPlan={scheduledToPlan}
                 />
 
                 <PlanCard
                     slug="standard"
                     name="Padrão"
-                    price="R$ 1,00/mês (teste)"
+                    price="R$ 49,90/mês"
                     features={[
                         "Dashboard",
                         "Cadastro de membros",
                         "Cadastro de visitantes",
                         "Acompanhamento de visitantes",
                         "Cadastro financeiro",
-                        "Relatórios simples"
+                        "Relatórios simples",
                     ]}
                     active={isCurrent("standard")}
                     churchId={churchId}
                     currentPlan={currentPlan}
-                    scheduledToPlan={scheduledToPlan}
                 />
 
                 <PlanCard
                     slug="premium"
                     name="Premium+"
-                    price="R$ 1,00/mês (teste)"
+                    price="R$ 89,90/mês"
                     features={[
                         "Dashboard",
                         "Cadastro de membros",
@@ -74,12 +66,11 @@ export default function PlanosPage() {
                         "Cadastro de eventos",
                         "Cadastro de escalas",
                         "Relatórios",
-                        "Suporte prioritário"
+                        "Suporte prioritário",
                     ]}
                     active={isCurrent("premium")}
                     churchId={churchId}
                     currentPlan={currentPlan}
-                    scheduledToPlan={scheduledToPlan}
                 />
             </div>
         </div>

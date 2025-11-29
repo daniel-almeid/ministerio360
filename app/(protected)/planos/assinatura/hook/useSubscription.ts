@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "../../../../../lib/supabaseClient";
 
 export type PlanSlug = "free" | "standard" | "premium";
@@ -10,14 +10,6 @@ export type PlanDef = {
     name: string;
     price: number;
     features: string[];
-};
-
-export type PaymentItem = {
-    id: string;
-    amount: number;
-    status: string;
-    created_at: string;
-    description?: string;
 };
 
 export const PLANS: PlanDef[] = [
@@ -60,36 +52,18 @@ export const PLANS: PlanDef[] = [
 ];
 
 type ProfileRow = {
-    plan_slug: PlanSlug | null;
-    subscription_active: boolean | null;
-    current_period_end: string | null;
-    canceled_at: string | null;
+    plan_slug: PlanSlug;
+    subscription_active: boolean;
+    pagarme_subscription_id: string | null;
 };
-
-function formatDate(dateStr: string | null) {
-    if (!dateStr) return null;
-    const [y, m, d] = dateStr.split("-");
-    const date = new Date(Number(y), Number(m) - 1, Number(d));
-    return new Intl.DateTimeFormat("pt-BR").format(date);
-}
 
 export function useSubscription() {
     const [loading, setLoading] = useState(true);
-    const [planSlug, setPlanSlug] = useState<PlanSlug>("free");
-    const [subscriptionActive, setSubscriptionActive] = useState(false);
-    const [currentPeriodEnd, setCurrentPeriodEnd] = useState<string | null>(null);
-    const [canceledAt, setCanceledAt] = useState<string | null>(null);
-    const [cancelLoading, setCancelLoading] = useState(false);
-
-    const [paymentHistory, setPaymentHistory] = useState<PaymentItem[]>([]);
-
-    useEffect(() => {
-        load();
-    }, []);
+    const [profile, setProfile] = useState<ProfileRow | null>(null);
 
     async function load() {
-        const { data: userData } = await supabase.auth.getUser();
-        const churchId = userData.user?.app_metadata?.church_id as string | undefined;
+        const { data: user } = await supabase.auth.getUser();
+        const churchId = user.user?.app_metadata?.church_id;
 
         if (!churchId) {
             setLoading(false);
@@ -98,123 +72,29 @@ export function useSubscription() {
 
         const { data } = await supabase
             .from("church_profiles")
-            .select("plan_slug, subscription_active, current_period_end, canceled_at")
+            .select("plan_slug, subscription_active, pagarme_subscription_id")
             .eq("id", churchId)
             .single<ProfileRow>();
 
-        if (data) {
-            setPlanSlug((data.plan_slug as PlanSlug) || "free");
-            setSubscriptionActive(!!data.subscription_active);
-            setCurrentPeriodEnd(data.current_period_end);
-            setCanceledAt(data.canceled_at);
-        }
-
-        const { data: payments } = await supabase
-            .from("subscription_payments")
-            .select("*")
-            .eq("church_id", churchId)
-            .order("created_at", { ascending: false });
-
-        setPaymentHistory((payments ?? []) as PaymentItem[]);
-
+        setProfile(data ?? null);
         setLoading(false);
     }
 
-    async function cancelSubscription() {
-        setCancelLoading(true);
+    useEffect(() => {
+        load();
+    }, []);
 
-        const session = await supabase.auth.getSession();
-        const token = session.data.session?.access_token;
-
-        const res = await fetch("/api/cancel", {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-            // atualiza estado local
-            setSubscriptionActive(false);
-
-            // mantém expiração se quiser mostrar
-            const base = new Date();
-            base.setDate(base.getDate() + 30);
-            setCurrentPeriodEnd(base.toISOString().slice(0, 10));
-
-            setCanceledAt(new Date().toISOString());
-        }
-
-        setCancelLoading(false);
-    }
-
-    const hasPaidPlan = planSlug !== "free";
-
-    const today = new Date();
-    const expiresDate = currentPeriodEnd
-        ? (() => {
-            const [y, m, d] = currentPeriodEnd.split("-");
-            return new Date(Number(y), Number(m) - 1, Number(d));
-        })()
-        : null;
-
-    const isCancelledButActive =
-        !subscriptionActive &&
-        hasPaidPlan &&
-        !!expiresDate &&
-        expiresDate.getTime() >= today.setHours(0, 0, 0, 0);
-
-    const isActive = hasPaidPlan && subscriptionActive;
-
-    const isExpired =
-        !subscriptionActive &&
-        hasPaidPlan &&
-        !!expiresDate &&
-        expiresDate.getTime() < today.setHours(0, 0, 0, 0);
-
-    const currentPlan = useMemo(
-        () => PLANS.find((p) => p.slug === planSlug) || PLANS[0],
-        [planSlug]
-    );
-
-    const price = currentPlan.price;
-
-    const formattedNextPayment =
-        isActive && currentPeriodEnd ? formatDate(currentPeriodEnd) : null;
-
-    const formattedExpiresOn =
-        isCancelledButActive && currentPeriodEnd ? formatDate(currentPeriodEnd) : null;
-
-    const formattedLastPayment = null;
-
-    let progressPercent = 0;
-    if ((isActive || isCancelledButActive) && expiresDate) {
-        const end = new Date(expiresDate);
-        const start = new Date(end);
-        start.setDate(start.getDate() - 30);
-        const totalMs = end.getTime() - start.getTime();
-        const usedMs = today.getTime() - start.getTime();
-        const raw = (usedMs / totalMs) * 100;
-        progressPercent = Math.min(100, Math.max(0, Math.round(raw)));
-    }
+    const currentPlan = useMemo(() => {
+        return PLANS.find((p) => p.slug === (profile?.plan_slug ?? "free"))!;
+    }, [profile]);
 
     return {
         loading,
-        planSlug,
+        planSlug: profile?.plan_slug ?? "free",
+        subscriptionActive: profile?.subscription_active ?? false,
         currentPlan,
-        price,
-        isActive,
-        isCancelledButActive,
-        isExpired,
-        formattedNextPayment,
-        formattedExpiresOn,
-        formattedLastPayment,
-        progressPercent,
-        paymentHistory,
-        hasPaidPlan,
-        cancelSubscription,
-        cancelLoading,
+        price: currentPlan.price,
+        pagarmeSubscriptionId: profile?.pagarme_subscription_id,
+        reload: load,
     };
 }

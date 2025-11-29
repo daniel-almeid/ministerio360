@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
 
 type Props = {
     slug: string;
@@ -9,6 +8,7 @@ type Props = {
     churchId: string | null;
     currentPlan: string;
     scheduledToPlan: string | null;
+    onReady: (pagarmePlanId: string) => void;
 };
 
 export default function SubscribeButton({
@@ -16,7 +16,8 @@ export default function SubscribeButton({
     active,
     churchId,
     currentPlan,
-    scheduledToPlan
+    scheduledToPlan,
+    onReady
 }: Props) {
     const [loading, setLoading] = useState(false);
 
@@ -26,41 +27,21 @@ export default function SubscribeButton({
 
         setLoading(true);
 
-        if (slug === "free") {
-            await supabase.rpc("request_plan_change", {
-                p_church_id: churchId,
-                p_to_plan: "free",
-                p_apply_at: null,
-                p_mp_preference_id: null
-            });
-
-            setLoading(false);
-            window.location.reload();
-            return;
-        }
-
         const res = await fetch("/api/checkout", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ plan_slug: slug })
+            body: JSON.stringify({ plan_slug: slug }),
         });
 
         const data = await res.json();
-
-        if (data.preference_id) {
-            await supabase.rpc("request_plan_change", {
-                p_church_id: churchId,
-                p_to_plan: slug,
-                p_mp_preference_id: data.preference_id,
-                p_apply_at: null
-            });
-        }
-
-        if (data.checkout_url) {
-            window.location.href = data.checkout_url;
-        }
-
         setLoading(false);
+
+        if (!data.ready) {
+            alert("Erro ao preparar assinatura.");
+            return;
+        }
+
+        onReady(data.pagarme_plan_id);
     }
 
     const scheduled = scheduledToPlan === slug;
@@ -69,7 +50,7 @@ export default function SubscribeButton({
         <button
             disabled={active || loading || scheduled}
             onClick={handleClick}
-            className={`w-full mt-6 py-3 rounded-xl font-semibold text-white transition ${
+            className={`w-full mt-6 py-3 rounded-xl font-semibold text-white ${
                 active
                     ? "bg-gray-400 cursor-not-allowed"
                     : scheduled
@@ -85,7 +66,7 @@ export default function SubscribeButton({
                 ? "Alteração agendada"
                 : loading
                 ? "Processando..."
-                : "Contratar plano"}
+                : "Assinar"}
         </button>
     );
 }

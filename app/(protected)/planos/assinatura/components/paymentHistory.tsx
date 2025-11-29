@@ -31,9 +31,7 @@ export default function PaymentHistory({ hasPaidPlan, paymentHistory }: Props) {
                             className="grid grid-cols-2 text-sm text-gray-700 px-4 py-2 border-t border-gray-100 first:border-t-0"
                         >
                             <span>{p.created_at}</span>
-                            <span className="text-right">
-                                R$ {p.amount.toFixed(2)}
-                            </span>
+                            <span className="text-right">R$ {p.amount.toFixed(2)}</span>
                         </div>
                     ))}
                 </div>

@@ -12,7 +12,7 @@ export function UpgradeRequiredModal({ open, onClose }: Props) {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
             <div className="bg-white w-full max-w-md p-8 rounded-2xl shadow-xl text-center">
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                    Recurso disponível apenas no plano Premium
+                    Recurso disponível apenas em planos superiores
                 </h2>
 
                 <p className="text-gray-600 mb-6">
@@ -20,7 +20,7 @@ export function UpgradeRequiredModal({ open, onClose }: Props) {
                 </p>
 
                 <button
-                    onClick={() => window.location.href = "/planos"}
+                    onClick={() => (window.location.href = "/planos")}
                     className="w-full py-3 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition"
                 >
                     Ver planos

@@ -11,6 +11,7 @@ type Props = {
     isCancelledButActive: boolean;
     formattedNextPayment: string | null;
     formattedExpiresOn: string | null;
+    onUpgrade?: () => void;
 };
 
 export default function CurrentPlanCard({
@@ -21,6 +22,7 @@ export default function CurrentPlanCard({
     isCancelledButActive,
     formattedNextPayment,
     formattedExpiresOn,
+    onUpgrade,
 }: Props) {
     const showStatus = planSlug !== "free";
 
@@ -31,16 +33,14 @@ export default function CurrentPlanCard({
 
     if (isActive) {
         badgeText = "Assinatura ativa";
-        badgeClass =
-            "bg-emerald-50 text-emerald-700 border-emerald-200";
+        badgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
         icon = "active";
         if (formattedNextPayment) {
             helperText = `Próxima cobrança em ${formattedNextPayment}`;
         }
     } else if (isCancelledButActive) {
         badgeText = "Assinatura cancelada";
-        badgeClass =
-            "bg-amber-50 text-amber-700 border-amber-200";
+        badgeClass = "bg-amber-50 text-amber-700 border-amber-200";
         icon = "warning";
         if (formattedExpiresOn) {
             helperText = `Seu plano permanece ativo até ${formattedExpiresOn}`;
@@ -74,25 +74,39 @@ export default function CurrentPlanCard({
                 </div>
             </div>
 
-            {showStatus && (
-                <div className="flex flex-col items-start md:items-end gap-2">
-                    <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${badgeClass}`}
-                    >
-                        {icon === "active" && (
-                            <BadgeCheck className="w-3 h-3 mr-1" />
-                        )}
-                        {icon === "warning" && (
-                            <AlertTriangle className="w-3 h-3 mr-1" />
-                        )}
-                        {badgeText}
-                    </span>
+            <div className="flex flex-col items-start md:items-end gap-2">
+                {showStatus && (
+                    <>
+                        <span
+                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${badgeClass}`}
+                        >
+                            {icon === "active" && (
+                                <BadgeCheck className="w-3 h-3 mr-1" />
+                            )}
+                            {icon === "warning" && (
+                                <AlertTriangle className="w-3 h-3 mr-1" />
+                            )}
+                            {badgeText}
+                        </span>
 
-                    {helperText && (
-                        <p className="text-xs text-gray-500">{helperText}</p>
-                    )}
-                </div>
-            )}
+                        {helperText && (
+                            <p className="text-xs text-gray-500">
+                                {helperText}
+                            </p>
+                        )}
+                    </>
+                )}
+
+                {onUpgrade && !isActive && (
+                    <button
+                        type="button"
+                        onClick={onUpgrade}
+                        className="mt-2 px-4 py-2 rounded-lg bg-teal-600 text-sm font-semibold text-white hover:bg-teal-700"
+                    >
+                        Fazer upgrade
+                    </button>
+                )}
+            </div>
         </div>
     );
 }

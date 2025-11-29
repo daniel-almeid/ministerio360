@@ -1,16 +1,15 @@
 "use client";
 
-import SubscribeButton from "./subscribeButton";
+import type { PlanSlug } from "../assinatura/hook/useSubscription";
 
 type Props = {
-    slug: string;
+    slug: PlanSlug;
     name: string;
     price: string;
     features: string[];
     active: boolean;
     churchId: string | null;
     currentPlan: string;
-    scheduledToPlan: string | null;
 };
 
 export default function PlanCard({
@@ -20,14 +19,36 @@ export default function PlanCard({
     features,
     active,
     churchId,
-    currentPlan,
-    scheduledToPlan
+    currentPlan
 }: Props) {
+
+    async function contratarPlano() {
+        try {
+            const res = await fetch("/api/pagarme/create-checkout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ plan_slug: slug })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok || !data.url) {
+                alert("Erro ao criar checkout");
+                console.error(data);
+                return;
+            }
+
+            window.location.href = data.url; // REDIRECIONA PARA O PAGAR.ME
+        } catch (err) {
+            console.error(err);
+            alert("Erro ao iniciar o pagamento.");
+        }
+    }
+
     return (
         <div
-            className={`border rounded-2xl p-8 shadow-md flex flex-col justify-between transition ${
-                active ? "border-teal-500 bg-teal-50" : "border-gray-300 bg-white"
-            }`}
+            className={`border rounded-2xl p-8 shadow-md flex flex-col justify-between ${active ? "border-teal-500 bg-teal-50" : "border-gray-300 bg-white"
+                }`}
         >
             <div>
                 <h3 className="text-2xl font-bold text-gray-800">{name}</h3>
@@ -40,13 +61,20 @@ export default function PlanCard({
                 </ul>
             </div>
 
-            <SubscribeButton
-                slug={slug}
-                active={active}
-                churchId={churchId}
-                currentPlan={currentPlan}
-                scheduledToPlan={scheduledToPlan}
-            />
+            {!active && (
+                <button
+                    onClick={contratarPlano}
+                    className="mt-6 py-2 px-4 rounded-xl bg-teal-600 text-white font-semibold hover:bg-teal-700"
+                >
+                    Migrar
+                </button>
+            )}
+
+            {active && (
+                <div className="mt-6 py-2 px-4 rounded-xl bg-gray-300 text-gray-700 text-center font-semibold">
+                    Plano atual
+                </div>
+            )}
         </div>
     );
 }

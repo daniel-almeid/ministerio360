@@ -5,9 +5,10 @@ import type { PlanDef, PlanSlug } from "../hook/useSubscription";
 type Props = {
     plans: PlanDef[];
     currentSlug: PlanSlug;
+    onSelectPlan?: (plan: PlanDef) => void;
 };
 
-export default function PlanComparison({ plans, currentSlug }: Props) {
+export default function PlanComparison({ plans, currentSlug, onSelectPlan }: Props) {
     return (
         <>
             <div className="h-px bg-gray-200" />
@@ -20,6 +21,7 @@ export default function PlanComparison({ plans, currentSlug }: Props) {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {plans.map((plan) => {
                         const isCurrent = plan.slug === currentSlug;
+
                         return (
                             <div
                                 key={plan.slug}
@@ -39,11 +41,13 @@ export default function PlanComparison({ plans, currentSlug }: Props) {
                                         </span>
                                     )}
                                 </div>
+
                                 <p className="text-sm text-gray-600">
                                     {plan.price === 0
                                         ? "Gratuito"
                                         : `R$ ${plan.price.toFixed(2)} / mês`}
                                 </p>
+
                                 <ul className="mt-2 space-y-1 text-xs text-gray-600">
                                     {plan.features.map((f) => (
                                         <li key={f} className="flex gap-1">
@@ -52,6 +56,23 @@ export default function PlanComparison({ plans, currentSlug }: Props) {
                                         </li>
                                     ))}
                                 </ul>
+
+                                <button
+                                    type="button"
+                                    disabled={isCurrent}
+                                    onClick={() =>
+                                        !isCurrent &&
+                                        onSelectPlan &&
+                                        onSelectPlan(plan)
+                                    }
+                                    className={`mt-4 w-full px-3 py-2 rounded-lg text-sm font-semibold text-white ${
+                                        isCurrent
+                                            ? "bg-gray-400 cursor-not-allowed"
+                                            : "bg-teal-600 hover:bg-teal-700"
+                                    }`}
+                                >
+                                    {isCurrent ? "Plano atual" : "Migrar"}
+                                </button>
                             </div>
                         );
                     })}

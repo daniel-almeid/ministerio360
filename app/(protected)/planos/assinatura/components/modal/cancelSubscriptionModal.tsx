@@ -31,10 +31,7 @@ export default function CancelSubscriptionModal({
                 {formattedExpiresOn && (
                     <p className="text-sm text-gray-700">
                         Você continuará com acesso ao plano atual até{" "}
-                        <span className="font-semibold">
-                            {formattedExpiresOn}
-                        </span>
-                        .
+                        <span className="font-semibold">{formattedExpiresOn}</span>.
                     </p>
                 )}
 

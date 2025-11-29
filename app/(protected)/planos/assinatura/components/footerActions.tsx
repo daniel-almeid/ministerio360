@@ -5,6 +5,7 @@ type Props = {
     isActive: boolean;
     isCancelledButActive: boolean;
     onCancelClick: () => void;
+    onUpgradeClick?: () => void;
 };
 
 export default function FooterActions({
@@ -12,6 +13,7 @@ export default function FooterActions({
     isActive,
     isCancelledButActive,
     onCancelClick,
+    onUpgradeClick,
 }: Props) {
     const canCancel = hasPaidPlan && isActive;
 
@@ -20,7 +22,8 @@ export default function FooterActions({
             <div className="flex flex-col gap-2">
                 {hasPaidPlan && (
                     <p className="text-sm text-gray-600">
-                        Gerencie sua assinatura ou altere seu plano a qualquer momento.
+                        Gerencie sua assinatura ou altere seu plano a qualquer
+                        momento.
                     </p>
                 )}
 
@@ -40,25 +43,31 @@ export default function FooterActions({
                             disabled={!canCancel}
                             className="px-4 py-2 rounded-lg bg-red-600 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
                         >
-                            {isCancelledButActive ? "Assinatura cancelada" : "Cancelar assinatura"}
+                            {isCancelledButActive
+                                ? "Assinatura cancelada"
+                                : "Cancelar assinatura"}
                         </button>
 
-                        <a
-                            href="/planos"
-                            className="px-4 py-2 rounded-lg bg-teal-600 text-sm font-semibold text-white hover:bg-teal-700"
-                        >
-                            Alterar plano
-                        </a>
+                        {onUpgradeClick && (
+                            <button
+                                type="button"
+                                onClick={onUpgradeClick}
+                                className="px-4 py-2 rounded-lg bg-teal-600 text-sm font-semibold text-white hover:bg-teal-700"
+                            >
+                                Alterar plano
+                            </button>
+                        )}
                     </>
                 )}
 
-                {!hasPaidPlan && (
-                    <a
-                        href="/planos"
+                {!hasPaidPlan && onUpgradeClick && (
+                    <button
+                        type="button"
+                        onClick={onUpgradeClick}
                         className="px-4 py-2 rounded-lg bg-teal-600 text-sm font-semibold text-white hover:bg-teal-700"
                     >
                         Contratar um plano
-                    </a>
+                    </button>
                 )}
             </div>
         </div>
