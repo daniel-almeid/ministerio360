@@ -3,14 +3,15 @@
 import { usePlan } from "./hook/usePlan";
 import Loading from "@/components/shared/loading";
 import PlanCard from "./components/planCard";
+import PlanFooter from "./components/planFooter";
 
 export default function PlanosPage() {
-    const { loading, currentPlan, churchId, isCurrent } = usePlan();
+    const { loading, isCurrent } = usePlan();
 
     if (loading) return <Loading />;
 
     return (
-        <div className="max-w-6xl mx-auto px-6 py-14 space-y-10">
+        <div className="max-w-6xl mx-auto px-2 py-4 space-y-10">
             <h1 className="text-4xl font-bold text-gray-800 text-center">
                 Escolha seu plano
             </h1>
@@ -31,8 +32,6 @@ export default function PlanosPage() {
                         "Relatórios simples",
                     ]}
                     active={isCurrent("free")}
-                    churchId={churchId}
-                    currentPlan={currentPlan}
                 />
 
                 <PlanCard
@@ -48,8 +47,6 @@ export default function PlanosPage() {
                         "Relatórios simples",
                     ]}
                     active={isCurrent("standard")}
-                    churchId={churchId}
-                    currentPlan={currentPlan}
                 />
 
                 <PlanCard
@@ -69,10 +66,10 @@ export default function PlanosPage() {
                         "Suporte prioritário",
                     ]}
                     active={isCurrent("premium")}
-                    churchId={churchId}
-                    currentPlan={currentPlan}
                 />
             </div>
+
+            <PlanFooter />
         </div>
     );
 }

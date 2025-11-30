@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { PlanSlug } from "../types";
 
 export function usePlan() {
     const [loading, setLoading] = useState(true);
-    const [currentPlan, setCurrentPlan] = useState<string>("free");
-    const [churchId, setChurchId] = useState<string | null>(null);
+    const [currentPlan, setCurrentPlan] = useState<PlanSlug>("free");
 
     useEffect(() => {
         load();
@@ -15,26 +15,22 @@ export function usePlan() {
     async function load() {
         setLoading(true);
 
-        const { data } = await supabase.auth.getUser();
-        const user = data.user;
+        const { data: session } = await supabase.auth.getSession();
+        const user = session.session?.user;
 
-        const slug = user?.app_metadata?.plan_slug ?? "free";
-        const id = user?.app_metadata?.church_id ?? null;
-
+        const slug = (user?.app_metadata?.plan_slug ?? "free") as PlanSlug;
         setCurrentPlan(slug);
-        setChurchId(id);
 
         setLoading(false);
     }
 
-    function isCurrent(slug: string) {
-        return currentPlan === slug;
+    function isCurrent(target: PlanSlug): boolean {
+        return target === currentPlan;
     }
 
     return {
         loading,
         currentPlan,
-        churchId,
         isCurrent,
     };
 }
