@@ -66,7 +66,7 @@ export default function PlanCard({
                     onClick={contratarPlano}
                     className="mt-6 py-2 px-4 rounded-xl bg-teal-600 text-white font-semibold hover:bg-teal-700"
                 >
-                    Migrar
+                    Assinar
                 </button>
             )}
 

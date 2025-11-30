@@ -23,27 +23,25 @@ export function useAdmin(enabled: boolean) {
     const [modalOpen, setModalOpen] = useState(false);
     const [saving, setSaving] = useState(false);
 
-    const ADMIN_ID = "289d49c4-8db0-49e2-b527-af90809f3be8";
-
     useEffect(() => {
         if (!enabled) return;
 
         async function load() {
             setLoading(true);
 
+            // Agora buscamos via public.profiles (fonte oficial da Admin Page)
             const { data, error } = await supabase
                 .from("profiles")
                 .select(`
                     id,
                     email,
-                    name,
                     created_at,
                     church_id,
-                    church_profiles (
+                    plan_slug,
+                    subscription_active,
+                    church_profiles:church_id (
                         id,
                         trade_name,
-                        plan_slug,
-                        subscription_active,
                         created_at
                     )
                 `)
@@ -58,14 +56,14 @@ export function useAdmin(enabled: boolean) {
 
             const formatted: AdminUser[] = (data as any[]).map(u => ({
                 user_id: u.id,
-                user_name: u.name,
                 email: u.email,
                 created_at_user: u.created_at,
-                church_id: u.church_profiles?.id ?? null,
+                church_id: u.church_id ?? null,
+                plan_slug: u.plan_slug ?? "free",
+                subscription_active: u.subscription_active ?? false,
                 church_name: u.church_profiles?.trade_name ?? null,
                 created_at_church: u.church_profiles?.created_at ?? null,
-                plan_slug: u.church_profiles?.plan_slug ?? "free",
-                subscription_active: u.church_profiles?.subscription_active ?? false
+                user_name: u.church_profiles?.trade_name ?? null
             }));
 
             setUsers(formatted);
@@ -90,6 +88,7 @@ export function useAdmin(enabled: boolean) {
 
         setSaving(true);
 
+        // Atualiza church_profiles
         const { error } = await supabase
             .from("church_profiles")
             .update({
@@ -105,10 +104,12 @@ export function useAdmin(enabled: boolean) {
             return;
         }
 
+        // Atualiza JWT claims
         await supabase.rpc("refresh_church_claim", {
             p_user_id: selectedUser.user_id
         });
 
+        // Atualiza estado local
         setUsers(prev =>
             prev.map(u =>
                 u.user_id === selectedUser.user_id
