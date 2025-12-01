@@ -12,8 +12,8 @@ export type AdminUser = {
     church_id: string | null;
     church_name: string | null;
     created_at_church: string | null;
-    plan_slug: string | null;
-    subscription_active: boolean | null;
+    plan_slug: string;
+    subscription_active: boolean;
 };
 
 export function useAdmin(enabled: boolean) {
@@ -29,7 +29,6 @@ export function useAdmin(enabled: boolean) {
         async function load() {
             setLoading(true);
 
-            // Agora buscamos via public.profiles (fonte oficial da Admin Page)
             const { data, error } = await supabase
                 .from("profiles")
                 .select(`
@@ -37,12 +36,12 @@ export function useAdmin(enabled: boolean) {
                     email,
                     created_at,
                     church_id,
-                    plan_slug,
-                    subscription_active,
                     church_profiles:church_id (
                         id,
                         trade_name,
-                        created_at
+                        created_at,
+                        plan_slug,
+                        subscription_active
                     )
                 `)
                 .order("created_at", { ascending: false });
@@ -59,10 +58,10 @@ export function useAdmin(enabled: boolean) {
                 email: u.email,
                 created_at_user: u.created_at,
                 church_id: u.church_id ?? null,
-                plan_slug: u.plan_slug ?? "free",
-                subscription_active: u.subscription_active ?? false,
                 church_name: u.church_profiles?.trade_name ?? null,
                 created_at_church: u.church_profiles?.created_at ?? null,
+                plan_slug: u.church_profiles?.plan_slug ?? "free",
+                subscription_active: u.church_profiles?.subscription_active ?? false,
                 user_name: u.church_profiles?.trade_name ?? null
             }));
 
@@ -88,7 +87,7 @@ export function useAdmin(enabled: boolean) {
 
         setSaving(true);
 
-        // Atualiza church_profiles
+        // Atualiza church_profiles — a tabela certa
         const { error } = await supabase
             .from("church_profiles")
             .update({
