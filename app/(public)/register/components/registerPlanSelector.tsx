@@ -1,8 +1,10 @@
 "use client";
 
+type PlanSlug = "free" | "standard" | "premium";
+
 type Props = {
-    plan: string;
-    setPlan: (p: string) => void;
+    plan: PlanSlug;
+    setPlan: (p: PlanSlug) => void;
     setShowDetails: (v: string | null) => void;
 };
 
@@ -39,9 +41,11 @@ export default function RegisterPlanSelector({ plan, setPlan, setShowDetails }: 
 
                         <div className="flex flex-col gap-2">
                             <button
-                                onClick={() => setPlan(p)}
+                                onClick={() => setPlan(p as PlanSlug)}
                                 type="button"
-                                className={`w-full py-2 rounded-xl font-semibold ${plan === p ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-700"
+                                className={`w-full py-2 rounded-xl font-semibold ${plan === p
+                                        ? "bg-teal-600 text-white"
+                                        : "bg-gray-200 text-gray-700"
                                     }`}
                             >
                                 Selecionar

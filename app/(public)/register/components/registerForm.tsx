@@ -9,8 +9,10 @@ import RegisterPlanSelector from "./registerPlanSelector";
 import RegisterPlanDetails from "./registerPlanDetails";
 import RegisterBackdrop from "./registerBackDrop";
 
+type PlanSlug = "free" | "standard" | "premium";
+
 type Props = {
-    onSuccess: (planSlug: string) => void;
+    onSuccess: (planSlug: PlanSlug, name: string, email: string) => void;
 };
 
 export default function RegisterForm({ onSuccess }: Props) {
@@ -25,7 +27,7 @@ export default function RegisterForm({ onSuccess }: Props) {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    const [plan, setPlan] = useState("free");
+    const [plan, setPlan] = useState<PlanSlug>("free");
     const [showDetails, setShowDetails] = useState<string | null>(null);
 
     const [loading, setLoading] = useState(false);
@@ -65,24 +67,8 @@ export default function RegisterForm({ onSuccess }: Props) {
             return;
         }
 
-        onSuccess(plan);
+        onSuccess(plan, name, email);
         setLoading(false);
-
-        if (plan !== "free") {
-            try {
-                const res = await fetch("/api/checkout", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ plan_slug: plan, email }),
-                });
-
-                const result = await res.json();
-
-                if (result.checkout_url) {
-                    window.location.href = result.checkout_url;
-                }
-            } catch (_) {}
-        }
     }
 
     return (
@@ -91,9 +77,8 @@ export default function RegisterForm({ onSuccess }: Props) {
 
             <form
                 onSubmit={handleRegister}
-                className={`w-full max-w-5xl p-12 md:p-20 space-y-12 rounded-2xl bg-white/80 backdrop-blur-md border border-gray-300/50 shadow-xl transition-all ${
-                    loading ? "opacity-60 pointer-events-none" : "opacity-100"
-                }`}
+                className={`w-full max-w-5xl p-12 md:p-20 space-y-12 rounded-2xl bg-white/80 backdrop-blur-md border border-gray-300/50 shadow-xl transition-all ${loading ? "opacity-60 pointer-events-none" : "opacity-100"
+                    }`}
             >
                 <button
                     type="button"
@@ -171,9 +156,7 @@ export default function RegisterForm({ onSuccess }: Props) {
                             />
                             <button
                                 type="button"
-                                onClick={() =>
-                                    setShowConfirmPassword(!showConfirmPassword)
-                                }
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                 className="absolute right-4 top-12 text-gray-600"
                             >
                                 {showConfirmPassword ? <EyeOff /> : <Eye />}
@@ -190,9 +173,7 @@ export default function RegisterForm({ onSuccess }: Props) {
                     setShowDetails={setShowDetails}
                 />
 
-                {error && (
-                    <p className="text-base text-red-500 text-center">{error}</p>
-                )}
+                {error && <p className="text-base text-red-500 text-center">{error}</p>}
 
                 <button
                     type="submit"

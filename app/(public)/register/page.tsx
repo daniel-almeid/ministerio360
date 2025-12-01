@@ -5,18 +5,23 @@ import RegisterForm from "./components/registerForm";
 import RegisterBackDrop from "./components/registerBackDrop";
 import RegisterSuccessModal from "./components/modals/registerSucessModal";
 
+type PlanSlug = "free" | "standard" | "premium";
+
 export default function RegisterPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState("free");
+  const [planSlug, setPlanSlug] = useState<PlanSlug>("free");
+  const [registerName, setRegisterName] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
 
-  function handleSuccess(planSlug: string) {
-    setSelectedPlan(planSlug);
+  function handleSuccess(plan: PlanSlug, name: string, email: string) {
+    setPlanSlug(plan);
+    setRegisterName(name);
+    setRegisterEmail(email);
     setShowSuccessModal(true);
   }
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-linear-to-br from-gray-200 to-gray-200 px-6 overflow-hidden">
-
       <RegisterForm onSuccess={handleSuccess} />
 
       {showSuccessModal && (
@@ -25,7 +30,9 @@ export default function RegisterPage() {
 
           <RegisterSuccessModal
             open={showSuccessModal}
-            plan={selectedPlan}
+            planSlug={planSlug}
+            name={registerName}
+            email={registerEmail}
             onClose={() => setShowSuccessModal(false)}
           />
         </>
