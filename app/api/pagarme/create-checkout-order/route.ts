@@ -1,14 +1,45 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  }
+);
 
 export async function POST(req: Request) {
   try {
-    const { plan_slug, name, email, price_cents } = await req.json();
+    const { plan_slug, name, email } = await req.json();
 
-    console.log("BODY RECEBIDO:", { plan_slug, email, name, price_cents });
-
-    if (!plan_slug || !name || !email || !price_cents) {
+    if (!plan_slug || !name || !email) {
       return NextResponse.json({ error: "Dados incompletos" }, { status: 400 });
     }
+
+    // PEGANDO PREÇO DIRETO DO SUPABASE
+
+    const { data: plan, error: planError } = await supabase
+      .from("plans")
+      .select("price_monthly")
+      .eq("plan_slug", plan_slug)
+      .single();
+
+    if (planError || !plan) {
+      return NextResponse.json(
+        { error: "Plano não encontrado no Supabase" },
+        { status: 404 }
+      );
+    }
+
+    const price_cents = Math.round(Number(plan.price_monthly) * 100);
+
+    console.log("💰 PRICE DO SUPABASE:", price_cents);
+
+    // PREPARANDO PEDIDO PARA O PAGAR.ME
 
     const pagarmeSecret = process.env.PAGARME_SECRET_KEY!;
     const auth = "Basic " + Buffer.from(pagarmeSecret + ":").toString("base64");

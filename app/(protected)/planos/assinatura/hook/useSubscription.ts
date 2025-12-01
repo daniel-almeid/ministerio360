@@ -130,8 +130,6 @@ export function useSubscription() {
         planSlug,
         currentPlan,
         price: currentPlan.price,
-
-        // status do plano
         isActive: profile?.subscription_active ?? false,
         expiresOn,
         formattedExpiresOn,
