@@ -5,6 +5,14 @@ import { createClient } from '@supabase/supabase-js';
 export async function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
 
+  // 🚨 Permite reset de senha SEM verificação de sessão
+  if (
+    url.pathname.startsWith('/reset-password') ||
+    url.pathname.startsWith('/auth/callback')
+  ) {
+    return NextResponse.next();
+  }
+
   // Inicializa o Supabase Client
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,7 +38,6 @@ export async function middleware(req: NextRequest) {
       const { data, error } = await supabase.auth.getUser(token);
 
       if (error || !data?.user) {
-        // Token inválido ou expirado → remove cookies e redireciona
         const res = NextResponse.redirect(new URL('/login', req.url));
         res.cookies.delete('sb-access-token');
         res.cookies.delete('sb-refresh-token');
@@ -47,7 +54,6 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(url);
       }
 
-      // ✅ JWT válido: deixa passar
       return NextResponse.next();
     } catch (err) {
       console.error('Erro ao validar sessão:', err);
@@ -58,11 +64,9 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // Se for /login ou /register → segue normalmente
   return NextResponse.next();
 }
 
-// Rotas protegidas (middleware será aplicado)
 export const config = {
   matcher: [
     '/dashboard/:path*',
