@@ -91,7 +91,7 @@ export default function PlanCard({
 
     return (
         <div
-            className={`border rounded-2xl p-8 shadow-md flex flex-col justify-between
+            className={`border rounded-2xl p-6 shadow-md flex flex-col justify-between
                 ${isActive ? "border-teal-600 bg-teal-50" : isSelected ? "border-teal-600 bg-teal-100" : "border-gray-300 bg-white"}`}
         >
             <div>

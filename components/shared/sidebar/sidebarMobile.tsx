@@ -78,9 +78,17 @@ export function SidebarMobile({
                                     })
                                 }
                                 className={`
-                  w-full flex items-center gap-3 px-4 py-2.5 rounded-lg mx-2 transition-all 
-                  ${isActive ? "bg-[#38B2AC] text-white shadow-md" : "hover:bg-[#2C5282] text-[#81E6D9]"}
-                `}
+                                    flex items-center gap-3 
+                                    w-full 
+                                    px-4 py-2.5 
+                                    rounded-md
+                                    transition-all
+                                    overflow-hidden 
+                                    ${isActive
+                                        ? "bg-[#38B2AC] text-white shadow-md"
+                                        : "hover:bg-[#2C5282] text-[#81E6D9]"
+                                    }
+                                `}
                             >
                                 <Icon size={22} />
                                 <span className="font-medium">{label}</span>
@@ -94,7 +102,16 @@ export function SidebarMobile({
                                 setIsMobileOpen(false);
                                 window.location.href = "/admin/painel";
                             }}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg mx-2 transition-all hover:bg-[#2C5282] text-[#81E6D9]"
+                            className="
+                                flex items-center gap-3 
+                                w-full 
+                                px-4 py-2.5 
+                                rounded-md 
+                                transition-all 
+                                overflow-hidden
+                                hover:bg-[#2C5282] 
+                                text-[#81E6D9]
+                            "
                         >
                             <Shield size={22} />
                             <span className="font-medium">Admin</span>
