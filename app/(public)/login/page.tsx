@@ -38,7 +38,7 @@ export default function LoginPage() {
                 return;
             }
 
-            // Atualiza claims no JWT
+            // Atualiza claims (Church_ID, etc)
             await supabase.rpc("refresh_church_claim", { p_user_id: data.user.id });
 
             // Atualiza sessão local com claims novos
@@ -60,14 +60,13 @@ export default function LoginPage() {
             if (remember) localStorage.setItem("rememberedEmail", email);
             else localStorage.removeItem("rememberedEmail");
 
-            // Regra REVISADA:
             // Se plano é pago mas assinatura NÃO está ativa → página de planos
             if (plan !== "free" && active === false) {
                 router.push("/planos");
                 return;
             }
 
-            // Caso contrário → dashboard normal
+            // Caso contrário → dashboard
             router.push("/dashboard");
 
         } catch {
@@ -79,6 +78,8 @@ export default function LoginPage() {
 
     return (
         <div className="relative min-h-screen flex items-center justify-center bg-linear-to-br from-gray-200 to-gray-200 px-6 overflow-hidden">
+
+            {/* Overlay de Loading */}
             {loading && (
                 <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="flex flex-col items-center space-y-4">
@@ -120,6 +121,16 @@ export default function LoginPage() {
                             className="w-full px-5 py-4 text-lg border rounded-xl"
                             required
                         />
+
+                        <div className="text-right mt-2">
+                            <button
+                                type="button"
+                                onClick={() => router.push("/login/reset-password")}
+                                className="text-sm text-[#38B2AC] hover:underline"
+                            >
+                                Esqueci minha senha
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex items-center space-x-3 mt-2">

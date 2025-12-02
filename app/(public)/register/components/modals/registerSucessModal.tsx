@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Loading from "@/components/shared/loading";
 
 type PlanSlug = "free" | "standard" | "premium";
 
@@ -18,9 +19,26 @@ const PLAN_PRICES: Record<PlanSlug, number> = {
     premium: 8990,
 };
 
-export default function RegisterSuccessModal({ open, onClose, planSlug, name, email }: Props) {
-    const [loading, setLoading] = useState(false);
+export default function RegisterSuccessModal({
+    open,
+    onClose,
+    planSlug,
+    name,
+    email,
+}: Props) {
 
+    const [loading, setLoading] = useState(false);
+    const [exitLoading, setExitLoading] = useState(false);
+
+    // Loading ao fechar e ir para login
+    function handleClose() {
+        setExitLoading(true);
+        setTimeout(() => {
+            window.location.href = "/login";
+        }, 800);
+    }
+
+    if (exitLoading) return <Loading />;
     if (!open) return null;
 
     const price_cents = PLAN_PRICES[planSlug];
@@ -91,7 +109,7 @@ export default function RegisterSuccessModal({ open, onClose, planSlug, name, em
                     )}
 
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="w-full border border-gray-300 py-2 rounded-lg font-medium hover:bg-gray-100 transition"
                     >
                         Fechar
