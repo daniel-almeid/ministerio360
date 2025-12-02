@@ -7,8 +7,8 @@ import { Loader2 } from "lucide-react";
 // Redirecionamento inteligente
 const redirectUrl =
   process.env.NODE_ENV === "development"
-    ? "http://localhost:3000/reset-password/update"
-    : "https://ministerio360.vercel.app/reset-password/update";
+    ? "http://localhost:3000/login/reset-password/update"
+    : "https://ministerio360.vercel.app/login/reset-password/update";
 
 export default function ResetPasswordPage() {
     const [email, setEmail] = useState("");
