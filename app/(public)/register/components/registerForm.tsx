@@ -33,6 +33,24 @@ export default function RegisterForm({ onSuccess }: Props) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
+    // Função de validação de senha forte
+    function validatePassword(pwd: string) {
+        const minLength = pwd.length >= 8;
+        const hasUpper = /[A-Z]/.test(pwd);
+        const hasLower = /[a-z]/.test(pwd);
+        const hasNumber = /[0-9]/.test(pwd);
+        const hasSpecial = /[^A-Za-z0-9]/.test(pwd);
+
+        return {
+            valid: minLength && hasUpper && hasLower && hasNumber && hasSpecial,
+            minLength,
+            hasUpper,
+            hasLower,
+            hasNumber,
+            hasSpecial,
+        };
+    }
+
     async function handleRegister(e: React.FormEvent) {
         e.preventDefault();
         setError("");
@@ -44,6 +62,12 @@ export default function RegisterForm({ onSuccess }: Props) {
 
         if (password !== confirmPassword) {
             setError("As senhas não coincidem.");
+            return;
+        }
+
+        const pwdCheck = validatePassword(password);
+        if (!pwdCheck.valid) {
+            setError("A senha não atende aos requisitos de segurança.");
             return;
         }
 
@@ -71,14 +95,18 @@ export default function RegisterForm({ onSuccess }: Props) {
         setLoading(false);
     }
 
+    // Objeto para verificar os requisitos visualmente
+    const pwdCheck = validatePassword(password);
+
     return (
         <>
             {loading && <RegisterBackdrop />}
 
             <form
                 onSubmit={handleRegister}
-                className={`w-full max-w-5xl p-12 md:p-20 space-y-12 rounded-2xl bg-white/80 backdrop-blur-md border border-gray-300/50 shadow-xl transition-all ${loading ? "opacity-60 pointer-events-none" : "opacity-100"
-                    }`}
+                className={`w-full max-w-5xl p-12 md:p-20 space-y-12 rounded-2xl bg-white/80 backdrop-blur-md border border-gray-300/50 shadow-xl transition-all ${
+                    loading ? "opacity-60 pointer-events-none" : "opacity-100"
+                }`}
             >
                 <button
                     type="button"
@@ -162,6 +190,24 @@ export default function RegisterForm({ onSuccess }: Props) {
                                 {showConfirmPassword ? <EyeOff /> : <Eye />}
                             </button>
                         </div>
+                    </div>
+
+                    <div className="text-sm text-gray-700 space-y-1">
+                        <p className={pwdCheck.minLength ? "text-green-600" : "text-red-600"}>
+                            • Mínimo de 8 caracteres
+                        </p>
+                        <p className={pwdCheck.hasUpper ? "text-green-600" : "text-red-600"}>
+                            • Pelo menos 1 letra maiúscula
+                        </p>
+                        <p className={pwdCheck.hasLower ? "text-green-600" : "text-red-600"}>
+                            • Pelo menos 1 letra minúscula
+                        </p>
+                        <p className={pwdCheck.hasNumber ? "text-green-600" : "text-red-600"}>
+                            • Pelo menos 1 número
+                        </p>
+                        <p className={pwdCheck.hasSpecial ? "text-green-600" : "text-red-600"}>
+                            • Pelo menos 1 caractere especial
+                        </p>
                     </div>
                 </div>
 
