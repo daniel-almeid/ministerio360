@@ -6,7 +6,7 @@ import PlanCard from "./components/planCard";
 import PlanFooter from "./components/planFooter";
 
 export default function PlanosPage() {
-    const { loading, isCurrent } = usePlan();
+    const { loading, currentPlan, active } = usePlan();
 
     if (loading) return <Loading />;
 
@@ -31,7 +31,8 @@ export default function PlanosPage() {
                         "Cadastro financeiro",
                         "Relatórios simples",
                     ]}
-                    active={isCurrent("free")}
+                    current={currentPlan}
+                    active={active && currentPlan === "free"}
                 />
 
                 <PlanCard
@@ -46,7 +47,8 @@ export default function PlanosPage() {
                         "Cadastro financeiro",
                         "Relatórios simples",
                     ]}
-                    active={isCurrent("standard")}
+                    current={currentPlan}
+                    active={active && currentPlan === "standard"}
                 />
 
                 <PlanCard
@@ -65,7 +67,8 @@ export default function PlanosPage() {
                         "Relatórios",
                         "Suporte prioritário",
                     ]}
-                    active={isCurrent("premium")}
+                    current={currentPlan}
+                    active={active && currentPlan === "premium"}
                 />
             </div>
 

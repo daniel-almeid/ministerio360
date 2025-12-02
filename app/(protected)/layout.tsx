@@ -38,7 +38,7 @@ export default function ProtectedLayout({
       const churchId = session.user?.app_metadata?.church_id;
       const plan = session.user?.app_metadata?.plan_slug || "free";
 
-      // Isso vamos usar depois quando houver webhook
+      // Com webhook funcionando: assinatura ativa
       const active = session.user?.app_metadata?.subscription_active ?? false;
 
       // Se churchId não existe → logout total
@@ -48,13 +48,13 @@ export default function ProtectedLayout({
         return;
       }
 
-      // Nunca bloquear a própria página de planos
-      if (pathname === "/planos") {
+      // 👉 Nunca bloquear qualquer rota dentro de `/planos`
+      if (pathname.startsWith("/planos")) {
         setLoading(false);
         return;
       }
 
-      // Se plano é pago mas assinatura ainda não foi concluída
+      // Se plano é pago mas assinatura ainda não foi ativada
       if (plan !== "free" && active === false) {
         router.push("/planos");
         return;
