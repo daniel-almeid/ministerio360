@@ -119,11 +119,14 @@ export function useSubscription() {
         const total = expiresOn.getTime() - start.getTime();
         const used = now.getTime() - start.getTime();
 
-        progressPercent = Math.min(100, Math.max(0, (used / total) * 100));
+        progressPercent = Math.round(
+            Math.min(100, Math.max(0, (used / total) * 100))
+        );
 
         formattedNextPayment = expiresOn.toLocaleDateString("pt-BR");
         formattedLastPayment = start.toLocaleDateString("pt-BR");
     }
+
 
     return {
         loading,

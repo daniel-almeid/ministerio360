@@ -34,7 +34,12 @@ export default function RegisterPlanSelector({ plan, setPlan, setShowDetails }: 
                             </p>
 
                             <p className="text-3xl font-extrabold text-gray-800 mb-4">
-                                {p === "free" ? "R$ 0" : "R$ 1,00"}
+                                {p === "free"
+                                    ? "R$ 0"
+                                    : p === "standard"
+                                        ? "R$ 49,00"
+                                        : "R$ 89,00"
+                                }
                                 <span className="text-base font-medium">/mês</span>
                             </p>
                         </div>
@@ -44,8 +49,8 @@ export default function RegisterPlanSelector({ plan, setPlan, setShowDetails }: 
                                 onClick={() => setPlan(p as PlanSlug)}
                                 type="button"
                                 className={`w-full py-2 rounded-xl font-semibold ${plan === p
-                                        ? "bg-teal-600 text-white"
-                                        : "bg-gray-200 text-gray-700"
+                                    ? "bg-teal-600 text-white"
+                                    : "bg-gray-200 text-gray-700"
                                     }`}
                             >
                                 Selecionar

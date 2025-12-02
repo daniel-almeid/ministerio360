@@ -21,7 +21,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-linear-to-br from-gray-200 to-gray-200 px-6 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center bg-linear-to-br from-gray-200 to-gray-200 px-4 overflow-hidden">
       <RegisterForm onSuccess={handleSuccess} />
 
       {showSuccessModal && (
