@@ -41,7 +41,7 @@ export function ModalNewTransaction({ onClose, onSuccess }: any) {
       }
 
       const payload = {
-        type: type.toLowerCase(),
+        type: type === "Entrada" ? "entrada" : "saida",
         category,
         amount: parseFloat(amount),
         person_name: personName,
@@ -50,6 +50,7 @@ export function ModalNewTransaction({ onClose, onSuccess }: any) {
       const { error } = await supabase.from("transactions").insert(payload);
 
       if (error) {
+        console.error(error);
         toast.error("Erro ao salvar transação.");
         return;
       }
