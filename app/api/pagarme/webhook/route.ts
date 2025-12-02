@@ -11,7 +11,7 @@ const supabase = createClient(
       autoRefreshToken: false,
     },
   }
-)
+);
 
 export async function POST(req: Request) {
   try {
@@ -26,18 +26,33 @@ export async function POST(req: Request) {
     if (event === "order.paid") {
       const email = order.customer?.email;
       const planSlug = order.items?.[0]?.code;
-      const userId = order.customer?.id;
 
-      console.log("🔍 Dados extraídos:", { email, planSlug, userId });
+      console.log("🔍 Dados extraídos:", { email, planSlug });
 
-      if (!email || !planSlug || !userId) {
-        console.log("❌ Erro: email, plano ou userId ausente");
+      if (!email || !planSlug) {
+        console.log("❌ Webhook ignorado: email ou plano ausente");
         return NextResponse.json({ ok: true });
       }
 
       console.log("🔥 PAGAMENTO APROVADO:", { email, planSlug });
 
-      // 1. Buscar church_profile pelo user_id
+      // 1. Buscar usuário pelo email no Supabase Auth
+      const { data: userData, error: userErr } = await supabase
+        .from("auth.users")
+        .select("id")
+        .eq("email", email)
+        .single();
+
+      if (userErr || !userData) {
+        console.log("❌ Usuário não encontrado no Supabase:", userErr);
+        return NextResponse.json({ ok: true });
+      }
+
+      const userId = userData.id;
+
+      console.log("👤 Usuário encontrado:", userId);
+
+      // 2. Buscar church_profile do usuário
       const { data: profile, error: profileErr } = await supabase
         .from("church_profiles")
         .select("*")
@@ -49,15 +64,15 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: true });
       }
 
-      const churchId = profile.id;
+      console.log("🏛 Church Profile encontrado:", profile.id);
 
-      // 2. Gerar data de expiração → 30 dias a partir de agora
+      // 3. Gerar data de expiração → 30 dias a partir de agora
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 30);
 
       console.log("📅 Plano expira em:", expiresAt.toISOString());
 
-      // 3. Atualizar church_profiles
+      // 4. Atualizar church_profiles
       const { error: updateErr } = await supabase
         .from("church_profiles")
         .update({
@@ -68,7 +83,7 @@ export async function POST(req: Request) {
           next_renewal_reminder: null,
           canceled_at: null,
         })
-        .eq("id", churchId);
+        .eq("id", profile.id);
 
       if (updateErr) {
         console.log("❌ Erro ao atualizar church_profiles:", updateErr);
@@ -77,10 +92,10 @@ export async function POST(req: Request) {
 
       console.log("✅ church_profiles atualizado com sucesso.");
 
-      // 4. Atualizar JWT claims (Super importante)
+      // 5. Atualizar JWT claims
       const { error: claimErr } = await supabase.rpc(
         "refresh_church_claim",
-        { p_user_id: profile.user_id }
+        { p_user_id: userId }
       );
 
       if (claimErr) {
@@ -92,7 +107,7 @@ export async function POST(req: Request) {
       console.log("🎉 PLANO ATIVADO COM SUCESSO PARA:", email);
     }
 
-    // FINISH
+    // FINALIZA
     return NextResponse.json({ received: true });
 
   } catch (err) {
