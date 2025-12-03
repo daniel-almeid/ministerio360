@@ -109,7 +109,7 @@ export default function PrivacidadePage() {
                     <h2 className="text-2xl font-semibold text-gray-900">11. Contato</h2>
                     <p className="mt-2">
                         Para exercer direitos da LGPD, envie um e-mail para:
-                        <span className="font-semibold"> privacidade@ministerio360.com</span>
+                        <span className="font-semibold"> danielandrade_2001@hotmail.com</span>
                     </p>
                 </section>
 
