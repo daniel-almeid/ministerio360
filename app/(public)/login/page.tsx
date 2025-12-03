@@ -10,7 +10,8 @@ export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [remember, setRemember] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false); // loading do login
+    const [navLoading, setNavLoading] = useState(false); // loading da navegação
     const [error, setError] = useState("");
 
     useEffect(() => {
@@ -20,6 +21,14 @@ export default function LoginPage() {
             setRemember(true);
         }
     }, []);
+
+    // 🔥 Função de navegação com loading
+    function navigateWithLoading(path: string) {
+        setNavLoading(true);
+        setTimeout(() => {
+            router.push(path);
+        }, 150);
+    }
 
     async function handleLogin(e: React.FormEvent) {
         e.preventDefault();
@@ -38,10 +47,8 @@ export default function LoginPage() {
                 return;
             }
 
-            // Atualiza claims (Church_ID, etc)
             await supabase.rpc("refresh_church_claim", { p_user_id: data.user.id });
 
-            // Atualiza sessão local com claims novos
             const { data: newSession } = await supabase.auth.refreshSession();
             if (newSession?.session) {
                 await supabase.auth.setSession({
@@ -50,7 +57,6 @@ export default function LoginPage() {
                 });
             }
 
-            // Pega claims atualizados
             const { data: sessionData } = await supabase.auth.getSession();
             const user = sessionData.session?.user;
 
@@ -60,13 +66,11 @@ export default function LoginPage() {
             if (remember) localStorage.setItem("rememberedEmail", email);
             else localStorage.removeItem("rememberedEmail");
 
-            // Se plano é pago mas assinatura NÃO está ativa → página de planos
             if (plan !== "free" && active === false) {
                 router.push("/planos");
                 return;
             }
 
-            // Caso contrário → dashboard
             router.push("/dashboard");
 
         } catch {
@@ -79,12 +83,14 @@ export default function LoginPage() {
     return (
         <div className="relative min-h-screen flex items-center justify-center bg-linear-to-br from-gray-200 to-gray-200 px-6 overflow-hidden">
 
-            {/* Overlay de Loading */}
-            {loading && (
+            {/* Overlay de Loading (Login e Navegação) */}
+            {(loading || navLoading) && (
                 <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="flex flex-col items-center space-y-4">
                         <Loader2 className="animate-spin text-[#38B2AC] w-10 h-10" />
-                        <p className="text-gray-700 font-medium animate-pulse">Entrando...</p>
+                        <p className="text-gray-700 font-medium animate-pulse">
+                            {loading ? "Entrando..." : "Carregando..."}
+                        </p>
                     </div>
                 </div>
             )}
@@ -125,7 +131,7 @@ export default function LoginPage() {
                         <div className="text-right mt-2">
                             <button
                                 type="button"
-                                onClick={() => router.push("/login/reset-password")}
+                                onClick={() => navigateWithLoading("/login/reset-password")}
                                 className="text-sm text-[#38B2AC] hover:underline"
                             >
                                 Esqueci minha senha
@@ -151,7 +157,7 @@ export default function LoginPage() {
 
                 <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || navLoading}
                     className="w-full flex items-center justify-center gap-2 text-white py-4 text-lg rounded-xl bg-[#38B2AC]"
                 >
                     {loading ? <Loader2 className="animate-spin h-6 w-6" /> : "Entrar"}
@@ -159,7 +165,7 @@ export default function LoginPage() {
 
                 <button
                     type="button"
-                    onClick={() => router.push("/register")}
+                    onClick={() => navigateWithLoading("/register")}
                     className="w-full mt-4 py-4 border border-[#38B2AC] text-[#38B2AC] rounded-xl"
                 >
                     Criar conta
@@ -168,6 +174,24 @@ export default function LoginPage() {
                 <p className="text-center text-sm text-gray-500 mt-10">
                     © {new Date().getFullYear()} Ministério360
                 </p>
+
+                <div className="mt-3 flex justify-center gap-6 text-sm">
+                    <button
+                        type="button"
+                        onClick={() => navigateWithLoading("/termos")}
+                        className="text-gray-600 hover:text-[#38B2AC] transition underline-offset-2 hover:underline"
+                    >
+                        Termos de Uso
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => navigateWithLoading("/privacidade")}
+                        className="text-gray-600 hover:text-[#38B2AC] transition underline-offset-2 hover:underline"
+                    >
+                        Política de Privacidade
+                    </button>
+                </div>
             </form>
         </div>
     );
