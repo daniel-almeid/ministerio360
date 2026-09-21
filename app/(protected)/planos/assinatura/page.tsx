@@ -1,24 +1,57 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Loading from "../../../../components/shared/loading";
 import {
     useSubscription,
     PLANS,
     type PlanSlug,
 } from "./hook/useSubscription";
+import { supabase } from "@/lib/supabaseClient";
 import CurrentPlanCard from "./components/currentPlanCard";
 import BillingCycle from "./components/billingCycle";
 import PlanComparison from "./components/planComparison";
 import FooterActions from "./components/footerActions";
 import CancelSubscriptionModal from "./components/modal/cancelSubscriptionModal";
-import PaymentFormModal from "./components/modal/paymentFormModal";
-import { supabase } from "@/lib/supabaseClient";
+import PaymentCardModal, { CardFormValues } from "../components/paymentCardModal";
 
-function getDefaultUpgradeTarget(current: PlanSlug): PlanSlug {
-    if (current === "free") return "standard";
-    if (current === "standard") return "premium";
-    return "premium";
+const PAGARME_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAGARME_PUBLIC_KEY!;
+
+async function tokenizeCard(card: {
+    number: string;
+    holderName: string;
+    expMonth: string;
+    expYear: string;
+    cvv: string;
+}) {
+    const res = await fetch(`https://api.pagar.me/core/v5/tokens?appId=${PAGARME_PUBLIC_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            type: "card",
+            card: {
+                number: card.number.replace(/\s/g, ""),
+                holder_name: card.holderName,
+                exp_month: card.expMonth,
+                exp_year: card.expYear,
+                cvv: card.cvv,
+            },
+        }),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok || !json?.id) {
+        throw new Error(json?.message || "Cartão inválido. Verifique os dados e tente novamente.");
+    }
+
+    return json.id as string;
+}
+
+function formatPrice(value: number) {
+    return value === 0
+        ? "R$ 0/mês"
+        : `R$ ${value.toFixed(2).replace(".", ",")}/mês`;
 }
 
 export default function AssinaturaPage() {
@@ -39,52 +72,77 @@ export default function AssinaturaPage() {
         hasPaidPlan,
     } = useSubscription();
 
-    // RETORNO DO CHECKOUT PAGAR.ME
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const status = params.get("status");
-
-        if (status === "success") {
-            finalizeCheckout();
-        }
-    }, []);
-
-    async function finalizeCheckout() {
-        const selected = localStorage.getItem("selected_plan");
-        if (!selected) return;
-
-        const session = await supabase.auth.getSession();
-        const jwt = session.data.session?.access_token;
-
-        await fetch("/api/planos/ativar", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${jwt}`,
-            },
-            body: JSON.stringify({
-                plan_slug: selected,
-            }),
-        });
-
-        localStorage.removeItem("selected_plan");
-        window.location.href = "/planos/assinatura";
-    }
-
     if (loading) return <Loading />;
-
-    const upgradeTarget = getDefaultUpgradeTarget(planSlug);
 
     function openPaymentFor(slug: PlanSlug) {
         setSelectedPlanSlug(slug);
         setShowPaymentModal(true);
     }
 
+    async function confirmarAssinatura(values: CardFormValues) {
+        if (!selectedPlanSlug) return;
+
+        const session = await supabase.auth.getSession();
+        const user = session.data.session?.user;
+
+        if (!user?.email) {
+            throw new Error("Sessão expirada. Faça login novamente.");
+        }
+
+        const name =
+            user.user_metadata?.full_name || user.user_metadata?.name || "Usuário";
+
+        const cardToken = await tokenizeCard({
+            number: values.number,
+            holderName: values.holderName,
+            expMonth: values.expMonth,
+            expYear: values.expYear,
+            cvv: values.cvv,
+        });
+
+        const streetLine = `${values.street}, ${values.number_address}${
+            values.complement ? " - " + values.complement : ""
+        }`;
+
+        const res = await fetch("/api/pagarme/create-subscription", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                plan_slug: selectedPlanSlug,
+                card_token: cardToken,
+                email: user.email,
+                name,
+                document: values.document,
+                phone: { area_code: values.areaCode, number: values.phoneNumber },
+                address: {
+                    line_1: streetLine,
+                    zip_code: values.zipCode,
+                    city: values.city,
+                    state: values.state,
+                },
+            }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data?.success) {
+            throw new Error(data?.error || "Erro ao criar assinatura.");
+        }
+
+        // Mesma correção aplicada no planCard.tsx: gera um token novo já
+        // com o plano atualizado, sem precisar de logout.
+        await supabase.auth.refreshSession();
+
+        setShowPaymentModal(false);
+        window.location.reload();
+    }
+
+    const selectedPlan = PLANS.find((p) => p.slug === selectedPlanSlug);
+
     return (
         <>
             <div className="max-w-5xl mx-auto px-6 py-0.5 space-y-0.5">
                 <div className="bg-white shadow-lg border border-gray-200 rounded-2xl p-8 md:p-10 space-y-8">
-                    {/* Cabeçalho: plano atual */}
                     <CurrentPlanCard
                         currentPlan={currentPlan}
                         price={price}
@@ -94,7 +152,6 @@ export default function AssinaturaPage() {
                         formattedExpiresOn={formattedExpiresOn}
                     />
 
-                    {/* Ciclo de cobrança (barra de progresso + datas) */}
                     <BillingCycle
                         hasPaidPlan={hasPaidPlan}
                         formattedLastPayment={formattedLastPayment}
@@ -102,15 +159,12 @@ export default function AssinaturaPage() {
                         progressPercent={progressPercent}
                     />
 
-
-                    {/* Comparação de planos + botões Migrar alinhados */}
                     <PlanComparison
                         plans={PLANS}
                         currentSlug={planSlug}
                         onSelectPlan={(plan) => openPaymentFor(plan.slug)}
                     />
 
-                    {/* Ações de rodapé (somente cancelar) */}
                     <FooterActions
                         hasPaidPlan={hasPaidPlan}
                         isActive={isActive}
@@ -119,19 +173,21 @@ export default function AssinaturaPage() {
                 </div>
             </div>
 
-            {/* Modal de cancelamento */}
             <CancelSubscriptionModal
                 open={showCancelModal}
                 onClose={() => setShowCancelModal(false)}
                 formattedExpiresOn={formattedExpiresOn}
             />
 
-            {/* Modal de confirmação antes de abrir o checkout */}
-            <PaymentFormModal
-                open={showPaymentModal}
-                onClose={() => setShowPaymentModal(false)}
-                planSlug={selectedPlanSlug}
-            />
+            {selectedPlan && (
+                <PaymentCardModal
+                    open={showPaymentModal}
+                    planName={selectedPlan.name}
+                    price={formatPrice(selectedPlan.price)}
+                    onClose={() => setShowPaymentModal(false)}
+                    onSubmit={confirmarAssinatura}
+                />
+            )}
         </>
     );
 }
