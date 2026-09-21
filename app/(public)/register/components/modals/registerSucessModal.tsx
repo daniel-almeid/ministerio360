@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Loading from "@/components/shared/loading";
+import PaymentCardModal, { CardFormValues } from "@/app/(protected)/planos/components/paymentCardModal";
 
 type PlanSlug = "free" | "standard" | "premium";
 
@@ -13,11 +14,50 @@ type Props = {
     email: string;
 };
 
-const PLAN_PRICES: Record<PlanSlug, number> = {
-    free: 0,
-    standard: 4990,
-    premium: 8990,
+const PLAN_NAMES: Record<PlanSlug, string> = {
+    free: "Grátis",
+    standard: "Padrão",
+    premium: "Premium+",
 };
+
+const PLAN_PRICES_LABEL: Record<PlanSlug, string> = {
+    free: "R$ 0/mês",
+    standard: "R$ 49,90/mês",
+    premium: "R$ 89,90/mês",
+};
+
+const PAGARME_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAGARME_PUBLIC_KEY!;
+
+async function tokenizeCard(card: {
+    number: string;
+    holderName: string;
+    expMonth: string;
+    expYear: string;
+    cvv: string;
+}) {
+    const res = await fetch(`https://api.pagar.me/core/v5/tokens?appId=${PAGARME_PUBLIC_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            type: "card",
+            card: {
+                number: card.number.replace(/\s/g, ""),
+                holder_name: card.holderName,
+                exp_month: card.expMonth,
+                exp_year: card.expYear,
+                cvv: card.cvv,
+            },
+        }),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok || !json?.id) {
+        throw new Error(json?.message || "Cartão inválido. Verifique os dados e tente novamente.");
+    }
+
+    return json.id as string;
+}
 
 export default function RegisterSuccessModal({
     open,
@@ -26,11 +66,10 @@ export default function RegisterSuccessModal({
     name,
     email,
 }: Props) {
-
-    const [loading, setLoading] = useState(false);
     const [exitLoading, setExitLoading] = useState(false);
+    const [showCardModal, setShowCardModal] = useState(false);
+    const [paidSuccessfully, setPaidSuccessfully] = useState(false);
 
-    // Loading ao fechar e ir para login
     function handleClose() {
         setExitLoading(true);
         setTimeout(() => {
@@ -41,39 +80,48 @@ export default function RegisterSuccessModal({
     if (exitLoading) return <Loading />;
     if (!open) return null;
 
-    const price_cents = PLAN_PRICES[planSlug];
     const isPaidPlan = planSlug !== "free";
 
-    async function handlePay() {
-        setLoading(true);
+    async function confirmarAssinatura(values: CardFormValues) {
+        const cardToken = await tokenizeCard({
+            number: values.number,
+            holderName: values.holderName,
+            expMonth: values.expMonth,
+            expYear: values.expYear,
+            cvv: values.cvv,
+        });
 
-        try {
-            const res = await fetch("/api/pagarme/create-checkout-order", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    plan_slug: planSlug,
-                    name,
-                    email,
-                    price_cents
-                }),
-            });
+        const streetLine = `${values.street}, ${values.number_address}${
+            values.complement ? " - " + values.complement : ""
+        }`;
 
-            const data = await res.json();
+        const res = await fetch("/api/pagarme/create-subscription", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                plan_slug: planSlug,
+                card_token: cardToken,
+                email,
+                name,
+                document: values.document,
+                phone: { area_code: values.areaCode, number: values.phoneNumber },
+                address: {
+                    line_1: streetLine,
+                    zip_code: values.zipCode,
+                    city: values.city,
+                    state: values.state,
+                },
+            }),
+        });
 
-            if (!res.ok || !data?.success || !data?.checkout_url) {
-                alert("Erro ao criar pedido de checkout.");
-                return;
-            }
+        const data = await res.json();
 
-            window.location.href = data.checkout_url;
-
-        } catch (err) {
-            alert("Erro ao processar pagamento.");
-            console.error(err);
-        } finally {
-            setLoading(false);
+        if (!res.ok || !data?.success) {
+            throw new Error(data?.error || "Erro ao criar assinatura.");
         }
+
+        setShowCardModal(false);
+        setPaidSuccessfully(true);
     }
 
     return (
@@ -87,7 +135,12 @@ export default function RegisterSuccessModal({
                     Antes de continuar, acesse o seu e-mail e confirme sua conta para poder entrar no sistema.
                 </p>
 
-                {isPaidPlan ? (
+                {paidSuccessfully ? (
+                    <p className="text-center text-emerald-600 font-medium">
+                        Assinatura confirmada! Assim que você confirmar o e-mail e fizer login, o
+                        plano {PLAN_NAMES[planSlug]} já estará ativo.
+                    </p>
+                ) : isPaidPlan ? (
                     <p className="text-center text-gray-600">
                         Após confirmar, finalize o pagamento para liberar todas as funcionalidades do plano.
                     </p>
@@ -98,13 +151,12 @@ export default function RegisterSuccessModal({
                 )}
 
                 <div className="flex flex-col gap-3 mt-4">
-                    {isPaidPlan && (
+                    {isPaidPlan && !paidSuccessfully && (
                         <button
-                            onClick={handlePay}
-                            disabled={loading}
-                            className="w-full bg-emerald-600 text-white py-2 rounded-lg font-medium hover:bg-emerald-700 transition disabled:opacity-60"
+                            onClick={() => setShowCardModal(true)}
+                            className="w-full bg-emerald-600 text-white py-2 rounded-lg font-medium hover:bg-emerald-700 transition"
                         >
-                            {loading ? "Redirecionando..." : "Pagar plano"}
+                            Pagar plano
                         </button>
                     )}
 
@@ -116,6 +168,14 @@ export default function RegisterSuccessModal({
                     </button>
                 </div>
             </div>
+
+            <PaymentCardModal
+                open={showCardModal}
+                planName={PLAN_NAMES[planSlug]}
+                price={PLAN_PRICES_LABEL[planSlug]}
+                onClose={() => setShowCardModal(false)}
+                onSubmit={confirmarAssinatura}
+            />
         </div>
     );
 }
