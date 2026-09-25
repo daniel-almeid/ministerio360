@@ -22,7 +22,6 @@ export default function LoginPage() {
         }
     }, []);
 
-    // 🔥 Função de navegação com loading
     function navigateWithLoading(path: string) {
         setNavLoading(true);
         setTimeout(() => {
@@ -83,7 +82,6 @@ export default function LoginPage() {
     return (
         <div className="relative min-h-screen flex items-center justify-center bg-linear-to-br from-gray-200 to-gray-200 px-6 overflow-hidden">
 
-            {/* Overlay de Loading (Login e Navegação) */}
             {(loading || navLoading) && (
                 <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="flex flex-col items-center space-y-4">
@@ -190,6 +188,15 @@ export default function LoginPage() {
                         className="text-gray-600 hover:text-[#38B2AC] transition underline-offset-2 hover:underline"
                     >
                         Política de Privacidade
+                    </button>
+                </div>
+                <div className="mt-2 flex justify-center text-sm">
+                    <button
+                        type="button"
+                        onClick={() => navigateWithLoading("/excluir-conta")}
+                        className="text-gray-400 hover:text-red-500 transition underline-offset-2 hover:underline"
+                    >
+                        Excluir minha conta
                     </button>
                 </div>
             </form>
