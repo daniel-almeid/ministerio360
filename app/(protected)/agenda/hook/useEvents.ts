@@ -6,6 +6,7 @@ import { EventItem, Ministry } from "../../../types/agenda";
 import { parseISO, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import toast from "react-hot-toast";
+import { generateEventsPdf } from "../utils/generateEventsPdf";
 
 export function useEvents(ministries: Ministry[], onRefresh: () => void) {
     const [events, setEvents] = useState<EventItem[]>([]);
@@ -34,7 +35,7 @@ export function useEvents(ministries: Ministry[], onRefresh: () => void) {
 
         if (filterMinistry) {
             data = data.filter((ev: any) =>
-                ev.ministries?.some((m: any) => m.name === filterMinistry),
+                ev.ministries?.some((m: any) => m.name === filterMinistry)
             );
         }
 
@@ -101,6 +102,20 @@ export function useEvents(ministries: Ministry[], onRefresh: () => void) {
         setSelected(null);
     }
 
+    function exportPdf(churchName: string) {
+        if (events.length === 0) {
+            toast.error("Nenhum evento para exportar.");
+            return;
+        }
+
+        generateEventsPdf({
+            churchName,
+            events,
+        });
+
+        toast.success("PDF gerado com sucesso!");
+    }
+
     return {
         events,
         loading,
@@ -125,5 +140,6 @@ export function useEvents(ministries: Ministry[], onRefresh: () => void) {
         openDelete,
         closeAll,
         confirmDelete,
+        exportPdf,
     };
 }

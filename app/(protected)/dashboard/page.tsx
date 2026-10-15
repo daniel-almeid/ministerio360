@@ -40,7 +40,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="space-y-0.5 pb-0.5">
+        <div className="space-y-4.5 pb-0.5">
             <DashboardMetrics
                 currentMonthIncome={currentMonthIncome}
                 currentMonthExpenses={currentMonthExpenses}
@@ -49,7 +49,7 @@ export default function DashboardPage() {
                 loading={loading}
             />
 
-            <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <section className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 <div className="bg-white rounded-xl p-5 shadow-sm">
                     <h3 className="font-semibold text-gray-700 mb-2">Entradas vs Saídas</h3>
                     <DashboardFinanceChart

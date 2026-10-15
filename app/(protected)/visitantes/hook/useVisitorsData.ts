@@ -3,6 +3,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { getVisitors } from "../../../services/visitors";
 import { Visitor } from "../../../types/visitors";
+import toast from "react-hot-toast";
+import { generateVisitorsPdf } from "../utils/generateVisitorsPdf";
 
 export function useVisitorsData() {
     const [visitors, setVisitors] = useState<Visitor[]>([]);
@@ -18,6 +20,7 @@ export function useVisitorsData() {
             setVisitors(data);
         } catch (err) {
             console.error(err);
+            toast.error("Erro ao carregar visitantes.");
         } finally {
             setLoading(false);
         }
@@ -40,6 +43,20 @@ export function useVisitorsData() {
         );
     }, [search, visitors]);
 
+    function exportPdf(churchName: string, data: Visitor[]) {
+        if (data.length === 0) {
+            toast.error("Nenhum visitante para exportar.");
+            return;
+        }
+
+        generateVisitorsPdf({
+            churchName,
+            visitors: data,
+        });
+
+        toast.success("PDF gerado com sucesso!");
+    }
+
     return {
         visitors,
         filteredVisitors,
@@ -51,5 +68,6 @@ export function useVisitorsData() {
         showArchived,
         setShowArchived,
         loadVisitors,
+        exportPdf,
     };
 }

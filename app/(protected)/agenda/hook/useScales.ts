@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { fetchScales, deleteScale } from "../services/scalesService";
 import toast from "react-hot-toast";
 import { ScaleItem } from "../../../types/agenda";
+import { generateScalesPdf } from "../utils/generateScalesPdf";
 
 export function useScales() {
     const [scales, setScales] = useState<ScaleItem[]>([]);
@@ -27,6 +28,21 @@ export function useScales() {
     useEffect(() => {
         load();
     }, [load]);
+
+    // ✅ IGUAL AO useEvents
+    function exportPdf(churchName: string) {
+        if (scales.length === 0) {
+            toast.error("Nenhuma escala para exportar.");
+            return;
+        }
+
+        generateScalesPdf({
+            churchName,
+            scales,
+        });
+
+        toast.success("PDF gerado com sucesso!");
+    }
 
     function openNew() {
         setSelected(null);
@@ -90,5 +106,6 @@ export function useScales() {
         openDelete,
         confirmDelete,
         closeAll,
+        exportPdf,
     };
 }

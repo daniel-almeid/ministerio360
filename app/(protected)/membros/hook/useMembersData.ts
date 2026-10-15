@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../../lib/supabaseClient";
+import { generateMembersPdf } from "../utils/generateMembersPdf";
+
+import toast from "react-hot-toast";
 
 export type Member = {
     id: string;
@@ -93,6 +96,20 @@ export function useMembersData() {
     const handlePrevious = () => currentPage > 1 && setCurrentPage((p) => p - 1);
     const handleNext = () => currentPage < totalPages && setCurrentPage((p) => p + 1);
 
+    function exportPdf(churchName: string) {
+        if (filtered.length === 0) {
+            toast.error("Nenhum membro para exportar.");
+            return;
+        }
+
+        generateMembersPdf({
+            churchName,
+            members: filtered,
+        });
+
+        toast.success("PDF gerado com sucesso!");
+    }
+
     return {
         members,
         search,
@@ -109,5 +126,6 @@ export function useMembersData() {
         setCurrentPage,
         handlePrevious,
         handleNext,
+        exportPdf
     };
 }

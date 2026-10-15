@@ -1,8 +1,11 @@
+
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../../../lib/supabaseClient";
 import toast from "react-hot-toast";
+
+export const ADMIN_ID = "289d49c4-8db0-49e2-b527-af90809f3be8";
 
 export type AdminUser = {
     user_id: string;
@@ -16,124 +19,128 @@ export type AdminUser = {
     subscription_active: boolean;
 };
 
+type PlanValues = {
+    plan_slug: string;
+    subscription_active: boolean;
+};
+
 export function useAdmin(enabled: boolean) {
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [loading, setLoading] = useState(false);
+    const [loaded, setLoaded] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [saving, setSaving] = useState(false);
 
-    useEffect(() => {
+    const load = useCallback(async () => {
         if (!enabled) return;
 
-        async function load() {
-            setLoading(true);
+        setLoading(true);
+        setError(null);
 
-            const { data, error } = await supabase
-                .from("profiles")
-                .select(`
-                    id,
-                    email,
-                    created_at,
-                    church_id,
-                    church_profiles:church_id (
-                        id,
-                        trade_name,
-                        created_at,
-                        plan_slug,
-                        subscription_active
-                    )
-                `)
-                .order("created_at", { ascending: false });
+        try {
+            const { data, error: rpcError } =
+                await supabase.rpc("admin_list_users");
 
-            if (error) {
-                console.error(error);
-                toast.error("Erro ao carregar usuários.");
-                setLoading(false);
+            if (rpcError) {
+                throw rpcError;
+            }
+
+            setUsers((data ?? []) as AdminUser[]);
+        } catch (err) {
+            console.error("Admin: erro ao carregar usuários", err);
+
+            const message =
+                err instanceof Error
+                    ? err.message
+                    : "Não foi possível carregar os usuários.";
+
+            setError(message);
+            toast.error("Erro ao carregar usuários.");
+        } finally {
+            setLoading(false);
+            setLoaded(true);
+        }
+    }, [enabled]);
+
+    useEffect(() => {
+        if (enabled) {
+            void load();
+        }
+    }, [enabled, load]);
+
+    const openModal = useCallback((user: AdminUser) => {
+        setSelectedUser(user);
+        setModalOpen(true);
+    }, []);
+
+    const closeModal = useCallback(() => {
+        setSelectedUser(null);
+        setModalOpen(false);
+    }, []);
+
+    const saveChanges = useCallback(
+        async (values: PlanValues) => {
+            if (!selectedUser?.church_id) {
+                toast.error(
+                    "Este usuário ainda não tem uma igreja vinculada."
+                );
                 return;
             }
 
-            const formatted: AdminUser[] = (data as any[]).map(u => ({
-                user_id: u.id,
-                email: u.email,
-                created_at_user: u.created_at,
-                church_id: u.church_id ?? null,
-                church_name: u.church_profiles?.trade_name ?? null,
-                created_at_church: u.church_profiles?.created_at ?? null,
-                plan_slug: u.church_profiles?.plan_slug ?? "free",
-                subscription_active: u.church_profiles?.subscription_active ?? false,
-                user_name: u.church_profiles?.trade_name ?? null
-            }));
+            setSaving(true);
 
-            setUsers(formatted);
-            setLoading(false);
-        }
-
-        load();
-    }, [enabled]);
-
-    function openModal(user: AdminUser) {
-        setSelectedUser(user);
-        setModalOpen(true);
-    }
-
-    function closeModal() {
-        setSelectedUser(null);
-        setModalOpen(false);
-    }
-
-    async function saveChanges(values: { plan_slug: string; subscription_active: boolean }) {
-        if (!selectedUser || !selectedUser.church_id) return;
-
-        setSaving(true);
-
-        // Atualiza church_profiles — a tabela certa
-        const { error } = await supabase
-            .from("church_profiles")
-            .update({
-                plan_slug: values.plan_slug,
-                subscription_active: values.subscription_active
-            })
-            .eq("id", selectedUser.church_id);
-
-        if (error) {
-            console.error(error);
-            toast.error("Erro ao atualizar plano.");
-            setSaving(false);
-            return;
-        }
-
-        // Atualiza JWT claims
-        await supabase.rpc("refresh_church_claim", {
-            p_user_id: selectedUser.user_id
-        });
-
-        // Atualiza estado local
-        setUsers(prev =>
-            prev.map(u =>
-                u.user_id === selectedUser.user_id
-                    ? {
-                        ...u,
-                        plan_slug: values.plan_slug,
-                        subscription_active: values.subscription_active
+            try {
+                const { error: rpcError } = await supabase.rpc(
+                    "admin_set_plan",
+                    {
+                        p_church_id: selectedUser.church_id,
+                        p_plan_slug: values.plan_slug,
+                        p_subscription_active: values.subscription_active,
                     }
-                    : u
-            )
-        );
+                );
 
-        toast.success("Plano atualizado com sucesso.");
-        setSaving(false);
-        closeModal();
-    }
+                if (rpcError) {
+                    throw rpcError;
+                }
+
+                setUsers((previous) =>
+                    previous.map((user) =>
+                        user.user_id === selectedUser.user_id
+                            ? {
+                                  ...user,
+                                  plan_slug: values.plan_slug,
+                                  subscription_active:
+                                      values.subscription_active,
+                              }
+                            : user
+                    )
+                );
+
+                toast.success("Plano atualizado com sucesso.");
+                closeModal();
+            } catch (err) {
+                console.error("Admin: erro ao atualizar plano", err);
+                toast.error("Erro ao atualizar plano.");
+            } finally {
+                setSaving(false);
+            }
+        },
+        [selectedUser, closeModal]
+    );
 
     return {
         users,
         loading,
+        loaded,
+        error,
         selectedUser,
         modalOpen,
         openModal,
         closeModal,
         saveChanges,
-        saving
+        saving,
+        refresh: load,
     };
 }

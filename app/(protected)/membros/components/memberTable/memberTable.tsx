@@ -2,12 +2,13 @@
 
 import { useEffect } from "react";
 import { useMembersData } from "../../hook/useMembersData";
-import { Search, PlusCircle } from "lucide-react";
+import { Search, PlusCircle, FileDown } from "lucide-react";
 import { PaginationControls } from "../../../../../components/shared/paginationControls";
 import Loading from "@/components/shared/loading";
-
+import { useHeaderData } from "../../../../../components/shared/header/useHeaderData";
 import { MemberTableDesktop } from "./memberTableDesktop";
 import { MemberTableMobile } from "./memberTableMobile";
+import { FileText } from "lucide-react";
 
 export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick }: any) {
     const {
@@ -23,8 +24,11 @@ export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick }
         setSearch,
         statusFilter,
         setStatusFilter,
-        setLoading
+        setLoading,
+        exportPdf,
     } = useMembersData();
+
+    const { churchName } = useHeaderData();
 
     useEffect(() => {
         setLoading(true);
@@ -45,7 +49,9 @@ export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick }
                             placeholder="Pesquisar membro..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#38B2AC] text-sm text-gray-700 placeholder-gray-400"
+                            className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg
+                         focus:outline-none focus:ring-2 focus:ring-[#38B2AC]
+                         text-sm text-gray-700 placeholder-gray-400"
                         />
                     </div>
 
@@ -57,12 +63,13 @@ export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick }
                         ].map((option) => (
                             <button
                                 key={option.key}
-                                onClick={() => setStatusFilter(option.key as "all" | "active" | "inactive")}
-                                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                                    statusFilter === option.key
-                                        ? "bg-[#38B2AC] text-white shadow-sm"
-                                        : "text-gray-600 hover:text-[#38B2AC]"
-                                }`}
+                                onClick={() =>
+                                    setStatusFilter(option.key as "all" | "active" | "inactive")
+                                }
+                                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${statusFilter === option.key
+                                    ? "bg-[#38B2AC] text-white shadow-sm"
+                                    : "text-gray-600 hover:text-[#38B2AC]"
+                                    }`}
                             >
                                 {option.label}
                             </button>
@@ -70,13 +77,31 @@ export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick }
                     </div>
                 </div>
 
-                <button
-                    onClick={onNewClick}
-                    className="flex items-center gap-2 px-3 py-2 bg-[#38B2AC] text-white rounded-lg hover:bg-[#319795] transition-all shadow-sm"
-                >
-                    <PlusCircle size={18} />
-                    Novo Membro
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => exportPdf(churchName)}
+                        title="Exportar PDF"
+                        className="relative p-2 rounded-lg border border-teal-400
+             bg-white text-[#38B2AC]
+             hover:bg-teal-50 transition"
+                    >
+                        <FileText className="w-5 h-5" />
+                        <span className="absolute -top-1 -right-1 text-[10px] px-1.5 py-0.5
+                   bg-[#38B2AC] text-white rounded-full">
+                            PDF
+                        </span>
+                    </button>
+
+                    <button
+                        onClick={onNewClick}
+                        className="flex items-center gap-2 px-3 py-2 bg-[#38B2AC]
+                       text-white rounded-lg hover:bg-[#319795]
+                       transition-all shadow-sm"
+                    >
+                        <PlusCircle size={18} />
+                        Novo Membro
+                    </button>
+                </div>
             </div>
 
             {loading ? (

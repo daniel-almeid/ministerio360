@@ -23,7 +23,7 @@ export default function VisitantesPage() {
 
     return (
         <div className="space-y-0.5 pb-0.5">
-            <h2 className="text-2xl font-semibold text-gray-700">Visitantes</h2>
+            <h2 className="text-2xl font-semibold text-gray-700"></h2>
 
             <VisitorTable
                 visitors={filteredVisitors}
