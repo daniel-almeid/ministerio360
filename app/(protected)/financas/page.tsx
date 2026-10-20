@@ -11,6 +11,8 @@ import { PaginationControls } from "../../../components/shared/paginationControl
 import { useTransactions } from "./hook/useTransactions";
 import { useHeaderData } from "../../../components/shared/header/useHeaderData";
 import Loading from "@/components/shared/loading";
+import { FinanceOverview } from "./components/finance/financeOverview";
+import { useFinanceOverview } from "./finance/useFinanceOverview";
 
 export default function FinancasPage() {
   const { churchName } = useHeaderData();
@@ -32,7 +34,17 @@ export default function FinancasPage() {
     loadTransactions,
     itemsPerPage,
     exportPdf,
+    accountFilter,
+    setAccountFilter,
   } = useTransactions();
+
+  const finance = useFinanceOverview(selectedMonth);
+
+  // Saldos mudam sempre que uma transação muda
+  function reloadAll() {
+    loadTransactions();
+    finance.reload();
+  }
 
   const [openModal, setOpenModal] = useState(false);
   const [editTransaction, setEditTransaction] = useState<any | null>(null);
@@ -54,6 +66,8 @@ export default function FinancasPage() {
 
   return (
     <div className="space-y-0.5 pb-0.5">
+      <FinanceOverview overview={finance} selectedMonth={selectedMonth} onChanged={reloadAll} />
+
       <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
           <h3 className="text-lg font-semibold text-gray-700">Transações</h3>
@@ -78,9 +92,25 @@ export default function FinancasPage() {
               <option value="saida">Saídas</option>
             </select>
 
+            {finance.accounts.length > 1 && (
+              <select
+                value={accountFilter}
+                onChange={(e) => setAccountFilter(e.target.value)}
+                className="border rounded-lg px-3 py-2 text-sm text-gray-600
+                           focus:ring-2 focus:ring-[#38B2AC] outline-none"
+              >
+                <option value="todas">Todas as contas</option>
+                {finance.accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
             {/* Exportação de PDF */}
             <button
-              onClick={() => exportPdf(churchName)}
+              onClick={() => exportPdf(churchName, { accounts: finance.accounts, recurring: finance.recurring })}
               title="Exportar PDF"
               className="relative p-2 rounded-lg border border-teal-400
              bg-white text-[#38B2AC]
@@ -124,6 +154,7 @@ export default function FinancasPage() {
               pageChanging={pageChanging}
               onEdit={setEditTransaction}
               onDelete={(id: string) => setConfirmingId(id)}
+              accountName={finance.accountName}
             />
 
             <PaginationControls
@@ -141,7 +172,9 @@ export default function FinancasPage() {
       {openModal && (
         <ModalNewTransaction
           onClose={() => setOpenModal(false)}
-          onSuccess={() => loadTransactions()}
+          onSuccess={reloadAll}
+          accounts={finance.accounts}
+          defaultAccountId={finance.defaultAccount?.id ?? null}
         />
       )}
 
@@ -149,13 +182,17 @@ export default function FinancasPage() {
         <ModalEditTransaction
           transaction={editTransaction}
           onClose={() => setEditTransaction(null)}
-          onUpdated={() => loadTransactions()}
+          onUpdated={reloadAll}
+          accounts={finance.accounts}
         />
       )}
 
       {confirmingId && (
         <ModalDeleteTransaction
-          onConfirm={() => confirmDelete(confirmingId)}
+          onConfirm={async () => {
+            await confirmDelete(confirmingId);
+            finance.reload();
+          }}
           onCancel={() => setConfirmingId(null)}
         />
       )}

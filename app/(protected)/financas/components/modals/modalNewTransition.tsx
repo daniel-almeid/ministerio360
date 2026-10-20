@@ -4,13 +4,33 @@ import { useState } from "react";
 import { supabase } from "../../../../../lib/supabaseClient";
 import toast from "react-hot-toast";
 import { CustomSelect } from "../../../../../components/shared/customSelect";
+import { AccountSelect, MemberPicker } from "../finance/fields";
+import { saveRecurring } from "../../finance/financeService";
+import { parseAmount } from "../../finance/money";
+import { currentYearMonth, monthStart } from "../../finance/recurring";
+import type { FinanceAccount, MemberOption } from "../../finance/types";
 
-export function ModalNewTransaction({ onClose, onSuccess }: any) {
+type Props = {
+  onClose: () => void;
+  onSuccess?: () => void;
+  accounts?: FinanceAccount[];
+  defaultAccountId?: string | null;
+};
+
+export function ModalNewTransaction({ onClose, onSuccess, accounts = [], defaultAccountId = null }: Props) {
   const [type, setType] = useState("Entrada");
   const [category, setCategory] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
   const [amount, setAmount] = useState("");
   const [personName, setPersonName] = useState("");
+  const [member, setMember] = useState<MemberOption | null>(null);
+  const [accountId, setAccountId] = useState<string | null>(defaultAccountId);
+  const [repeat, setRepeat] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const isIncome = type === "Entrada";
+  const linkedMember = isIncome ? member : null;
+  const today = new Date().getDate();
 
   const categoriasPadrao = [
     "Dízimo",
@@ -24,8 +44,16 @@ export function ModalNewTransaction({ onClose, onSuccess }: any) {
   ];
 
   async function handleSave() {
-    if (!category || !amount) {
+    const finalCategory = category === "Outro..." ? customCategory.trim() : category;
+
+    if (!finalCategory || !amount) {
       toast.error("Preencha todos os campos obrigatórios!");
+      return;
+    }
+
+    const value = parseAmount(amount);
+    if (!Number.isFinite(value) || value <= 0) {
+      toast.error("Informe um valor válido.");
       return;
     }
 
@@ -40,12 +68,30 @@ export function ModalNewTransaction({ onClose, onSuccess }: any) {
         return;
       }
 
-      const payload = {
-        type: type === "Entrada" ? "entrada" : "saida",
-        category,
-        amount: parseFloat(amount),
-        person_name: personName,
+      const payload: Record<string, unknown> = {
+        type: isIncome ? "entrada" : "saida",
+        category: finalCategory,
+        amount: value,
+        person_name: linkedMember ? linkedMember.name : personName,
+        account_id: accountId,
+        member_id: linkedMember?.id ?? null,
       };
+
+      // "Repetir todo mês": cria a despesa fixa e já registra o pagamento deste mês
+      if (!isIncome && repeat) {
+        const month = monthStart(currentYearMonth());
+        payload.recurring_id = await saveRecurring({
+          description: personName.trim() || finalCategory,
+          category: finalCategory,
+          amount: value,
+          day_of_month: today,
+          account_id: accountId,
+          start_month: month,
+          end_month: null,
+          is_active: true,
+        });
+        payload.recurring_month = month;
+      }
 
       const { error } = await supabase.from("transactions").insert(payload);
 
@@ -92,33 +138,70 @@ export function ModalNewTransaction({ onClose, onSuccess }: any) {
               type="text"
               className="w-full border rounded-lg px-3 py-2 bg-gray-50 text-gray-700 focus:ring-2 focus:ring-[#38B2AC] focus:outline-none"
               placeholder="Digite a categoria"
-              onChange={(e) => setCategory(e.target.value)}
+              value={customCategory}
+              onChange={(e) => setCustomCategory(e.target.value)}
             />
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Pessoa / Motivo
-            </label>
-            <input
-              type="text"
-              className="w-full border rounded-lg px-3 py-2 bg-gray-50 focus:ring-2 focus:ring-[#38B2AC]"
-              value={personName}
-              onChange={(e) => setPersonName(e.target.value)}
-            />
+          {isIncome && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Membro
+              </label>
+              <MemberPicker value={member} onChange={setMember} />
+            </div>
+          )}
+
+          {!linkedMember && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {isIncome ? "Pessoa / Motivo (se não for membro)" : "Pessoa / Motivo"}
+              </label>
+              <input
+                type="text"
+                className="w-full border rounded-lg px-3 py-2 bg-gray-50 focus:ring-2 focus:ring-[#38B2AC]"
+                value={personName}
+                onChange={(e) => setPersonName(e.target.value)}
+              />
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Valor
+              </label>
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="0,00"
+                className="w-full border rounded-lg px-3 py-2 bg-gray-50 focus:ring-2 focus:ring-[#38B2AC]"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </div>
+
+            {accounts.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Conta
+                </label>
+                <AccountSelect accounts={accounts} value={accountId} onChange={setAccountId} />
+              </div>
+            )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Valor
+          {!isIncome && (
+            <label className="flex items-center justify-between border rounded-lg px-3 py-2 text-sm text-gray-700 cursor-pointer">
+              {repeat ? `Repetir todo dia ${today} (despesa fixa)` : "Repetir todo mês"}
+              <input
+                type="checkbox"
+                checked={repeat}
+                onChange={(e) => setRepeat(e.target.checked)}
+                className="accent-[#38B2AC] w-4 h-4"
+              />
             </label>
-            <input
-              type="number"
-              className="w-full border rounded-lg px-3 py-2 bg-gray-50 focus:ring-2 focus:ring-[#38B2AC]"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          </div>
+          )}
         </div>
 
         <div className="mt-6 flex justify-end gap-3">

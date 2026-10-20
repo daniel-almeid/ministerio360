@@ -10,7 +10,7 @@ import { MemberTableDesktop } from "./memberTableDesktop";
 import { MemberTableMobile } from "./memberTableMobile";
 import { FileText } from "lucide-react";
 
-export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick }: any) {
+export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick, onContributions }: any) {
     const {
         paginatedMembers,
         loading,
@@ -115,6 +115,7 @@ export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick }
                             members={paginatedMembers}
                             onEdit={onEdit}
                             onDelete={onDelete}
+                            onContributions={onContributions}
                         />
                     </div>
 
@@ -123,6 +124,7 @@ export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick }
                             members={paginatedMembers}
                             onEdit={onEdit}
                             onDelete={onDelete}
+                            onContributions={onContributions}
                         />
                     </div>
 

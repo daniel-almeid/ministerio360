@@ -8,6 +8,7 @@ export function TransactionTable({
     onEdit,
     onDelete,
     pageChanging,
+    accountName,
 }: any) {
     return (
         <>
@@ -15,6 +16,7 @@ export function TransactionTable({
                 data={data}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                accountName={accountName}
             />
 
             <TransactionTableMobile
@@ -22,6 +24,7 @@ export function TransactionTable({
                 onEdit={onEdit}
                 onDelete={onDelete}
                 pageChanging={pageChanging}
+                accountName={accountName}
             />
         </>
     );

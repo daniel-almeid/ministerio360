@@ -85,10 +85,31 @@ async function deactivateBySubscriptionId(subscriptionId: string, reason: string
     return true;
 }
 
+// ---------------------------------------------------------------------
+// SEGURANÇA: o corpo do webhook pode ser forjado por qualquer pessoa que
+// descubra a URL. Por isso nunca confiamos nele: buscamos o objeto
+// direto na API do Pagar.me (com a nossa chave secreta) e só agimos
+// com base no que a própria API responder.
+// ---------------------------------------------------------------------
+async function fetchFromPagarme(path: string) {
+    const secret = process.env.PAGARME_SECRET_KEY!;
+    const auth = "Basic " + Buffer.from(secret + ":").toString("base64");
+    const res = await fetch(`https://api.pagar.me/core/v5/${path}`, {
+        headers: { Authorization: auth },
+        cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return res.json();
+}
+
+function isSafeId(id: unknown): id is string {
+    return typeof id === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(id);
+}
+
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        console.log("📥 WEBHOOK RECEBIDO:", JSON.stringify(body, null, 2));
+        console.log("📥 WEBHOOK RECEBIDO:", body?.type, body?.data?.id);
 
         const event = body.type;
         const data = body.data;
@@ -100,29 +121,37 @@ export async function POST(req: Request) {
         switch (event) {
             case "order.paid": {
                 // Fluxo antigo (pedido avulso via Checkout, se algum dia for reativado)
-                const email = data?.customer?.email;
-                const planSlug = data?.items?.[0]?.code;
+                if (!isSafeId(data?.id)) break;
+                const order = await fetchFromPagarme(`orders/${data.id}`);
+                if (order?.status !== "paid") {
+                    console.log("⚠️ order.paid não confirmado na API do Pagar.me:", data.id);
+                    break;
+                }
+                const email = order?.customer?.email;
+                const planSlug = order?.items?.[0]?.code;
                 if (email && planSlug) await activatePlanByEmail(email, planSlug);
                 break;
             }
 
-            case "invoice.paid": {
-                // Cobrança recorrente do mês foi paga com sucesso
+            case "invoice.paid":
+            case "invoice.payment_failed": {
+                // Cobrança recorrente do mês (paga ou recusada)
+                if (!isSafeId(data?.id)) break;
+                const invoice = await fetchFromPagarme(`invoices/${data.id}`);
+                const expected = event === "invoice.paid" ? "paid" : "failed";
+                if (invoice?.status !== expected) {
+                    console.log(`⚠️ ${event} não confirmado na API do Pagar.me:`, data.id);
+                    break;
+                }
                 const subscriptionId =
-                    data?.subscription?.id ?? data?.subscription_id ?? data?.subscription;
-                if (subscriptionId) {
+                    invoice?.subscription?.id ?? invoice?.subscription_id ?? invoice?.subscription;
+                if (!isSafeId(subscriptionId)) {
+                    console.log(`⚠️ ${event} sem subscription_id identificável:`, data.id);
+                    break;
+                }
+                if (event === "invoice.paid") {
                     await renewBySubscriptionId(subscriptionId);
                 } else {
-                    console.log("⚠️ invoice.paid sem subscription_id identificável:", data);
-                }
-                break;
-            }
-
-            case "invoice.payment_failed": {
-                // Cobrança do mês falhou (cartão recusado, sem limite, etc.)
-                const subscriptionId =
-                    data?.subscription?.id ?? data?.subscription_id ?? data?.subscription;
-                if (subscriptionId) {
                     await deactivateBySubscriptionId(subscriptionId, "cobrança falhou");
                 }
                 break;
@@ -130,9 +159,13 @@ export async function POST(req: Request) {
 
             case "subscription.canceled": {
                 const subscriptionId = data?.id ?? data?.subscription_id;
-                if (subscriptionId) {
-                    await deactivateBySubscriptionId(subscriptionId, "assinatura cancelada");
+                if (!isSafeId(subscriptionId)) break;
+                const subscription = await fetchFromPagarme(`subscriptions/${subscriptionId}`);
+                if (subscription?.status !== "canceled") {
+                    console.log("⚠️ subscription.canceled não confirmado na API do Pagar.me:", subscriptionId);
+                    break;
                 }
+                await deactivateBySubscriptionId(subscriptionId, "assinatura cancelada");
                 break;
             }
 

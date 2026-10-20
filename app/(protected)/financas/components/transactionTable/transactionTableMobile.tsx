@@ -14,6 +14,7 @@ export function TransactionTableMobile({
     onEdit,
     onDelete,
     pageChanging,
+    accountName,
 }: any) {
     return (
         <div className="md:hidden space-y-4 mt-2">
@@ -53,9 +54,15 @@ export function TransactionTableMobile({
                         </p>
 
                         <p className="text-gray-700 text-[15px] mb-1">
-                            <span className="font-semibold">Pessoa / Motivo:</span>{" "}
+                            <span className="font-semibold">{t.member_id ? "Membro:" : "Pessoa / Motivo:"}</span>{" "}
                             {t.person_name || "-"}
                         </p>
+
+                        {accountName?.(t.account_id) && (
+                            <p className="text-gray-700 text-[15px] mb-1">
+                                <span className="font-semibold">Conta:</span> {accountName(t.account_id)}
+                            </p>
+                        )}
 
                         <div className="flex items-center gap-2 text-gray-600 text-sm mb-3">
                             <Calendar className="w-4 h-4 text-[#38B2AC]" />

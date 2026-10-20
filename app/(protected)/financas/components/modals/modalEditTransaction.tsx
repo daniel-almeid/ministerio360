@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { supabase } from "../../../../../lib/supabaseClient";
 import { Loader2 } from "lucide-react";
+import { AccountSelect, MemberPicker } from "../finance/fields";
+import type { FinanceAccount, MemberOption } from "../../finance/types";
 
 type ModalEditTransactionProps = {
     transaction: {
@@ -11,15 +13,19 @@ type ModalEditTransactionProps = {
         category: string;
         person_name: string;
         amount: number;
+        account_id?: string | null;
+        member_id?: string | null;
     };
     onClose: () => void;
     onUpdated: () => void;
+    accounts?: FinanceAccount[];
 };
 
 export function ModalEditTransaction({
     transaction,
     onClose,
     onUpdated,
+    accounts = [],
 }: ModalEditTransactionProps) {
     const [form, setForm] = useState({
         type: transaction.type,
@@ -27,6 +33,14 @@ export function ModalEditTransaction({
         person_name: transaction.person_name || "",
         amount: transaction.amount,
     });
+
+    const [accountId, setAccountId] = useState<string | null>(transaction.account_id ?? null);
+    const [member, setMember] = useState<MemberOption | null>(
+        transaction.member_id
+            ? { id: transaction.member_id, name: transaction.person_name || "Membro" }
+            : null
+    );
+    const linkedMember = form.type === "entrada" ? member : null;
 
     const [loading, setLoading] = useState(false);
 
@@ -39,8 +53,10 @@ export function ModalEditTransaction({
                 .update({
                     type: form.type,
                     category: form.category,
-                    person_name: form.person_name,
+                    person_name: linkedMember ? linkedMember.name : form.person_name,
                     amount: parseFloat(String(form.amount)),
+                    account_id: accountId,
+                    member_id: linkedMember?.id ?? null,
                 })
                 .eq("id", transaction.id);
 
@@ -108,7 +124,18 @@ export function ModalEditTransaction({
                         />
                     </div>
 
+                    {/* Membro (só para entradas) */}
+                    {form.type === "entrada" && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">
+                                Membro
+                            </label>
+                            <MemberPicker value={member} onChange={setMember} />
+                        </div>
+                    )}
+
                     {/* Nome da pessoa */}
+                    {!linkedMember && (
                     <div>
                         <label className="block text-sm font-medium text-gray-600 mb-1">
                             Nome da pessoa
@@ -121,6 +148,17 @@ export function ModalEditTransaction({
                             className="w-full border rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring focus:ring-emerald-400"
                         />
                     </div>
+                    )}
+
+                    {/* Conta */}
+                    {accounts.length > 0 && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">
+                                Conta
+                            </label>
+                            <AccountSelect accounts={accounts} value={accountId} onChange={setAccountId} />
+                        </div>
+                    )}
 
                     {/* Valor */}
                     <div>

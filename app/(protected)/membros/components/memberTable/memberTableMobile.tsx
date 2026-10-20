@@ -1,8 +1,8 @@
 "use client";
 
-import { Calendar, User, Phone, Pencil, Trash } from "lucide-react";
+import { Calendar, User, Phone, Pencil, Trash, HandCoins } from "lucide-react";
 
-export function MemberTableMobile({ members, onEdit, onDelete }: any) {
+export function MemberTableMobile({ members, onEdit, onDelete, onContributions }: any) {
     return (
         <div className="md:hidden space-y-4 mt-2">
             {members.map((m: any) => (
@@ -51,6 +51,16 @@ export function MemberTableMobile({ members, onEdit, onDelete }: any) {
                     </div>
 
                     <div className="flex justify-end gap-5 pt-2">
+                        {onContributions && (
+                            <button
+                                onClick={() => onContributions(m)}
+                                title="Contribuições"
+                                className="text-[#0F766E] hover:text-teal-900 transition"
+                            >
+                                <HandCoins className="w-5 h-5" />
+                            </button>
+                        )}
+
                         <button
                             onClick={() => onEdit(m)}
                             className="text-emerald-600 hover:text-emerald-700 transition"

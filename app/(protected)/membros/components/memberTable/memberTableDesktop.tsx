@@ -1,8 +1,8 @@
 "use client";
 
-import { Calendar, User, Phone, Pencil, Trash } from "lucide-react";
+import { Calendar, User, Phone, Pencil, Trash, HandCoins } from "lucide-react";
 
-export function MemberTableDesktop({ members, onEdit, onDelete }: any) {
+export function MemberTableDesktop({ members, onEdit, onDelete, onContributions }: any) {
     return (
         <div className="max-h-140 overflow-y-auto custom-scrollbar">
             <table className="w-full border-collapse text-sm">
@@ -70,6 +70,16 @@ export function MemberTableDesktop({ members, onEdit, onDelete }: any) {
 
                             <td className="px-5 py-3 text-center">
                                 <div className="flex justify-center gap-3 text-gray-600">
+                                    {onContributions && (
+                                        <button
+                                            onClick={() => onContributions(m)}
+                                            title="Contribuições"
+                                            className="text-[#0F766E] hover:text-teal-900 transition"
+                                        >
+                                            <HandCoins className="w-4 h-4" />
+                                        </button>
+                                    )}
+
                                     <button
                                         onClick={() => onEdit(m)}
                                         className="text-emerald-600 hover:text-emerald-700 transition"

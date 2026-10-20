@@ -8,7 +8,7 @@ import {
     Trash,
 } from "lucide-react";
 
-export function TransactionTableDesktop({ data, onEdit, onDelete }: any) {
+export function TransactionTableDesktop({ data, onEdit, onDelete, accountName }: any) {
     return (
         <div className="hidden md:block overflow-x-auto">
             <table className="w-full border-collapse">
@@ -19,6 +19,7 @@ export function TransactionTableDesktop({ data, onEdit, onDelete }: any) {
                             "Categoria",
                             "Valor",
                             "Pessoa / Motivo",
+                            "Conta",
                             "Data",
                             "Ações",
                         ].map((h) => (
@@ -63,6 +64,18 @@ export function TransactionTableDesktop({ data, onEdit, onDelete }: any) {
 
                             <td className="px-5 py-4 text-gray-700 capitalize">
                                 {t.person_name || "-"}
+                                {t.member_id && (
+                                    <span
+                                        title="Membro vinculado"
+                                        className="ml-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#E6FFFA] text-[#0F766E] normal-case"
+                                    >
+                                        membro
+                                    </span>
+                                )}
+                            </td>
+
+                            <td className="px-5 py-4 text-gray-600 text-sm">
+                                {accountName?.(t.account_id) || "-"}
                             </td>
 
                             <td className="px-5 py-4 flex items-center gap-2 text-gray-600 text-sm">

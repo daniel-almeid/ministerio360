@@ -5,6 +5,7 @@ import MemberTable from './components/memberTable/memberTable';
 import NewMemberModal from './components/modals/newMember';
 import EditMemberModal from './components/modals/editMember';
 import DeleteMemberModal from './components/modals/deleteMember';
+import { MemberContributionsModal } from '../financas/components/finance/memberContributionsModal';
 
 export default function MembersPage() {
     const [reloadFlag, setReloadFlag] = useState(false);
@@ -12,6 +13,7 @@ export default function MembersPage() {
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedMember, setSelectedMember] = useState<any>(null);
+    const [contributionsOf, setContributionsOf] = useState<any>(null);
 
     const handleReload = () => setReloadFlag(!reloadFlag);
 
@@ -32,7 +34,15 @@ export default function MembersPage() {
                     setShowDeleteModal(true);
                 }}
                 onNewClick={() => setShowNewModal(true)}
+                onContributions={(m: any) => setContributionsOf(m)}
             />
+
+            {contributionsOf && (
+                <MemberContributionsModal
+                    member={contributionsOf}
+                    onClose={() => setContributionsOf(null)}
+                />
+            )}
 
             {showNewModal && (
                 <NewMemberModal

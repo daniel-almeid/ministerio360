@@ -4,6 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../../../../lib/supabaseClient";
 import toast from "react-hot-toast";
 import { generateFinancialPdf } from "../utils/generateFinancialPdf";
+import { fetchRecurringPayments, fetchTransfers } from "../finance/financeService";
+import { buildRecurringStatus, monthStart } from "../finance/recurring";
+import type { FinanceAccount, RecurringExpense } from "../finance/types";
 
 export function useTransactions() {
     const [transactions, setTransactions] = useState<any[]>([]);
@@ -23,6 +26,15 @@ export function useTransactions() {
 
     const selectedMonthRef = useRef(selectedMonthState);
     const filterRef = useRef(filterState);
+
+    // "todas" ou o id de uma conta
+    const [accountFilterState, setAccountFilterState] = useState("todas");
+    const accountFilterRef = useRef(accountFilterState);
+
+    const setAccountFilter = (value: string) => {
+        accountFilterRef.current = value;
+        setAccountFilterState(value);
+    };
 
     const setSelectedMonth = (value: string) => {
         selectedMonthRef.current = value;
@@ -72,6 +84,10 @@ export function useTransactions() {
                 query = query.eq("type", type);
             }
 
+            if (accountFilterRef.current !== "todas") {
+                query = query.eq("account_id", accountFilterRef.current);
+            }
+
             const { data, error } = await query;
 
             if (error) {
@@ -107,7 +123,7 @@ export function useTransactions() {
             loadTransactions();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filterState, selectedMonthState, sessionLoaded]);
+    }, [filterState, selectedMonthState, accountFilterState, sessionLoaded]);
 
     const totalPages = useMemo(
         () => Math.ceil(transactions.length / itemsPerPage),
@@ -154,7 +170,10 @@ export function useTransactions() {
         }
     }
 
-    async function exportPdf(churchName: string) {
+    async function exportPdf(
+        churchName: string,
+        extras: { accounts?: FinanceAccount[]; recurring?: RecurringExpense[] } = {}
+    ) {
         const monthYear = selectedMonthRef.current;
         const type = filterRef.current;
 
@@ -184,6 +203,10 @@ export function useTransactions() {
                 query = query.eq("type", type);
             }
 
+            if (accountFilterRef.current !== "todas") {
+                query = query.eq("account_id", accountFilterRef.current);
+            }
+
             const { data, error } = await query;
 
             if (error || !data) {
@@ -191,10 +214,21 @@ export function useTransactions() {
                 return;
             }
 
+            // Dados novos de Finanças: se falharem, o PDF sai só com os lançamentos
+            const [transfers, recurringPayments] = await Promise.all([
+                fetchTransfers(monthYear).catch(() => []),
+                fetchRecurringPayments(monthStart(monthYear)).catch(() => []),
+            ]);
+
             generateFinancialPdf({
-                churchName, 
+                churchName,
                 monthLabel: monthYear,
                 transactions: data,
+                accounts: extras.accounts ?? [],
+                transfers,
+                recurring: buildRecurringStatus(extras.recurring ?? [], recurringPayments, monthYear),
+                typeFilter: type,
+                accountFilter: accountFilterRef.current,
             });
 
             toast.success("PDF gerado com sucesso!", { id: loadingToast });
@@ -214,6 +248,8 @@ export function useTransactions() {
         setFilter,
         selectedMonth: selectedMonthState,
         setSelectedMonth,
+        accountFilter: accountFilterState,
+        setAccountFilter,
         totalPages,
         currentPage,
         handleNext,
@@ -223,4 +259,4 @@ export function useTransactions() {
         exportPdf,
         itemsPerPage,
     };
-}
+}
