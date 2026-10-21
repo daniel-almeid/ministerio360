@@ -19,11 +19,17 @@ export default function ModalEditMinistry({ onClose, onSuccess, ministry }: any)
 
         const { error } = await supabase
             .from('ministries')
-            .update({ name, description })
+            .update({ name: name.trim(), description })
             .eq('id', ministry.id);
 
         setSaving(false);
-        if (error) return alert('Erro ao atualizar ministério.');
+        if (error) {
+            return alert(
+                error.code === '23505'
+                    ? 'Já existe um ministério com este nome na sua igreja.'
+                    : 'Erro ao atualizar ministério.'
+            );
+        }
         onSuccess();
     }
 

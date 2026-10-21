@@ -41,7 +41,7 @@ export default function ModalNewMinistry({ onClose, onSuccess }: ModalNewMinistr
         error.message.toLowerCase().includes('duplicate') ||
         error.message.toLowerCase().includes('unique constraint')
       ) {
-        toast.error('Erro ao salvar, já existe um ministério com este nome.');
+        toast.error('Já existe um ministério com este nome na sua igreja.');
       } else {
         toast.error('Erro ao salvar ministério. Tente novamente.');
       }

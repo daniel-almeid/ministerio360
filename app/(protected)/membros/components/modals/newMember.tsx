@@ -1,6 +1,6 @@
 'use client';
 
-import { X } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
 import { useMemberForm } from "./memberModal/useMemberForm";
 import { MinistrySelect } from "./memberModal/ministrySelect";
 
@@ -11,7 +11,7 @@ type Props = {
 };
 
 export default function MemberModal({ member, onClose, onSuccess }: Props) {
-    const { form, setForm, ministries, saving, handleSubmit } = useMemberForm(
+    const { form, setForm, ministries, saving, handleSubmit, nameWarning } = useMemberForm(
         member,
         onSuccess,
         onClose
@@ -96,6 +96,13 @@ export default function MemberModal({ member, onClose, onSuccess }: Props) {
                         </div>
                     </div>
 
+                    {nameWarning && (
+                        <div className="flex gap-2 items-start rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+                            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                            <p>{nameWarning}</p>
+                        </div>
+                    )}
+
                     <div className="flex justify-end gap-3 pt-5 border-t border-gray-100">
                         <button
                             type="button"
@@ -109,7 +116,7 @@ export default function MemberModal({ member, onClose, onSuccess }: Props) {
                             disabled={saving}
                             className="px-4 py-2 rounded-lg bg-[#38B2AC] text-white hover:bg-[#319795] transition disabled:opacity-60"
                         >
-                            {saving ? "Salvando..." : member ? "Salvar Alterações" : "Cadastrar"}
+                            {saving ? "Salvando..." : nameWarning ? (member ? "Salvar mesmo assim" : "Cadastrar mesmo assim") : member ? "Salvar Alterações" : "Cadastrar"}
                         </button>
                     </div>
                 </form>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
+import { normalizeMemberName, sameNameWarning, type SameNameMember } from "@/lib/memberNames";
 import { supabase } from "../../../../../lib/supabaseClient";
 import { MinistrySelect } from "./memberModal/ministrySelect";
 
@@ -22,6 +23,9 @@ export default function EditMemberModal({ member, onClose, onSuccess }: EditMemb
     });
     const [saving, setSaving] = useState(false);
     const [ministries, setMinistries] = useState<any[]>([]);
+    // Aviso de nome repetido; o nome que o usuário já confirmou que é outra pessoa
+    const [nameWarning, setNameWarning] = useState<string | null>(null);
+    const [confirmedName, setConfirmedName] = useState<string | null>(null);
 
     useEffect(() => {
         loadMinistries();
@@ -44,12 +48,37 @@ export default function EditMemberModal({ member, onClose, onSuccess }: EditMemb
         if (!error && data) setMinistries(data);
     }
 
+    function changeName(name: string) {
+        setFormData({ ...formData, name });
+        if (normalizeMemberName(name) !== confirmedName) setNameWarning(null);
+    }
+
+    // Trocou o nome para um que já existe na igreja? Avisa antes de salvar.
+    async function checkSameName(name: string) {
+        const key = normalizeMemberName(name);
+        if (key === normalizeMemberName(member.name) || key === confirmedName) return true;
+
+        const { data, error } = await supabase.rpc("find_members_by_name", { p_name: name, p_exclude: member.id });
+        if (error || !data?.length) return true;
+
+        setNameWarning(sameNameWarning(name, data as SameNameMember[]));
+        setConfirmedName(key);
+        return false;
+    }
+
     async function handleSave() {
+        if (!formData.name.trim()) return alert("O nome é obrigatório.");
         setSaving(true);
+
+        if (!(await checkSameName(formData.name))) {
+            setSaving(false);
+            return;
+        }
+
         const { error } = await supabase
             .from("members")
             .update({
-                name: formData.name,
+                name: formData.name.trim().replace(/\s+/g, " "),
                 email: formData.email,
                 phone: formData.phone,
                 ministry_id: formData.ministry_id || null,
@@ -87,7 +116,7 @@ export default function EditMemberModal({ member, onClose, onSuccess }: EditMemb
                         <input
                             type="text"
                             value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            onChange={(e) => changeName(e.target.value)}
                             className="w-full px-3 py-2 border rounded-lg text-sm mt-1 focus:ring-2 focus:ring-[#38B2AC] outline-none"
                         />
                     </div>
@@ -146,6 +175,13 @@ export default function EditMemberModal({ member, onClose, onSuccess }: EditMemb
                     </div>
                 </div>
 
+                {nameWarning && (
+                    <div className="mt-4 flex gap-2 items-start rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+                        <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                        <p>{nameWarning}</p>
+                    </div>
+                )}
+
                 <div className="mt-6 flex justify-end gap-3">
                     <button
                         onClick={onClose}
@@ -158,7 +194,7 @@ export default function EditMemberModal({ member, onClose, onSuccess }: EditMemb
                         disabled={saving}
                         className="px-4 py-2 rounded-lg bg-[#38B2AC] text-white hover:bg-[#319795] transition disabled:opacity-60"
                     >
-                        {saving ? "Salvando..." : "Salvar Alterações"}
+                        {saving ? "Salvando..." : nameWarning ? "Salvar mesmo assim" : "Salvar Alterações"}
                     </button>
                 </div>
             </div>

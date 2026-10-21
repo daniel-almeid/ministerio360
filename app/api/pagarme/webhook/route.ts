@@ -47,8 +47,33 @@ async function activatePlanByEmail(email: string, planSlug: string) {
     return true;
 }
 
-// Renovação: a validade vai até o fim do ciclo pago (mensal ou anual)
-async function renewBySubscriptionId(subscriptionId: string, cycleEnd?: string | null) {
+type PaidPlan = { plan_slug: string; billing_cycle: "monthly" | "yearly" };
+const PAID_PLANS = ["standard", "premium_basic", "premium"];
+
+// Qual plano a assinatura do Pagar.me cobra de verdade.
+// 1º pelo id do plano no Pagar.me (tabela "plans"); 2º pelo metadata gravado ao assinar.
+async function planOfSubscription(subscription: any): Promise<PaidPlan | null> {
+    const pagarmePlanId = subscription?.plan?.id;
+    if (isSafeId(pagarmePlanId)) {
+        const { data } = await supabase.from("plans").select("plan_slug, pagarme_plan_id, pagarme_yearly_plan_id");
+        for (const p of (data ?? []) as any[]) {
+            if (p.pagarme_plan_id === pagarmePlanId) return { plan_slug: p.plan_slug, billing_cycle: "monthly" };
+            if (p.pagarme_yearly_plan_id === pagarmePlanId) return { plan_slug: p.plan_slug, billing_cycle: "yearly" };
+        }
+    }
+
+    const slug = subscription?.metadata?.plan_slug;
+    const cycle = subscription?.metadata?.billing_cycle;
+    if (PAID_PLANS.includes(slug) && (cycle === "monthly" || cycle === "yearly")) {
+        return { plan_slug: slug, billing_cycle: cycle };
+    }
+    return null;
+}
+
+// Renovação: a validade vai até o fim do ciclo pago (mensal ou anual).
+// Também devolve o plano pago: se a rotina diária já tinha passado a igreja
+// para o Grátis (pagamento atrasado), o pagamento confirmado restaura tudo.
+async function renewBySubscriptionId(subscriptionId: string, cycleEnd?: string | null, plan?: PaidPlan | null) {
     const { data: profile } = await supabase
         .from("church_profiles")
         .select("id, user_id, billing_cycle")
@@ -60,17 +85,22 @@ async function renewBySubscriptionId(subscriptionId: string, cycleEnd?: string |
         return false;
     }
 
+    const cycle = plan?.billing_cycle ?? profile.billing_cycle;
     let expiresAt = cycleEnd ? new Date(cycleEnd) : null;
     if (!expiresAt || isNaN(expiresAt.getTime())) {
         // Sem a data do Pagar.me: 30 dias no mensal, 1 ano no anual
         expiresAt = new Date();
-        if (profile.billing_cycle === "yearly") expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+        if (cycle === "yearly") expiresAt.setFullYear(expiresAt.getFullYear() + 1);
         else expiresAt.setDate(expiresAt.getDate() + 30);
     }
 
     await supabase
         .from("church_profiles")
-        .update({ subscription_active: true, plan_expires_at: expiresAt.toISOString() })
+        .update({
+            subscription_active: true,
+            plan_expires_at: expiresAt.toISOString(),
+            ...(plan ? { plan_slug: plan.plan_slug, billing_cycle: plan.billing_cycle } : {}),
+        })
         .eq("id", profile.id);
 
     await refreshChurchClaims(profile.id, profile.user_id);
@@ -163,14 +193,15 @@ export async function POST(req: Request) {
                 }
                 if (event === "invoice.paid") {
                     // Fim do ciclo: pela fatura ou, se faltar, pela assinatura
-                    let cycleEnd: string | null = invoice?.cycle?.end_at ?? null;
-                    if (!cycleEnd) {
-                        const subscription = await fetchFromPagarme(`subscriptions/${subscriptionId}`);
-                        cycleEnd = subscription?.current_cycle?.end_at ?? null;
-                    }
-                    await renewBySubscriptionId(subscriptionId, cycleEnd);
+                    const subscription = await fetchFromPagarme(`subscriptions/${subscriptionId}`);
+                    const cycleEnd: string | null =
+                        invoice?.cycle?.end_at ?? subscription?.current_cycle?.end_at ?? null;
+                    const plan = await planOfSubscription(subscription);
+                    await renewBySubscriptionId(subscriptionId, cycleEnd, plan);
                 } else {
-                    await deactivateBySubscriptionId(subscriptionId, "cobrança falhou");
+                    // Não bloqueia na hora: o Pagar.me tenta cobrar de novo. Se nada for pago,
+                    // a rotina diária passa a igreja para o Grátis 1 dia depois do vencimento.
+                    console.log(`⚠️ Cobrança recusada (assinatura ${subscriptionId}); aguardando nova tentativa.`);
                 }
                 break;
             }
@@ -196,4 +227,4 @@ export async function POST(req: Request) {
         console.error("❌ ERRO GERAL NO WEBHOOK:", err);
         return NextResponse.json({ error: "Erro webhook" }, { status: 500 });
     }
-}
+}
