@@ -2,11 +2,14 @@
 
 import { useRef, useState } from "react";
 import { CreditCard, MapPin, User, X, Loader2 } from "lucide-react";
+import { installmentLabel } from "@/lib/plans";
 
 type Props = {
     open: boolean;
     planName: string;
     price: string;
+    totalCents?: number; // valor total (para mostrar as parcelas)
+    maxInstallments?: number; // > 1 mostra a escolha de parcelas (plano anual)
     onClose: () => void;
     onSubmit: (values: CardFormValues) => Promise<void>;
 };
@@ -27,6 +30,7 @@ export type CardFormValues = {
     neighborhood: string;
     city: string;
     state: string;
+    installments: string;
 };
 
 const EMPTY: CardFormValues = {
@@ -45,6 +49,7 @@ const EMPTY: CardFormValues = {
     neighborhood: "",
     city: "",
     state: "",
+    installments: "1",
 };
 
 // ===== Máscaras =====
@@ -86,7 +91,7 @@ function maskDigits(v: string, max: number) {
     return v.replace(/\D/g, "").slice(0, max);
 }
 
-export default function PaymentCardModal({ open, planName, price, onClose, onSubmit }: Props) {
+export default function PaymentCardModal({ open, planName, price, totalCents = 0, maxInstallments = 1, onClose, onSubmit }: Props) {
     const [values, setValues] = useState<CardFormValues>(EMPTY);
     const [loading, setLoading] = useState(false);
     const [cepLoading, setCepLoading] = useState(false);
@@ -285,6 +290,26 @@ export default function PaymentCardModal({ open, planName, price, onClose, onSub
                         </div>
                     </section>
 
+                    {/* Parcelas (só no plano anual) */}
+                    {maxInstallments > 1 && (
+                        <section>
+                            <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
+                                Parcelas
+                            </label>
+                            <select
+                                value={values.installments}
+                                onChange={(e) => set("installments", e.target.value)}
+                                className={inputClass + " bg-white"}
+                            >
+                                {Array.from({ length: maxInstallments }, (_, i) => i + 1).map((n) => (
+                                    <option key={n} value={String(n)}>
+                                        {installmentLabel(totalCents, n)}
+                                    </option>
+                                ))}
+                            </select>
+                        </section>
+                    )}
+
                     {/* Titular */}
                     <section>
                         <div className="flex items-center gap-2 mb-3">
@@ -429,4 +454,4 @@ export default function PaymentCardModal({ open, planName, price, onClose, onSub
             </div>
         </div>
     );
-}
+}

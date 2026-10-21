@@ -13,8 +13,9 @@ type Props = {
 // Preços oficiais em centavos
 const PLAN_PRICES: Record<PlanSlug, number> = {
     free: 0,
-    standard: 4990,
-    premium: 8990,
+    standard: 3990,
+    premium_basic: 6990,
+    premium: 9990,
 };
 
 export default function PaymentFormModal({ open, onClose, planSlug }: Props) {

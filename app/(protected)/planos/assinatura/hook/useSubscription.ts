@@ -1,66 +1,18 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../../../../../lib/supabaseClient";
+import { PLANS, getPlan, priceCents, type BillingCycle, type PlanInfo, type PlanSlug } from "@/lib/plans";
 
-export type PlanSlug = "free" | "standard" | "premium";
-
-export type PlanDef = {
-    slug: PlanSlug;
-    name: string;
-    price: number; // mensal
-    features: string[];
-};
-
-export const PLANS: PlanDef[] = [
-    {
-        slug: "free",
-        name: "GRÁTIS",
-        price: 0,
-        features: [
-            "Dashboard",
-            "Cadastro de membros",
-            "Cadastro financeiro",
-            "Relatórios simples",
-        ],
-    },
-    {
-        slug: "standard",
-        name: "PADRÃO",
-        price: 49.9,
-        features: [
-            "Dashboard",
-            "Cadastro de membros",
-            "Cadastro de visitantes",
-            "Acompanhamento de visitantes",
-            "Cadastro financeiro",
-            "Relatórios simples",
-        ],
-    },
-    {
-        slug: "premium",
-        name: "PREMIUM+",
-        price: 89.9,
-        features: [
-            "Dashboard",
-            "Cadastro de membros",
-            "Cadastro de visitantes",
-            "Acompanhamento de visitantes",
-            "Cadastro financeiro",
-            "Cadastro de ministérios",
-            "Cadastro de eventos",
-            "Cadastro de escalas",
-            "Relatórios completos",
-            "Suporte prioritário",
-        ],
-    },
-];
+export type { PlanSlug, BillingCycle };
+export type PlanDef = PlanInfo;
+export { PLANS };
 
 // TIPAGEM DO church_profiles
 type ProfileRow = {
     plan_slug: PlanSlug;
     subscription_active: boolean;
-
+    billing_cycle: BillingCycle | null;
     plan_expires_at: string | null;
     current_period_end: string | null;
 };
@@ -80,7 +32,7 @@ export function useSubscription() {
 
         const { data } = await supabase
             .from("church_profiles")
-            .select("plan_slug, subscription_active, plan_expires_at, current_period_end")
+            .select("plan_slug, subscription_active, billing_cycle, plan_expires_at, current_period_end")
             .eq("id", churchId)
             .single<ProfileRow>();
 
@@ -92,47 +44,42 @@ export function useSubscription() {
         load();
     }, []);
 
-    const planSlug = profile?.plan_slug ?? "free";
-    const currentPlan = PLANS.find((p) => p.slug === planSlug)!;
+    const currentPlan = getPlan(profile?.plan_slug ?? "free");
+    const planSlug = currentPlan.slug;
+    const billingCycle: BillingCycle = profile?.billing_cycle === "yearly" ? "yearly" : "monthly";
 
     // DATAS TRATADAS
-    const expiresOn = profile?.plan_expires_at
-        ? new Date(profile.plan_expires_at)
-        : null;
+    const expiresOn = profile?.plan_expires_at ? new Date(profile.plan_expires_at) : null;
+    const formattedExpiresOn = expiresOn ? expiresOn.toLocaleDateString("pt-BR") : null;
 
-    const formattedExpiresOn = expiresOn
-        ? expiresOn.toLocaleDateString("pt-BR")
-        : null;
-
-    // CÁLCULO DO PERÍODO
+    // CÁLCULO DO PERÍODO (30 dias no mensal, 1 ano no anual)
     const now = new Date();
 
     let progressPercent = 0;
     let formattedNextPayment = "";
     let formattedLastPayment = "";
-    let hasPaidPlan = planSlug !== "free";
+    const hasPaidPlan = planSlug !== "free";
 
     if (expiresOn) {
         const start = new Date(expiresOn);
-        start.setDate(start.getDate() - 30);
+        if (billingCycle === "yearly") start.setFullYear(start.getFullYear() - 1);
+        else start.setDate(start.getDate() - 30);
 
         const total = expiresOn.getTime() - start.getTime();
         const used = now.getTime() - start.getTime();
 
-        progressPercent = Math.round(
-            Math.min(100, Math.max(0, (used / total) * 100))
-        );
+        progressPercent = Math.round(Math.min(100, Math.max(0, (used / total) * 100)));
 
         formattedNextPayment = expiresOn.toLocaleDateString("pt-BR");
         formattedLastPayment = start.toLocaleDateString("pt-BR");
     }
 
-
     return {
         loading,
         planSlug,
         currentPlan,
-        price: currentPlan.price,
+        billingCycle,
+        price: priceCents(currentPlan, billingCycle) / 100,
         isActive: profile?.subscription_active ?? false,
         expiresOn,
         formattedExpiresOn,

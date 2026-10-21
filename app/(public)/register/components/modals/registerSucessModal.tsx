@@ -3,66 +3,23 @@
 import { useState } from "react";
 import Loading from "@/components/shared/loading";
 import PaymentCardModal, { CardFormValues } from "@/app/(protected)/planos/components/paymentCardModal";
-
-type PlanSlug = "free" | "standard" | "premium";
+import { subscribeWithCard } from "@/app/(protected)/planos/subscribe";
+import { PLAN_NAME, getPlan, priceCents, priceLabel, type BillingCycle, type PlanSlug } from "@/lib/plans";
 
 type Props = {
     open: boolean;
     onClose: () => void;
     planSlug: PlanSlug;
+    cycle: BillingCycle;
     name: string;
     email: string;
 };
-
-const PLAN_NAMES: Record<PlanSlug, string> = {
-    free: "Grátis",
-    standard: "Padrão",
-    premium: "Premium+",
-};
-
-const PLAN_PRICES_LABEL: Record<PlanSlug, string> = {
-    free: "R$ 0/mês",
-    standard: "R$ 49,90/mês",
-    premium: "R$ 89,90/mês",
-};
-
-const PAGARME_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAGARME_PUBLIC_KEY!;
-
-async function tokenizeCard(card: {
-    number: string;
-    holderName: string;
-    expMonth: string;
-    expYear: string;
-    cvv: string;
-}) {
-    const res = await fetch(`https://api.pagar.me/core/v5/tokens?appId=${PAGARME_PUBLIC_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            type: "card",
-            card: {
-                number: card.number.replace(/\s/g, ""),
-                holder_name: card.holderName,
-                exp_month: card.expMonth,
-                exp_year: card.expYear,
-                cvv: card.cvv,
-            },
-        }),
-    });
-
-    const json = await res.json();
-
-    if (!res.ok || !json?.id) {
-        throw new Error(json?.message || "Cartão inválido. Verifique os dados e tente novamente.");
-    }
-
-    return json.id as string;
-}
 
 export default function RegisterSuccessModal({
     open,
     onClose,
     planSlug,
+    cycle,
     name,
     email,
 }: Props) {
@@ -82,44 +39,10 @@ export default function RegisterSuccessModal({
 
     const isPaidPlan = planSlug !== "free";
 
+    const plan = getPlan(planSlug);
+
     async function confirmarAssinatura(values: CardFormValues) {
-        const cardToken = await tokenizeCard({
-            number: values.number,
-            holderName: values.holderName,
-            expMonth: values.expMonth,
-            expYear: values.expYear,
-            cvv: values.cvv,
-        });
-
-        const streetLine = `${values.street}, ${values.number_address}${
-            values.complement ? " - " + values.complement : ""
-        }`;
-
-        const res = await fetch("/api/pagarme/create-subscription", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                plan_slug: planSlug,
-                card_token: cardToken,
-                email,
-                name,
-                document: values.document,
-                phone: { area_code: values.areaCode, number: values.phoneNumber },
-                address: {
-                    line_1: streetLine,
-                    zip_code: values.zipCode,
-                    city: values.city,
-                    state: values.state,
-                },
-            }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok || !data?.success) {
-            throw new Error(data?.error || "Erro ao criar assinatura.");
-        }
-
+        await subscribeWithCard({ planSlug, cycle, values, email, name });
         setShowCardModal(false);
         setPaidSuccessfully(true);
     }
@@ -138,7 +61,7 @@ export default function RegisterSuccessModal({
                 {paidSuccessfully ? (
                     <p className="text-center text-emerald-600 font-medium">
                         Assinatura confirmada! Assim que você confirmar o e-mail e fizer login, o
-                        plano {PLAN_NAMES[planSlug]} já estará ativo.
+                        plano {PLAN_NAME[planSlug]} já estará ativo.
                     </p>
                 ) : isPaidPlan ? (
                     <p className="text-center text-gray-600">
@@ -171,11 +94,13 @@ export default function RegisterSuccessModal({
 
             <PaymentCardModal
                 open={showCardModal}
-                planName={PLAN_NAMES[planSlug]}
-                price={PLAN_PRICES_LABEL[planSlug]}
+                planName={`${plan.name} ${cycle === "yearly" ? "Anual" : "Mensal"}`}
+                price={priceLabel(plan, cycle)}
+                totalCents={priceCents(plan, cycle)}
+                maxInstallments={cycle === "yearly" ? plan.maxInstallments : 1}
                 onClose={() => setShowCardModal(false)}
                 onSubmit={confirmarAssinatura}
             />
         </div>
     );
-}
+}

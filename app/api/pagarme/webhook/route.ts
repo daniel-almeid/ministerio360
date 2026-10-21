@@ -9,6 +9,16 @@ const supabase = createClient(
     { auth: { persistSession: false, autoRefreshToken: false } }
 );
 
+// Atualiza o "crachá" (token) de todos os usuários da igreja
+async function refreshChurchClaims(churchId: string, ownerId: string | null) {
+    const { data } = await supabase.from("church_users").select("user_id").eq("church_id", churchId);
+    const ids = new Set<string>((data ?? []).map((r: { user_id: string }) => r.user_id));
+    if (ownerId) ids.add(ownerId);
+    for (const id of ids) {
+        await supabase.rpc("refresh_church_claim", { p_user_id: id });
+    }
+}
+
 async function activatePlanByEmail(email: string, planSlug: string) {
     const { data: usersData, error: listErr } = await supabase.auth.admin.listUsers();
     if (listErr || !usersData) return false;
@@ -37,10 +47,11 @@ async function activatePlanByEmail(email: string, planSlug: string) {
     return true;
 }
 
-async function renewBySubscriptionId(subscriptionId: string) {
+// Renovação: a validade vai até o fim do ciclo pago (mensal ou anual)
+async function renewBySubscriptionId(subscriptionId: string, cycleEnd?: string | null) {
     const { data: profile } = await supabase
         .from("church_profiles")
-        .select("id, user_id")
+        .select("id, user_id, billing_cycle")
         .eq("pagarme_subscription_id", subscriptionId)
         .single();
 
@@ -49,17 +60,20 @@ async function renewBySubscriptionId(subscriptionId: string) {
         return false;
     }
 
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
+    let expiresAt = cycleEnd ? new Date(cycleEnd) : null;
+    if (!expiresAt || isNaN(expiresAt.getTime())) {
+        // Sem a data do Pagar.me: 30 dias no mensal, 1 ano no anual
+        expiresAt = new Date();
+        if (profile.billing_cycle === "yearly") expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+        else expiresAt.setDate(expiresAt.getDate() + 30);
+    }
 
     await supabase
         .from("church_profiles")
         .update({ subscription_active: true, plan_expires_at: expiresAt.toISOString() })
         .eq("id", profile.id);
 
-    if (profile.user_id) {
-        await supabase.rpc("refresh_church_claim", { p_user_id: profile.user_id });
-    }
+    await refreshChurchClaims(profile.id, profile.user_id);
     return true;
 }
 
@@ -79,9 +93,7 @@ async function deactivateBySubscriptionId(subscriptionId: string, reason: string
 
     console.log(`⚠️ Assinatura ${subscriptionId} marcada como inativa (${reason}).`);
 
-    if (profile.user_id) {
-        await supabase.rpc("refresh_church_claim", { p_user_id: profile.user_id });
-    }
+    await refreshChurchClaims(profile.id, profile.user_id);
     return true;
 }
 
@@ -150,7 +162,13 @@ export async function POST(req: Request) {
                     break;
                 }
                 if (event === "invoice.paid") {
-                    await renewBySubscriptionId(subscriptionId);
+                    // Fim do ciclo: pela fatura ou, se faltar, pela assinatura
+                    let cycleEnd: string | null = invoice?.cycle?.end_at ?? null;
+                    if (!cycleEnd) {
+                        const subscription = await fetchFromPagarme(`subscriptions/${subscriptionId}`);
+                        cycleEnd = subscription?.current_cycle?.end_at ?? null;
+                    }
+                    await renewBySubscriptionId(subscriptionId, cycleEnd);
                 } else {
                     await deactivateBySubscriptionId(subscriptionId, "cobrança falhou");
                 }
@@ -178,4 +196,4 @@ export async function POST(req: Request) {
         console.error("❌ ERRO GERAL NO WEBHOOK:", err);
         return NextResponse.json({ error: "Erro webhook" }, { status: 500 });
     }
-}
+}

@@ -7,63 +7,28 @@ import {
     PLANS,
     type PlanSlug,
 } from "./hook/useSubscription";
-import { supabase } from "@/lib/supabaseClient";
 import CurrentPlanCard from "./components/currentPlanCard";
 import BillingCycle from "./components/billingCycle";
 import PlanComparison from "./components/planComparison";
 import FooterActions from "./components/footerActions";
 import CancelSubscriptionModal from "./components/modal/cancelSubscriptionModal";
 import PaymentCardModal, { CardFormValues } from "../components/paymentCardModal";
-
-const PAGARME_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAGARME_PUBLIC_KEY!;
-
-async function tokenizeCard(card: {
-    number: string;
-    holderName: string;
-    expMonth: string;
-    expYear: string;
-    cvv: string;
-}) {
-    const res = await fetch(`https://api.pagar.me/core/v5/tokens?appId=${PAGARME_PUBLIC_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            type: "card",
-            card: {
-                number: card.number.replace(/\s/g, ""),
-                holder_name: card.holderName,
-                exp_month: card.expMonth,
-                exp_year: card.expYear,
-                cvv: card.cvv,
-            },
-        }),
-    });
-
-    const json = await res.json();
-
-    if (!res.ok || !json?.id) {
-        throw new Error(json?.message || "Cartão inválido. Verifique os dados e tente novamente.");
-    }
-
-    return json.id as string;
-}
-
-function formatPrice(value: number) {
-    return value === 0
-        ? "R$ 0/mês"
-        : `R$ ${value.toFixed(2).replace(".", ",")}/mês`;
-}
+import CycleToggle from "../components/cycleToggle";
+import { subscribeWithCard } from "../subscribe";
+import { priceCents, priceLabel, type BillingCycle as Cycle } from "@/lib/plans";
 
 export default function AssinaturaPage() {
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [selectedPlanSlug, setSelectedPlanSlug] = useState<PlanSlug | null>(null);
+    const [cycle, setCycle] = useState<Cycle>("monthly");
 
     const {
         loading,
         planSlug,
         currentPlan,
         price,
+        billingCycle,
         isActive,
         formattedLastPayment,
         formattedNextPayment,
@@ -81,58 +46,7 @@ export default function AssinaturaPage() {
 
     async function confirmarAssinatura(values: CardFormValues) {
         if (!selectedPlanSlug) return;
-
-        const session = await supabase.auth.getSession();
-        const user = session.data.session?.user;
-
-        if (!user?.email) {
-            throw new Error("Sessão expirada. Faça login novamente.");
-        }
-
-        const name =
-            user.user_metadata?.full_name || user.user_metadata?.name || "Usuário";
-
-        const cardToken = await tokenizeCard({
-            number: values.number,
-            holderName: values.holderName,
-            expMonth: values.expMonth,
-            expYear: values.expYear,
-            cvv: values.cvv,
-        });
-
-        const streetLine = `${values.street}, ${values.number_address}${
-            values.complement ? " - " + values.complement : ""
-        }`;
-
-        const res = await fetch("/api/pagarme/create-subscription", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                plan_slug: selectedPlanSlug,
-                card_token: cardToken,
-                email: user.email,
-                name,
-                document: values.document,
-                phone: { area_code: values.areaCode, number: values.phoneNumber },
-                address: {
-                    line_1: streetLine,
-                    zip_code: values.zipCode,
-                    city: values.city,
-                    state: values.state,
-                },
-            }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok || !data?.success) {
-            throw new Error(data?.error || "Erro ao criar assinatura.");
-        }
-
-        // Mesma correção aplicada no planCard.tsx: gera um token novo já
-        // com o plano atualizado, sem precisar de logout.
-        await supabase.auth.refreshSession();
-
+        await subscribeWithCard({ planSlug: selectedPlanSlug, cycle, values });
         setShowPaymentModal(false);
         window.location.reload();
     }
@@ -146,6 +60,7 @@ export default function AssinaturaPage() {
                     <CurrentPlanCard
                         currentPlan={currentPlan}
                         price={price}
+                        billingCycle={billingCycle}
                         planSlug={planSlug}
                         isActive={isActive}
                         formattedNextPayment={formattedNextPayment}
@@ -159,9 +74,13 @@ export default function AssinaturaPage() {
                         progressPercent={progressPercent}
                     />
 
+                    <CycleToggle value={cycle} onChange={setCycle} />
+
                     <PlanComparison
                         plans={PLANS}
+                        cycle={cycle}
                         currentSlug={planSlug}
+                        currentCycle={billingCycle}
                         onSelectPlan={(plan) => openPaymentFor(plan.slug)}
                     />
 
@@ -182,12 +101,14 @@ export default function AssinaturaPage() {
             {selectedPlan && (
                 <PaymentCardModal
                     open={showPaymentModal}
-                    planName={selectedPlan.name}
-                    price={formatPrice(selectedPlan.price)}
+                    planName={`${selectedPlan.name} ${cycle === "yearly" ? "Anual" : "Mensal"}`}
+                    price={priceLabel(selectedPlan, cycle)}
+                    totalCents={priceCents(selectedPlan, cycle)}
+                    maxInstallments={cycle === "yearly" ? selectedPlan.maxInstallments : 1}
                     onClose={() => setShowPaymentModal(false)}
                     onSubmit={confirmarAssinatura}
                 />
             )}
         </>
     );
-}
+}

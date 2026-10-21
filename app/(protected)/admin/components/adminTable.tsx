@@ -1,6 +1,19 @@
 "use client";
 
 import type { AdminUser } from "../hook/useAdminPlans";
+import { PLAN_NAME, isPlanSlug } from "@/lib/plans";
+
+// "2 de 3", "4 (ilimitado)" ou "-" sem igreja
+function usersLabel(u: AdminUser) {
+    if (!u.church_id) return "-";
+    return u.user_limit == null ? `${u.users_count ?? 0} (ilimitado)` : `${u.users_count ?? 0} de ${u.user_limit}`;
+}
+
+// "Premium · Anual"
+function planLabel(u: AdminUser) {
+    const name = isPlanSlug(u.plan_slug) ? PLAN_NAME[u.plan_slug] : u.plan_slug ?? "Grátis";
+    return u.plan_slug && u.plan_slug !== "free" && u.billing_cycle === "yearly" ? `${name} · Anual` : name;
+}
 
 type Props = {
     users: AdminUser[];
@@ -28,6 +41,7 @@ export default function AdminTable({ users, loading, onEdit }: Props) {
                         <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Igreja</th>
                         <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Plano</th>
                         <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Assinatura</th>
+                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Usuários</th>
                         <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Criado usuário</th>
                         <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Criado igreja</th>
                         <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Ações</th>
@@ -42,7 +56,7 @@ export default function AdminTable({ users, loading, onEdit }: Props) {
 
                             <td className="px-4 py-3 text-sm">
                                 <span className="px-2 py-1 text-xs rounded-full bg-teal-50 text-teal-700 border border-teal-100">
-                                    {u.plan_slug ?? "free"}
+                                    {planLabel(u)}
                                 </span>
                             </td>
 
@@ -57,6 +71,8 @@ export default function AdminTable({ users, loading, onEdit }: Props) {
                                     </span>
                                 )}
                             </td>
+
+                            <td className="px-4 py-3 text-sm">{usersLabel(u)}</td>
 
                             <td className="px-4 py-3 text-sm">
                                 {u.created_at_user
@@ -103,7 +119,7 @@ export default function AdminTable({ users, loading, onEdit }: Props) {
                         <div className="mb-2">
                             <p className="text-xs text-gray-500">Plano</p>
                             <span className="px-2 py-1 text-xs rounded-full bg-teal-50 text-teal-700 border border-teal-100">
-                                {u.plan_slug ?? "free"}
+                                {planLabel(u)}
                             </span>
                         </div>
 
@@ -118,6 +134,11 @@ export default function AdminTable({ users, loading, onEdit }: Props) {
                                     Inativa
                                 </span>
                             )}
+                        </div>
+
+                        <div className="mb-2">
+                            <p className="text-xs text-gray-500">Usuários</p>
+                            <p className="text-sm">{usersLabel(u)}</p>
                         </div>
 
                         <div className="mb-2">

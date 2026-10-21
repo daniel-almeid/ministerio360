@@ -5,16 +5,18 @@ import RegisterForm from "./components/registerForm";
 import RegisterBackDrop from "./components/registerBackDrop";
 import RegisterSuccessModal from "./components/modals/registerSucessModal";
 
-type PlanSlug = "free" | "standard" | "premium";
+import type { BillingCycle, PlanSlug } from "@/lib/plans";
 
 export default function RegisterPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [planSlug, setPlanSlug] = useState<PlanSlug>("free");
+  const [cycle, setCycle] = useState<BillingCycle>("monthly");
   const [registerName, setRegisterName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
 
-  function handleSuccess(plan: PlanSlug, name: string, email: string) {
+  function handleSuccess(plan: PlanSlug, chosenCycle: BillingCycle, name: string, email: string) {
     setPlanSlug(plan);
+    setCycle(chosenCycle);
     setRegisterName(name);
     setRegisterEmail(email);
     setShowSuccessModal(true);
@@ -31,6 +33,7 @@ export default function RegisterPage() {
           <RegisterSuccessModal
             open={showSuccessModal}
             planSlug={planSlug}
+            cycle={cycle}
             name={registerName}
             email={registerEmail}
             onClose={() => setShowSuccessModal(false)}

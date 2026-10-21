@@ -5,8 +5,6 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../../../lib/supabaseClient";
 import toast from "react-hot-toast";
 
-export const ADMIN_ID = "289d49c4-8db0-49e2-b527-af90809f3be8";
-
 export type AdminUser = {
     user_id: string;
     user_name: string | null;
@@ -17,11 +15,15 @@ export type AdminUser = {
     created_at_church: string | null;
     plan_slug: string;
     subscription_active: boolean;
+    users_count: number;
+    user_limit: number | null; // null = ilimitado
+    billing_cycle: "monthly" | "yearly";
 };
 
 type PlanValues = {
     plan_slug: string;
     subscription_active: boolean;
+    billing_cycle: "monthly" | "yearly";
 };
 
 export function useAdmin(enabled: boolean) {
@@ -98,6 +100,7 @@ export function useAdmin(enabled: boolean) {
                         p_church_id: selectedUser.church_id,
                         p_plan_slug: values.plan_slug,
                         p_subscription_active: values.subscription_active,
+                        p_billing_cycle: values.billing_cycle,
                     }
                 );
 
@@ -113,6 +116,7 @@ export function useAdmin(enabled: boolean) {
                                   plan_slug: values.plan_slug,
                                   subscription_active:
                                       values.subscription_active,
+                                  billing_cycle: values.billing_cycle,
                               }
                             : user
                     )

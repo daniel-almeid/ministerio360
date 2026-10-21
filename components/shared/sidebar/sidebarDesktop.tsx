@@ -21,8 +21,6 @@ import {
 } from "lucide-react";
 import { useMyAccess } from "../access/useMyAccess";
 
-const ADMIN_ID = "289d49c4-8db0-49e2-b527-af90809f3be8";
-
 const links = [
     { href: "/dashboard", label: "Dashboard", icon: Home, plan: "free" },
     { href: "/financas", label: "Finanças", icon: DollarSign, plan: "free" },
@@ -51,9 +49,9 @@ export function SidebarDesktop({
     isPastor?: boolean;
 }) {
     const pathname = usePathname();
-    const isAdmin = userId === ADMIN_ID;
     // Só aparecem as áreas que o usuário pode acessar
-    const { canOpen } = useMyAccess();
+    const { canOpen, access } = useMyAccess();
+    const isAdmin = !!access?.platform_admin; // vem do banco (platform_admins)
     const visibleLinks = links.filter(({ href }) => canOpen(href));
 
     const [loading, setLoading] = useState(false);

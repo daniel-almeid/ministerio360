@@ -9,10 +9,10 @@ import RegisterPlanSelector from "./registerPlanSelector";
 import RegisterPlanDetails from "./registerPlanDetails";
 import RegisterBackdrop from "./registerBackDrop";
 
-type PlanSlug = "free" | "standard" | "premium";
+import type { BillingCycle, PlanSlug } from "@/lib/plans";
 
 type Props = {
-    onSuccess: (planSlug: PlanSlug, name: string, email: string) => void;
+    onSuccess: (planSlug: PlanSlug, cycle: BillingCycle, name: string, email: string) => void;
 };
 
 export default function RegisterForm({ onSuccess }: Props) {
@@ -28,6 +28,7 @@ export default function RegisterForm({ onSuccess }: Props) {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const [plan, setPlan] = useState<PlanSlug>("free");
+    const [cycle, setCycle] = useState<BillingCycle>("monthly");
     const [showDetails, setShowDetails] = useState<string | null>(null);
 
     const [loading, setLoading] = useState(false);
@@ -91,7 +92,7 @@ export default function RegisterForm({ onSuccess }: Props) {
             return;
         }
 
-        onSuccess(plan, name, email);
+        onSuccess(plan, cycle, name, email);
         setLoading(false);
     }
 
@@ -216,6 +217,8 @@ export default function RegisterForm({ onSuccess }: Props) {
                 <RegisterPlanSelector
                     plan={plan}
                     setPlan={setPlan}
+                    cycle={cycle}
+                    setCycle={setCycle}
                     setShowDetails={setShowDetails}
                 />
 

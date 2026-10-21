@@ -1,54 +1,23 @@
-
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "../../../../lib/supabaseClient";
+import { useMemo, useState } from "react";
 import AdminTable from "../components/adminTable";
 import EditPlanModal from "../components/editPlanModal";
-import { ADMIN_ID, useAdmin } from "../hook/useAdminPlans";
+import AdminUsersTab from "../components/adminUsersTab";
+import { useAdmin } from "../hook/useAdminPlans";
+import { useMyAccess } from "@/components/shared/access/useMyAccess";
+import { PLAN_NAME, PLAN_SLUGS, type PlanSlug } from "@/lib/plans";
 import { CustomSelect } from "@/components/shared/customSelect";
 
 export default function AdminPage() {
-    const [checking, setChecking] = useState(true);
-    const [enabled, setEnabled] = useState(false);
+    // Admin = quem está em platform_admins no banco
+    const { access, loading: checking } = useMyAccess();
+    const enabled = !!access?.platform_admin;
+    const [tab, setTab] = useState<"churches" | "users">("churches");
 
     const [search, setSearch] = useState("");
     const [planFilter, setPlanFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
-
-    useEffect(() => {
-        let mounted = true;
-
-        async function check() {
-            try {
-                const { data, error } = await supabase.auth.getSession();
-
-                if (error) {
-                    throw error;
-                }
-
-                if (mounted) {
-                    setEnabled(data.session?.user?.id === ADMIN_ID);
-                }
-            } catch (err) {
-                console.error("Admin: erro ao verificar acesso", err);
-
-                if (mounted) {
-                    setEnabled(false);
-                }
-            } finally {
-                if (mounted) {
-                    setChecking(false);
-                }
-            }
-        }
-
-        void check();
-
-        return () => {
-            mounted = false;
-        };
-    }, []);
 
     const {
         users,
@@ -119,114 +88,118 @@ export default function AdminPage() {
                 Administração
             </h1>
 
-            <p className="text-sm text-gray-500 mb-6">
-                Gerencie usuários, igrejas e seus planos.
-                {users.length > 0
-                    ? ` · ${filteredUsers.length} de ${users.length}`
-                    : ""}
+            <p className="text-sm text-gray-500 mb-4">
+                {tab === "churches"
+                    ? `Igrejas e seus planos.${users.length > 0 ? ` · ${filteredUsers.length} de ${users.length}` : ""}`
+                    : "Todas as pessoas que acessam o Ministério360."}
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="flex flex-col">
-                    <label className="text-sm font-medium text-gray-700 mb-1">
-                        Buscar
-                    </label>
+            <div className="inline-flex rounded-xl bg-gray-100 p-1 mb-6">
+                {([
+                    ["churches", "Igrejas e planos"],
+                    ["users", "Usuários"],
+                ] as const).map(([value, label]) => (
+                    <button
+                        key={value}
+                        onClick={() => setTab(value)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                            tab === value ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                        }`}
+                    >
+                        {label}
+                    </button>
+                ))}
+            </div>
 
-                    <input
-                        type="text"
-                        placeholder="Buscar usuário ou igreja..."
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        className="px-3 py-2 border rounded-lg w-full bg-gray-50 focus:bg-white transition"
+            {tab === "users" ? (
+                <AdminUsersTab enabled={enabled} />
+            ) : (
+                <>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="flex flex-col">
+                        <label className="text-sm font-medium text-gray-700 mb-1">
+                            Buscar
+                        </label>
+
+                        <input
+                            type="text"
+                            placeholder="Buscar usuário ou igreja..."
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                            className="px-3 py-2 border rounded-lg w-full bg-gray-50 focus:bg-white transition"
+                        />
+                    </div>
+
+                    <CustomSelect
+                        label="Plano"
+                        value={planFilter === "all" ? "Todos os planos" : PLAN_NAME[planFilter as PlanSlug] ?? "Todos os planos"}
+                        onChange={(value) => {
+                            const slug = PLAN_SLUGS.find((s) => PLAN_NAME[s] === value);
+                            setPlanFilter(slug ?? "all");
+                        }}
+                        options={["Todos os planos", ...PLAN_SLUGS.map((s) => PLAN_NAME[s])]}
+                    />
+
+                    <CustomSelect
+                        label="Assinatura"
+                        value={
+                            statusFilter === "all"
+                                ? "Todas"
+                                : statusFilter === "active"
+                                  ? "Ativa"
+                                  : "Inativa"
+                        }
+                        onChange={(value) => {
+                            const statuses: Record<string, string> = {
+                                "Todas": "all",
+                                "Ativa": "active",
+                                "Inativa": "inactive",
+                            };
+
+                            setStatusFilter(statuses[value] ?? "all");
+                        }}
+                        options={["Todas", "Ativa", "Inativa"]}
                     />
                 </div>
 
-                <CustomSelect
-                    label="Plano"
-                    value={
-                        planFilter === "all"
-                            ? "Todos os planos"
-                            : planFilter === "free"
-                              ? "Grátis"
-                              : planFilter === "standard"
-                                ? "Padrão"
-                                : "Premium"
-                    }
-                    onChange={(value) => {
-                        const plans: Record<string, string> = {
-                            "Todos os planos": "all",
-                            "Grátis": "free",
-                            "Padrão": "standard",
-                            "Premium": "premium",
-                        };
+                {error && (
+                    <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4">
+                        <h2 className="text-sm font-bold text-red-700">
+                            Não foi possível carregar os usuários
+                        </h2>
 
-                        setPlanFilter(plans[value] ?? "all");
-                    }}
-                    options={[
-                        "Todos os planos",
-                        "Grátis",
-                        "Padrão",
-                        "Premium",
-                    ]}
-                />
+                        <p className="mt-1 text-sm text-red-800">
+                            {error}
+                        </p>
 
-                <CustomSelect
-                    label="Assinatura"
-                    value={
-                        statusFilter === "all"
-                            ? "Todas"
-                            : statusFilter === "active"
-                              ? "Ativa"
-                              : "Inativa"
-                    }
-                    onChange={(value) => {
-                        const statuses: Record<string, string> = {
-                            "Todas": "all",
-                            "Ativa": "active",
-                            "Inativa": "inactive",
-                        };
+                        <button
+                            type="button"
+                            onClick={() => void refresh()}
+                            disabled={loading}
+                            className="mt-3 rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {loading ? "Carregando..." : "Tentar de novo"}
+                        </button>
+                    </div>
+                )}
 
-                        setStatusFilter(statuses[value] ?? "all");
-                    }}
-                    options={["Todas", "Ativa", "Inativa"]}
-                />
-            </div>
-
-            {error && (
-                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4">
-                    <h2 className="text-sm font-bold text-red-700">
-                        Não foi possível carregar os usuários
-                    </h2>
-
-                    <p className="mt-1 text-sm text-red-800">
-                        {error}
+                {loaded && !loading && !error && users.length === 0 ? (
+                    <p className="mt-6 text-center text-sm text-gray-400">
+                        Nenhum usuário cadastrado.
                     </p>
-
-                    <button
-                        type="button"
-                        onClick={() => void refresh()}
-                        disabled={loading}
-                        className="mt-3 rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        {loading ? "Carregando..." : "Tentar de novo"}
-                    </button>
-                </div>
-            )}
-
-            {loaded && !loading && !error && users.length === 0 ? (
-                <p className="mt-6 text-center text-sm text-gray-400">
-                    Nenhum usuário cadastrado.
-                </p>
-            ) : loaded && !loading && !error && filteredUsers.length === 0 ? (
-                <p className="mt-6 text-center text-sm text-gray-400">
-                    Nenhum usuário encontrado com esses filtros.
-                </p>
-            ) : (
-                <AdminTable
-                    users={filteredUsers}
-                    loading={loading}
-                    onEdit={openModal}
-                />
+                ) : loaded && !loading && !error && filteredUsers.length === 0 ? (
+                    <p className="mt-6 text-center text-sm text-gray-400">
+                        Nenhum usuário encontrado com esses filtros.
+                    </p>
+                ) : (
+                    <AdminTable
+                        users={filteredUsers}
+                        loading={loading}
+                        onEdit={openModal}
+                    />
+                )}
+                </>
             )}
 
             <EditPlanModal

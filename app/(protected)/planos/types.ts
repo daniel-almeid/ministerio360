@@ -1,1 +1,1 @@
-export type PlanSlug = "free" | "standard" | "premium";
+export type { PlanSlug, BillingCycle } from "@/lib/plans";

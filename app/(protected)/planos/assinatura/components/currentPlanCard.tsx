@@ -1,11 +1,13 @@
 "use client";
 
 import { Crown } from "lucide-react";
-import type { PlanDef, PlanSlug } from "../hook/useSubscription";
+import type { BillingCycle, PlanDef, PlanSlug } from "../hook/useSubscription";
+import { formatBRL } from "@/lib/plans";
 
 type Props = {
     currentPlan: PlanDef;
     price: number;
+    billingCycle: BillingCycle;
     planSlug: PlanSlug;
     isActive: boolean;
     formattedNextPayment: string | null;
@@ -15,6 +17,7 @@ type Props = {
 export default function CurrentPlanCard({
     currentPlan,
     price,
+    billingCycle,
     planSlug,
     isActive,
     formattedNextPayment,
@@ -37,7 +40,7 @@ export default function CurrentPlanCard({
 
                     {price > 0 ? (
                         <p className="text-sm text-gray-500 mt-1">
-                            R$ {price.toFixed(2)} / mês
+                            {formatBRL(Math.round(price * 100))} / {billingCycle === "yearly" ? "ano (plano anual)" : "mês"}
                         </p>
                     ) : (
                         <p className="text-sm text-gray-500 mt-1">

@@ -5,13 +5,14 @@ import { SidebarDesktop } from "./sidebarDesktop";
 import { SidebarMobile } from "./sidebarMobile";
 import { ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { planLevel, isPlanSlug, type PlanSlug } from "@/lib/plans";
 import { UpgradeRequiredModal } from "../../../app/(protected)/planos/components/modal/upgradeRequiredModal";
 
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const [userPlan, setUserPlan] = useState<"free" | "standard" | "premium">("free");
+  const [userPlan, setUserPlan] = useState<PlanSlug>("free");
   const [userId, setUserId] = useState<string | null>(null);
   // Pastor vê o item "Usuários" no menu
   const [isPastor, setIsPastor] = useState(false);
@@ -33,7 +34,7 @@ export function Sidebar() {
         setIsPastor(access?.role === "pastor" && access?.status === "active");
 
         const plan = sessionUser.app_metadata?.plan_slug;
-        if (plan === "free" || plan === "standard" || plan === "premium") {
+        if (isPlanSlug(plan)) {
           setUserPlan(plan);
         }
       }
@@ -50,13 +51,7 @@ export function Sidebar() {
     requiredPlan: "free" | "standard" | "premium",
     callback: () => void
   ) => {
-    const level = {
-      free: 1,
-      standard: 2,
-      premium: 3,
-    };
-
-    if (level[userPlan] >= level[requiredPlan]) {
+    if (planLevel(userPlan) >= planLevel(requiredPlan)) {
       callback();
       return;
     }

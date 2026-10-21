@@ -24,12 +24,13 @@ type Props = {
     mode: "invite" | "edit";
     user?: ChurchUser | null; // edição
     ministries: { id: string; name: string }[];
+    showMember?: boolean; // o Admin edita outras igrejas: não escolhe membro
     onClose: () => void;
     onSubmit: (input: UserInput & { name: string | null; email: string | null }) => Promise<string | null>; // devolve erro
 };
 
 // Convidar ou editar usuário: função, ministérios, membro ligado e permissões
-export function UserFormModal({ mode, user, ministries, onClose, onSubmit }: Props) {
+export function UserFormModal({ mode, user, ministries, showMember = true, onClose, onSubmit }: Props) {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [role, setRole] = useState<Role>(user?.role ?? "tesoureiro");
@@ -182,9 +183,11 @@ export function UserFormModal({ mode, user, ministries, onClose, onSubmit }: Pro
                 </Field>
             )}
 
-            <Field label="Membro ligado" hint="Ligue a pessoa ao cadastro dela em Membros (opcional).">
-                <MemberPicker value={member} onChange={setMember} />
-            </Field>
+            {showMember && (
+                <Field label="Membro ligado" hint="Ligue a pessoa ao cadastro dela em Membros (opcional).">
+                    <MemberPicker value={member} onChange={setMember} />
+                </Field>
+            )}
 
             {/* Permissões por área */}
             <div className="rounded-xl border border-gray-200">
