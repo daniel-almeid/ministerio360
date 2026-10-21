@@ -8,6 +8,7 @@ import type { RecurringExpense, RecurringStatus } from "../../finance/types";
 import type { FinanceOverview as Overview } from "../../finance/useFinanceOverview";
 import { AccountsModal, KIND_ICON, TransferModal } from "./accountModals";
 import { PayRecurringModal, RecurringFormModal, RecurringListModal } from "./recurringModals";
+import { useMyAccess } from "../../../../../components/shared/access/useMyAccess";
 
 const MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 
@@ -36,6 +37,8 @@ export function FinanceOverview({
     selectedMonth: string;
     onChanged: () => void;
 }) {
+    const { can } = useMyAccess();
+    const canEdit = can("financas", "edit");
     const [accountsOpen, setAccountsOpen] = useState(false);
     const [transferOpen, setTransferOpen] = useState(false);
     const [recurringOpen, setRecurringOpen] = useState(false);
@@ -54,7 +57,7 @@ export function FinanceOverview({
                 <div className="flex items-center justify-between mb-2 shrink-0">
                     <h3 className="text-base font-semibold text-gray-700">Saldo atual</h3>
                     <div className="flex items-center gap-3">
-                        {activeAccounts.length >= 2 && (
+                        {activeAccounts.length >= 2 && canEdit && (
                             <button
                                 onClick={() => setTransferOpen(true)}
                                 className="text-sm font-semibold text-[#0F766E] hover:underline inline-flex items-center gap-1"
@@ -62,12 +65,12 @@ export function FinanceOverview({
                                 <ArrowLeftRight className="w-4 h-4" /> Transferir
                             </button>
                         )}
-                        <button
+                        {canEdit && <button
                             onClick={() => setAccountsOpen(true)}
                             className="text-sm font-semibold text-[#0F766E] hover:underline inline-flex items-center gap-1"
                         >
                             <Settings className="w-4 h-4" /> Contas
-                        </button>
+                        </button>}
                     </div>
                 </div>
 
@@ -82,7 +85,7 @@ export function FinanceOverview({
                             return (
                                 <button
                                     key={a.id}
-                                    onClick={() => setAccountsOpen(true)}
+                                    onClick={() => canEdit && setAccountsOpen(true)}
                                     className="rounded-xl border border-gray-200 px-3 py-2 text-left hover:bg-gray-50"
                                 >
                                     <p className="text-xs text-gray-500 font-medium flex items-center gap-1 truncate">
@@ -109,17 +112,17 @@ export function FinanceOverview({
                             </span>
                         )}
                     </h3>
-                    <button
+                    {canEdit && (<button
                         onClick={() => setRecurringOpen(true)}
                         className="text-sm font-semibold text-[#0F766E] hover:underline"
                     >
                         Gerenciar
-                    </button>
+                    </button>)}
                 </div>
 
                 {statuses.length === 0 ? (
                     <button
-                        onClick={() => setRecurringForm("new")}
+                        onClick={() => canEdit && setRecurringForm("new")}
                         className="w-full flex items-center gap-2 text-sm text-gray-500 py-3 hover:text-[#0F766E]"
                     >
                         <PlusCircle className="w-4 h-4" />
@@ -144,7 +147,7 @@ export function FinanceOverview({
                                             <span className="text-sm font-semibold text-gray-800 shrink-0">
                                                 {formatBRL(status.item.amount)}
                                             </span>
-                                            {!isFutureMonth && (
+                                            {!isFutureMonth && canEdit && (
                                                 <button
                                                     onClick={() => setPaying(status)}
                                                     className="shrink-0 px-2.5 py-1 rounded-lg bg-[#38B2AC] text-white text-xs font-semibold hover:bg-[#319795]"

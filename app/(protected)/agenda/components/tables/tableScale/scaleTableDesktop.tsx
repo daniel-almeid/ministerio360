@@ -4,6 +4,7 @@ import { ScaleItem } from "../../../../../types/agenda";
 import { CalendarDays, Users, Eye, Pencil, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useMyAccess } from "../../../../../../components/shared/access/useMyAccess";
 
 export function ScaleTableDesktop({
     scales,
@@ -12,6 +13,8 @@ export function ScaleTableDesktop({
     openDelete,
 }: any) {
 
+    const { canEditScale } = useMyAccess();
+    const editable = (s: any) => canEditScale((s?.ministries ?? []).map((m: any) => m.id));
     function isSoon(date: string) {
         const today = new Date();
         const target = parseISO(date);
@@ -58,13 +61,13 @@ export function ScaleTableDesktop({
                             <Eye className="w-4 h-4" /> Ver
                         </button>
 
-                        <button onClick={() => openEdit(scale)} className="px-3 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-teal-700 text-xs flex items-center gap-1">
+                        {editable(scale) && (<button onClick={() => openEdit(scale)} className="px-3 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-teal-700 text-xs flex items-center gap-1">
                             <Pencil className="w-4 h-4" /> Editar
-                        </button>
+                        </button>)}
 
-                        <button onClick={() => openDelete(scale)} className="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs flex items-center gap-1">
+                        {editable(scale) && (<button onClick={() => openDelete(scale)} className="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs flex items-center gap-1">
                             <Trash2 className="w-4 h-4" /> Excluir
-                        </button>
+                        </button>)}
                     </div>
                 </div>
             ))}

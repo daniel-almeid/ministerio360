@@ -7,6 +7,7 @@ import { PaginationControls } from "../../../../../components/shared/paginationC
 import Loading from '@/components/shared/loading';
 import { MinistryTableDesktop } from "./ministryTableDesktop";
 import { MinistryTableMobile } from "./ministryTableMobile";
+import { useMyAccess } from "../../../../../components/shared/access/useMyAccess";
 
 type MinistryTableProps = {
     reloadFlag: boolean;
@@ -16,6 +17,8 @@ type MinistryTableProps = {
 };
 
 export default function MinistryTable({ reloadFlag, onEdit, onDelete, onNewClick }: MinistryTableProps) {
+    const { can } = useMyAccess();
+    const canEdit = can("ministerios", "edit");
     const {
         ministries,
         loading,
@@ -51,13 +54,13 @@ export default function MinistryTable({ reloadFlag, onEdit, onDelete, onNewClick
                     />
                 </div>
 
-                <button
+                {canEdit && (<button
                     onClick={onNewClick}
                     className="flex items-center gap-2 px-3 py-2 bg-[#38B2AC] text-white rounded-lg hover:bg-[#319795] transition-all shadow-sm"
                 >
                     <PlusCircle size={18} />
                     Novo Ministério
-                </button>
+                </button>)}
             </div>
 
             {loading ? (

@@ -13,8 +13,11 @@ import { useHeaderData } from "../../../components/shared/header/useHeaderData";
 import Loading from "@/components/shared/loading";
 import { FinanceOverview } from "./components/finance/financeOverview";
 import { useFinanceOverview } from "./finance/useFinanceOverview";
+import { useMyAccess } from "../../../components/shared/access/useMyAccess";
 
 export default function FinancasPage() {
+  const { can } = useMyAccess();
+  const canEdit = can("financas", "edit");
   const { churchName } = useHeaderData();
 
   const {
@@ -127,13 +130,13 @@ export default function FinancasPage() {
             </button>
 
 
-            <button
+            {canEdit && (<button
               onClick={() => setOpenModal(true)}
               className="px-4 py-2 bg-[#38B2AC] text-white rounded-lg
                          hover:bg-[#319795] transition-all shadow-sm"
             >
               + Nova Transação
-            </button>
+            </button>)}
           </div>
         </div>
 

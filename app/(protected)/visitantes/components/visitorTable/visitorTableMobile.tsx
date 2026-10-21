@@ -10,6 +10,7 @@ import {
     Mail,
 } from "lucide-react";
 import Loading from "@/components/shared/loading";
+import { useMyAccess } from "../../../../../components/shared/access/useMyAccess";
 
 export function VisitorTableMobile({
     visitors,
@@ -20,6 +21,8 @@ export function VisitorTableMobile({
     showArchived,
     isLoading,
 }: any) {
+    const { can } = useMyAccess();
+    const canEdit = can("visitantes", "edit");
     if (isLoading)
         return (
             <div className="md:hidden flex justify-center py-8">
@@ -97,7 +100,7 @@ export function VisitorTableMobile({
 
                     {!showArchived && (
                         <div className="flex justify-end gap-4 pt-1">
-                            {v.followup_status === "pendente" && (
+                            {v.followup_status === "pendente" && canEdit && (
                                 <button
                                     onClick={() => onFollowup(v)}
                                     disabled={processingId === v.id}
@@ -111,7 +114,7 @@ export function VisitorTableMobile({
                                 </button>
                             )}
 
-                            {v.followup_status === "em_andamento" && (
+                            {v.followup_status === "em_andamento" && canEdit && (
                                 <button
                                     onClick={() => onFinish(v)}
                                     disabled={processingId === v.id}

@@ -9,6 +9,7 @@ import { VisitorTableDesktop } from "./visitorTableDesktop";
 import { VisitorTableMobile } from "./visitorTableMobile";
 import { useVisitorsData } from "../../hook/useVisitorsData";
 import { useHeaderData } from "../../../../../components/shared/header/useHeaderData"
+import { useMyAccess } from "../../../../../components/shared/access/useMyAccess";
 
 type Props = {
   visitors: any[];
@@ -31,6 +32,8 @@ export default function VisitorTable({
   showArchived,
   onToggleArchived,
 }: Props) {
+    const { can } = useMyAccess();
+    const canEdit = can("visitantes", "edit");
   const [visitors, setVisitors] = useState(initialVisitors);
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -179,7 +182,7 @@ export default function VisitorTable({
             {showArchived ? "Ativos" : "Arquivados"}
           </button>
 
-          {!showArchived && (
+          {!showArchived && canEdit && (
             <button
               onClick={onNewClick}
               className="flex items-center gap-2 px-3 py-2 bg-[#38B2AC]

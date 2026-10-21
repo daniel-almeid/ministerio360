@@ -13,6 +13,8 @@ export function Sidebar() {
 
   const [userPlan, setUserPlan] = useState<"free" | "standard" | "premium">("free");
   const [userId, setUserId] = useState<string | null>(null);
+  // Pastor vê o item "Usuários" no menu
+  const [isPastor, setIsPastor] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -26,6 +28,9 @@ export function Sidebar() {
 
       if (sessionUser) {
         setUserId(sessionUser.id);
+
+        const { data: access } = await supabase.rpc("my_access");
+        setIsPastor(access?.role === "pastor" && access?.status === "active");
 
         const plan = sessionUser.app_metadata?.plan_slug;
         if (plan === "free" || plan === "standard" || plan === "premium") {
@@ -66,6 +71,7 @@ export function Sidebar() {
         setIsCollapsed={setIsCollapsed}
         handleProtectedClick={handleProtectedClick}
         userId={userId}
+        isPastor={isPastor}
       />
 
       <SidebarMobile
@@ -73,6 +79,7 @@ export function Sidebar() {
         setIsMobileOpen={setIsMobileOpen}
         handleProtectedClick={handleProtectedClick}
         userId={userId}
+        isPastor={isPastor}
       />
 
       {!isMobileOpen && (

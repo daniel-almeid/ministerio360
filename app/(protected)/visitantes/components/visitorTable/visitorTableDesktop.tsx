@@ -9,6 +9,7 @@ import {
     Phone,
     Mail,
 } from "lucide-react";
+import { useMyAccess } from "../../../../../components/shared/access/useMyAccess";
 
 export function VisitorTableDesktop({
     visitors,
@@ -18,6 +19,8 @@ export function VisitorTableDesktop({
     processingId,
     showArchived,
 }: any) {
+    const { can } = useMyAccess();
+    const canEdit = can("visitantes", "edit");
     return (
         <div className="max-h-140 overflow-y-auto custom-scrollbar">
             <table className="w-full border-collapse text-sm">
@@ -113,7 +116,7 @@ export function VisitorTableDesktop({
                             {!showArchived && (
                                 <td className="px-5 py-3 text-center">
                                     <div className="flex justify-center gap-3">
-                                        {v.followup_status === "pendente" && (
+                                        {v.followup_status === "pendente" && canEdit && (
                                             <button
                                                 onClick={() => onFollowup(v)}
                                                 disabled={processingId === v.id}
@@ -127,7 +130,7 @@ export function VisitorTableDesktop({
                                             </button>
                                         )}
 
-                                        {v.followup_status === "em_andamento" && (
+                                        {v.followup_status === "em_andamento" && canEdit && (
                                             <button
                                                 onClick={() => onFinish(v)}
                                                 disabled={processingId === v.id}

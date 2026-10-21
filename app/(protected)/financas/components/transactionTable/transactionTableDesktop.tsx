@@ -7,8 +7,11 @@ import {
     Pencil,
     Trash,
 } from "lucide-react";
+import { useMyAccess } from "../../../../../components/shared/access/useMyAccess";
 
 export function TransactionTableDesktop({ data, onEdit, onDelete, accountName }: any) {
+    const { can } = useMyAccess();
+    const canEdit = can("financas", "edit");
     return (
         <div className="hidden md:block overflow-x-auto">
             <table className="w-full border-collapse">
@@ -85,19 +88,19 @@ export function TransactionTableDesktop({ data, onEdit, onDelete, accountName }:
 
                             <td className="px-5 py-4 text-center">
                                 <div className="flex justify-center gap-3">
-                                    <button
+                                    {canEdit && (<button
                                         onClick={() => onEdit(t)}
                                         className="text-emerald-600 hover:text-emerald-700 transition"
                                     >
                                         <Pencil className="w-4 h-4" />
-                                    </button>
+                                    </button>)}
 
-                                    <button
+                                    {canEdit && (<button
                                         onClick={() => onDelete(t.id)}
                                         className="text-red-600 hover:text-red-700 transition"
                                     >
                                         <Trash className="w-4 h-4" />
-                                    </button>
+                                    </button>)}
                                 </div>
                             </td>
                         </tr>

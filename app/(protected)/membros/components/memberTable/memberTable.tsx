@@ -9,8 +9,12 @@ import { useHeaderData } from "../../../../../components/shared/header/useHeader
 import { MemberTableDesktop } from "./memberTableDesktop";
 import { MemberTableMobile } from "./memberTableMobile";
 import { FileText } from "lucide-react";
+import { useMyAccess } from "../../../../../components/shared/access/useMyAccess";
 
 export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick, onContributions }: any) {
+    const { can } = useMyAccess();
+    const canEdit = can("membros", "edit");
+    const canSeeGiving = can("financas", "view");
     const {
         paginatedMembers,
         loading,
@@ -92,7 +96,7 @@ export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick, 
                         </span>
                     </button>
 
-                    <button
+                    {canEdit && (<button
                         onClick={onNewClick}
                         className="flex items-center gap-2 px-3 py-2 bg-[#38B2AC]
                        text-white rounded-lg hover:bg-[#319795]
@@ -100,7 +104,7 @@ export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick, 
                     >
                         <PlusCircle size={18} />
                         Novo Membro
-                    </button>
+                    </button>)}
                 </div>
             </div>
 

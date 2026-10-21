@@ -9,6 +9,7 @@ import { Ministry } from "../../../types/agenda";
 import EventTable from "./tables/tableEvents/eventTable";
 import { CustomSelect } from "@/components/shared/customSelect";
 import { useHeaderData } from "../../../../components/shared/header/useHeaderData";
+import { useMyAccess } from "../../../../components/shared/access/useMyAccess";
 
 type Props = {
   ministries: Ministry[];
@@ -16,6 +17,8 @@ type Props = {
 };
 
 export default function EventSection({ ministries, onRefreshMinistries }: Props) {
+    const { can } = useMyAccess();
+    const canEdit = can("agenda", "edit");
   const {
     loading,
     filterMinistry,
@@ -63,14 +66,14 @@ export default function EventSection({ ministries, onRefreshMinistries }: Props)
           </button>
 
 
-          <button
+          {canEdit && (<button
             onClick={openNew}
             className="px-4 py-2 bg-[#38B2AC] text-white rounded-lg
                        hover:bg-[#319795] transition-all shadow-sm
                        text-sm font-medium"
           >
             + Novo Evento
-          </button>
+          </button>)}
         </div>
       </div>
 

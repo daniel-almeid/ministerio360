@@ -1,8 +1,11 @@
 "use client";
 
 import { Calendar, Info, Pencil, Trash } from "lucide-react";
+import { useMyAccess } from "../../../../../components/shared/access/useMyAccess";
 
 export function MinistryTableDesktop({ ministries, onEdit, onDelete }: any) {
+    const { can } = useMyAccess();
+    const canEdit = can("ministerios", "edit");
     return (
         <div className="max-h-130 overflow-y-auto custom-scrollbar">
             <table className="w-full border-collapse">
@@ -44,19 +47,19 @@ export function MinistryTableDesktop({ ministries, onEdit, onDelete }: any) {
 
                             <td className="px-5 py-4 text-center">
                                 <div className="flex justify-center gap-3 text-gray-600">
-                                    <button
+                                    {canEdit && (<button
                                         onClick={() => onEdit(m)}
                                         className="text-emerald-600 hover:text-emerald-700 transition"
                                     >
                                         <Pencil className="w-4 h-4" />
-                                    </button>
+                                    </button>)}
 
-                                    <button
+                                    {canEdit && (<button
                                         onClick={() => onDelete(m)}
                                         className="text-red-600 hover:text-red-700 transition"
                                     >
                                         <Trash className="w-4 h-4" />
-                                    </button>
+                                    </button>)}
                                 </div>
                             </td>
                         </tr>

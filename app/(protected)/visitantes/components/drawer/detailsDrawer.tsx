@@ -15,6 +15,7 @@ import { Visitor } from "../../../../types/visitors";
 import { supabase } from "@/lib/supabaseClient";
 import { useFollowup } from "../../components/visitorTable/useFollowup";
 import toast from "react-hot-toast";
+import { useMyAccess } from "../../../../../components/shared/access/useMyAccess";
 
 interface VisitorDetailsDrawerProps {
     visitor: Visitor;
@@ -27,6 +28,8 @@ export default function VisitorDetailsDrawer({
     onClose,
     onUpdated,
 }: VisitorDetailsDrawerProps) {
+    const { can } = useMyAccess();
+    const canEdit = can("visitantes", "edit");
     const [isVisible, setIsVisible] = useState(false);
     const { handleFollowup, handleFinish, processingId } = useFollowup();
     const [archiving, setArchiving] = useState(false);
@@ -229,7 +232,7 @@ export default function VisitorDetailsDrawer({
                         </button>
 
                         <div className="flex gap-2">
-                            {visitor.followup_status === "pendente" && (
+                            {visitor.followup_status === "pendente" && canEdit && (
                                 <button
                                     disabled={processingId === visitor.id}
                                     onClick={handleClickFollowup}
@@ -240,7 +243,7 @@ export default function VisitorDetailsDrawer({
                                 </button>
                             )}
 
-                            {visitor.followup_status === "em_andamento" && (
+                            {visitor.followup_status === "em_andamento" && canEdit && (
                                 <button
                                     disabled={processingId === visitor.id}
                                     onClick={handleClickFinish}
@@ -251,7 +254,7 @@ export default function VisitorDetailsDrawer({
                                 </button>
                             )}
 
-                            {!visitor.archived && (
+                            {!visitor.archived && canEdit && (
                                 <button
                                     onClick={handleArchive}
                                     disabled={archiving}

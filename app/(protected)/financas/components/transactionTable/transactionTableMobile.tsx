@@ -8,6 +8,7 @@ import {
     Trash,
 } from "lucide-react";
 import Loading from "@/components/shared/loading";
+import { useMyAccess } from "../../../../../components/shared/access/useMyAccess";
 
 export function TransactionTableMobile({
     data,
@@ -16,6 +17,8 @@ export function TransactionTableMobile({
     pageChanging,
     accountName,
 }: any) {
+    const { can } = useMyAccess();
+    const canEdit = can("financas", "edit");
     return (
         <div className="md:hidden space-y-4 mt-2">
 
@@ -70,19 +73,19 @@ export function TransactionTableMobile({
                         </div>
 
                         <div className="flex justify-end gap-5 pt-2">
-                            <button
+                            {canEdit && (<button
                                 onClick={() => onEdit(t)}
                                 className="text-emerald-600 hover:text-emerald-700 transition"
                             >
                                 <Pencil className="w-5 h-5" />
-                            </button>
+                            </button>)}
 
-                            <button
+                            {canEdit && (<button
                                 onClick={() => onDelete(t.id)}
                                 className="text-red-600 hover:text-red-700 transition"
                             >
                                 <Trash className="w-5 h-5" />
-                            </button>
+                            </button>)}
                         </div>
                     </div>
                 ))}

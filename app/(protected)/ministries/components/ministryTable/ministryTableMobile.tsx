@@ -1,8 +1,11 @@
 "use client";
 
 import { Calendar, Info, Pencil, Trash } from "lucide-react";
+import { useMyAccess } from "../../../../../components/shared/access/useMyAccess";
 
 export function MinistryTableMobile({ ministries, onEdit, onDelete }: any) {
+    const { can } = useMyAccess();
+    const canEdit = can("ministerios", "edit");
     return (
         <div className="md:hidden space-y-4 mt-2">
             {ministries.map((m: any) => (
@@ -27,19 +30,19 @@ export function MinistryTableMobile({ ministries, onEdit, onDelete }: any) {
                     </div>
 
                     <div className="flex justify-end gap-5 pt-2">
-                        <button
+                        {canEdit && (<button
                             onClick={() => onEdit(m)}
                             className="text-emerald-600 hover:text-emerald-700 transition"
                         >
                             <Pencil className="w-5 h-5" />
-                        </button>
+                        </button>)}
 
-                        <button
+                        {canEdit && (<button
                             onClick={() => onDelete(m)}
                             className="text-red-600 hover:text-red-700 transition"
                         >
                             <Trash className="w-5 h-5" />
-                        </button>
+                        </button>)}
                     </div>
                 </div>
             ))}

@@ -4,6 +4,7 @@ import { ScaleItem } from "../../../../../types/agenda";
 import { CalendarDays, Users, Pencil, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useMyAccess } from "../../../../../../components/shared/access/useMyAccess";
 
 export function ScaleTableMobile({
     scales,
@@ -11,6 +12,8 @@ export function ScaleTableMobile({
     openDelete,
     openView
 }: any) {
+    const { canEditScale } = useMyAccess();
+    const editable = (s: any) => canEditScale((s?.ministries ?? []).map((m: any) => m.id));
     return (
         <div className="md:hidden space-y-4">
             {scales.map((scale: ScaleItem) => (
@@ -64,19 +67,19 @@ export function ScaleTableMobile({
                             </svg>
                         </button>
 
-                        <button
+                        {editable(scale) && (<button
                             onClick={() => openEdit(scale)}
                             className="p-2 rounded-lg bg-teal-50 border border-teal-200 text-teal-700 hover:bg-teal-100"
                         >
                             <Pencil className="w-4 h-4" />
-                        </button>
+                        </button>)}
 
-                        <button
+                        {editable(scale) && (<button
                             onClick={() => openDelete(scale)}
                             className="p-2 rounded-lg bg-red-50 border border-red-200 text-red-600 hover:bg-red-100"
                         >
                             <Trash2 className="w-4 h-4" />
-                        </button>
+                        </button>)}
                     </div>
                 </div>
             ))}

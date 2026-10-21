@@ -7,6 +7,7 @@ import { Poppins } from "next/font/google";
 import { Sidebar } from "../../components/shared/sidebar/sidebar";
 import { Header } from "../../components/shared/header/header";
 import { supabase } from "../../lib/supabaseClient";
+import { AccessGate } from "../../components/shared/access/accessGate";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -87,7 +88,10 @@ export default function ProtectedLayout({
 
       <div className="flex-1 flex flex-col">
         <Header />
-        <main className="p-4 md:p-6 flex-1">{children}</main>
+        <main className="p-4 md:p-6 flex-1">
+          {/* Cada página só aparece para quem tem acesso a ela */}
+          <AccessGate>{children}</AccessGate>
+        </main>
       </div>
     </div>
   );

@@ -1,8 +1,12 @@
 "use client";
 
 import { Calendar, User, Phone, Pencil, Trash, HandCoins } from "lucide-react";
+import { useMyAccess } from "../../../../../components/shared/access/useMyAccess";
 
 export function MemberTableDesktop({ members, onEdit, onDelete, onContributions }: any) {
+    const { can } = useMyAccess();
+    const canEdit = can("membros", "edit");
+    const canSeeGiving = can("financas", "view");
     return (
         <div className="max-h-140 overflow-y-auto custom-scrollbar">
             <table className="w-full border-collapse text-sm">
@@ -70,7 +74,7 @@ export function MemberTableDesktop({ members, onEdit, onDelete, onContributions 
 
                             <td className="px-5 py-3 text-center">
                                 <div className="flex justify-center gap-3 text-gray-600">
-                                    {onContributions && (
+                                    {onContributions && canSeeGiving && (
                                         <button
                                             onClick={() => onContributions(m)}
                                             title="Contribuições"
@@ -80,19 +84,19 @@ export function MemberTableDesktop({ members, onEdit, onDelete, onContributions 
                                         </button>
                                     )}
 
-                                    <button
+                                    {canEdit && (<button
                                         onClick={() => onEdit(m)}
                                         className="text-emerald-600 hover:text-emerald-700 transition"
                                     >
                                         <Pencil className="w-4 h-4" />
-                                    </button>
+                                    </button>)}
 
-                                    <button
+                                    {canEdit && (<button
                                         onClick={() => onDelete(m)}
                                         className="text-red-600 hover:text-red-700 transition"
                                     >
                                         <Trash className="w-4 h-4" />
-                                    </button>
+                                    </button>)}
                                 </div>
                             </td>
                         </tr>

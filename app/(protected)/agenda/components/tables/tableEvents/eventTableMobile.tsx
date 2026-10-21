@@ -4,6 +4,7 @@ import { EventItem } from "../../../../../types/agenda";
 import { CalendarDays, MapPin, Pencil, Trash2, Users } from "lucide-react";
 import { parseISO, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useMyAccess } from "../../../../../../components/shared/access/useMyAccess";
 
 export function EventTableMobile({
     grouped,
@@ -11,6 +12,8 @@ export function EventTableMobile({
     openEdit,
     openDelete,
 }: any) {
+    const { can } = useMyAccess();
+    const canEdit = can("agenda", "edit");
     return (
         <div className="md:hidden space-y-6">
 
@@ -93,19 +96,19 @@ export function EventTableMobile({
                                 })()}
 
                                 <div className="flex justify-end gap-2 mt-4">
-                                    <button
+                                    {canEdit && (<button
                                         onClick={() => openEdit(event)}
                                         className="px-3 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-teal-700 text-xs flex items-center gap-1"
                                     >
                                         <Pencil className="w-4 h-4" /> Editar
-                                    </button>
+                                    </button>)}
 
-                                    <button
+                                    {canEdit && (<button
                                         onClick={() => openDelete(event)}
                                         className="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs flex items-center gap-1"
                                     >
                                         <Trash2 className="w-4 h-4" /> Excluir
-                                    </button>
+                                    </button>)}
                                 </div>
                             </li>
                         ))}

@@ -16,8 +16,10 @@ import {
     UserPlus,
     Church,
     Shield,
+    UserCog,
     Loader2
 } from "lucide-react";
+import { useMyAccess } from "../access/useMyAccess";
 
 const ADMIN_ID = "289d49c4-8db0-49e2-b527-af90809f3be8";
 
@@ -36,7 +38,8 @@ export function SidebarDesktop({
     isCollapsed,
     setIsCollapsed,
     handleProtectedClick,
-    userId
+    userId,
+    isPastor = false,
 }: {
     isCollapsed: boolean;
     setIsCollapsed: (v: boolean) => void;
@@ -45,9 +48,13 @@ export function SidebarDesktop({
         cb: () => void
     ) => void;
     userId: string | null;
+    isPastor?: boolean;
 }) {
     const pathname = usePathname();
     const isAdmin = userId === ADMIN_ID;
+    // Só aparecem as áreas que o usuário pode acessar
+    const { canOpen } = useMyAccess();
+    const visibleLinks = links.filter(({ href }) => canOpen(href));
 
     const [loading, setLoading] = useState(false);
 
@@ -126,7 +133,7 @@ export function SidebarDesktop({
                 </div>
 
                 <nav className="flex-1 mt-4 space-y-1">
-                    {links.map(({ href, label, icon: Icon, plan }) => {
+                    {visibleLinks.map(({ href, label, icon: Icon, plan }) => {
                         const isActive = pathname === href;
 
                         return (
@@ -146,6 +153,20 @@ export function SidebarDesktop({
                             </button>
                         );
                     })}
+
+                    {isPastor && (
+                        <button
+                            onClick={() => navigateWithLoading("/usuarios")}
+                            className={`
+                                w-full flex items-center gap-3 px-4 py-2.5 rounded-lg mx-2 transition-all
+                                ${pathname === "/usuarios" ? "bg-[#38B2AC] text-white" : "hover:bg-[#2C5282] text-[#81E6D9]"}
+                                ${isCollapsed ? "justify-center" : ""}
+                            `}
+                        >
+                            <UserCog size={22} />
+                            {!isCollapsed && <span className="font-medium">Usuários</span>}
+                        </button>
+                    )}
 
                     {isAdmin && (
                         <button

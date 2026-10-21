@@ -10,12 +10,16 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ScaleTableMobile } from "./tables/tableScale/scaleTableMobile";
 import { useHeaderData } from "../../../../components/shared/header/useHeaderData";
+import { useMyAccess } from "../../../../components/shared/access/useMyAccess";
 
 type Props = {
     ministries: any[];
 };
 
 export default function ScaleSection({ ministries }: Props) {
+    const { can, canEditScale, myMinistryIds } = useMyAccess();
+    const canCreate = can("escalas", "edit");
+    const editable = (s: any) => canEditScale((s?.ministries ?? []).map((m: any) => m.id));
     const {
         scales,
         loading,
@@ -63,13 +67,13 @@ export default function ScaleSection({ ministries }: Props) {
                     </button>
 
 
-                    <button
+                    {canCreate && (<button
                         onClick={openNew}
                         className="px-3 py-2 bg-[#38B2AC] text-white rounded-lg
                                    hover:bg-[#319795] transition-all shadow-sm"
                     >
                         + Nova Escala
-                    </button>
+                    </button>)}
                 </div>
             </div>
 
@@ -155,21 +159,21 @@ export default function ScaleSection({ ministries }: Props) {
                                                 <Eye className="w-4 h-4" />
                                             </button>
 
-                                            <button
+                                            {editable(item) && (<button
                                                 onClick={() => openEdit(item)}
                                                 className="p-2 rounded-lg bg-teal-50 border border-teal-200
                                                            text-teal-700 hover:bg-teal-100"
                                             >
                                                 <Pencil className="w-4 h-4" />
-                                            </button>
+                                            </button>)}
 
-                                            <button
+                                            {editable(item) && (<button
                                                 onClick={() => openDelete(item)}
                                                 className="p-2 rounded-lg bg-red-50 border border-red-200
                                                            text-red-600 hover:bg-red-100"
                                             >
                                                 <Trash2 className="w-4 h-4" />
-                                            </button>
+                                            </button>)}
                                         </td>
                                     </tr>
                                 ))}
@@ -191,7 +195,7 @@ export default function ScaleSection({ ministries }: Props) {
                 <ModalNewScale
                     onClose={closeAll}
                     onSuccess={load}
-                    ministries={ministries}
+                    ministries={can("escalas", "all") ? ministries : ministries.filter((m: any) => myMinistryIds.includes(m.id))}
                 />
             )}
 
