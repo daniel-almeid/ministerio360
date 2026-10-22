@@ -107,14 +107,29 @@ async function renewBySubscriptionId(subscriptionId: string, cycleEnd?: string |
     return true;
 }
 
+// Assinatura cancelada (pelo cliente ou pelo Pagar.me depois de várias recusas).
+// Se ainda há período pago, mantém o acesso até o fim dele e só marca o cancelamento;
+// a rotina diária passa a igreja para o Grátis depois. Sem período pago, desativa já.
 async function deactivateBySubscriptionId(subscriptionId: string, reason: string) {
     const { data: profile } = await supabase
         .from("church_profiles")
-        .select("id, user_id")
+        .select("id, user_id, plan_expires_at, canceled_at")
         .eq("pagarme_subscription_id", subscriptionId)
         .single();
 
     if (!profile) return false;
+
+    const paidUntil = profile.plan_expires_at ? new Date(profile.plan_expires_at).getTime() : 0;
+    if (paidUntil > Date.now()) {
+        if (!profile.canceled_at) {
+            await supabase
+                .from("church_profiles")
+                .update({ canceled_at: new Date().toISOString() })
+                .eq("id", profile.id);
+        }
+        console.log(`🛑 Assinatura ${subscriptionId} cancelada (${reason}); acesso mantido até ${profile.plan_expires_at}.`);
+        return true;
+    }
 
     await supabase
         .from("church_profiles")

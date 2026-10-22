@@ -11,7 +11,7 @@ const { POST } = await import("@/app/api/convite/route");
 
 const URL = "https://ministerio360.vercel.app/api/convite";
 const TOKEN = "8f3c2a10-1b2c-4d5e-8f90-123456789abc";
-const corpo = (over: Record<string, unknown> = {}) => ({ token: TOKEN, name: "Maria Souza", email: "Maria@Email.com ", password: "segredo123", ...over });
+const corpo = (over: Record<string, unknown> = {}) => ({ token: TOKEN, name: "Maria Souza", email: "Maria@Email.com ", password: "segredo123", accepted_terms: true, ...over });
 
 function convite(info: Record<string, unknown>) {
     state.rpc = (fn) => (fn === "get_church_invite" ? { data: info } : {});
@@ -31,7 +31,12 @@ describe("Aceitar convite (criar a conta do convidado)", () => {
                 email: "maria@email.com",
                 password: "segredo123",
                 email_confirm: true,
-                user_metadata: { name: "Maria Souza", invite_token: TOKEN },
+                user_metadata: {
+                    name: "Maria Souza",
+                    invite_token: TOKEN,
+                    terms_version: "2026-10-22",
+                    terms_accepted_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+                },
             },
         ]);
     });
@@ -42,6 +47,8 @@ describe("Aceitar convite (criar a conta do convidado)", () => {
         [{ email: "maria@" }, 400, "Confira o e-mail digitado."],
         [{ password: "123" }, 400, "A senha precisa ter pelo menos 6 caracteres."],
         [{ password: "x".repeat(73) }, 400, "A senha precisa ter pelo menos 6 caracteres."],
+        [{ accepted_terms: false }, 400, "Para continuar, aceite os Termos de Uso e a Política de Privacidade."],
+        [{ accepted_terms: "sim" }, 400, "Para continuar, aceite os Termos de Uso e a Política de Privacidade."],
     ])("dados inválidos %o → %i", async (over, status, msg) => {
         const r = await POST(post(URL, corpo(over)));
         expect(r.status).toBe(status);

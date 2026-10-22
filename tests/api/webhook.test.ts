@@ -99,6 +99,14 @@ describe("Webhook do Pagar.me", () => {
         expect(perfil().subscription_active).toBe(false);
     });
 
+    it("cancelada com período pago pela frente: mantém o acesso até o fim e marca o cancelamento", async () => {
+        Object.assign(state.db.church_profiles[0], { plan_expires_at: "2099-01-01T00:00:00Z", canceled_at: null });
+        mockPagarme({ "GET subscriptions/sub_1": () => ({ json: { status: "canceled" } }) });
+        await POST(evento("subscription.canceled", { id: "sub_1" }));
+        expect(perfil()).toMatchObject({ subscription_active: true, plan_slug: "premium" });
+        expect(perfil().canceled_at).toBeTruthy();
+    });
+
     it("cancelamento de uma assinatura antiga (já trocada) não afeta a igreja", async () => {
         mockPagarme({ "GET subscriptions/sub_velha": () => ({ json: { status: "canceled" } }) });
         await POST(evento("subscription.canceled", { id: "sub_velha" }));

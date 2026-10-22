@@ -8,6 +8,8 @@ import RegisterHeader from "./registerHeader";
 import RegisterPlanSelector from "./registerPlanSelector";
 import RegisterPlanDetails from "./registerPlanDetails";
 import RegisterBackdrop from "./registerBackDrop";
+import ConsentCheckbox from "@/components/legal/consentCheckbox";
+import { legalAcceptance } from "@/lib/legal";
 
 import type { BillingCycle, PlanSlug } from "@/lib/plans";
 
@@ -30,6 +32,9 @@ export default function RegisterForm({ onSuccess }: Props) {
     const [plan, setPlan] = useState<PlanSlug>("free");
     const [cycle, setCycle] = useState<BillingCycle>("monthly");
     const [showDetails, setShowDetails] = useState<string | null>(null);
+
+    const [accepted, setAccepted] = useState(false);
+    const [consentMissing, setConsentMissing] = useState(false);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -72,6 +77,12 @@ export default function RegisterForm({ onSuccess }: Props) {
             return;
         }
 
+        if (!accepted) {
+            setConsentMissing(true);
+            setError("Para criar a conta, aceite os Termos de Uso e a Política de Privacidade.");
+            return;
+        }
+
         setLoading(true);
 
         const { error: signUpError } = await supabase.auth.signUp({
@@ -82,6 +93,7 @@ export default function RegisterForm({ onSuccess }: Props) {
                 data: {
                     church_name: name,
                     plan_slug: plan,
+                    ...legalAcceptance(),
                 },
             },
         });
@@ -220,6 +232,15 @@ export default function RegisterForm({ onSuccess }: Props) {
                     cycle={cycle}
                     setCycle={setCycle}
                     setShowDetails={setShowDetails}
+                />
+
+                <ConsentCheckbox
+                    checked={accepted}
+                    invalid={consentMissing && !accepted}
+                    onChange={(v) => {
+                        setAccepted(v);
+                        if (v) setConsentMissing(false);
+                    }}
                 />
 
                 {error && <p className="text-base text-red-500 text-center">{error}</p>}

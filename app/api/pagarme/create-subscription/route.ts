@@ -203,6 +203,7 @@ export async function POST(req: Request) {
                 billing_cycle,
                 subscription_active: true,
                 plan_expires_at: expiresAt.toISOString(),
+                canceled_at: null, // nova assinatura: renovação automática ligada de novo
                 pagarme_customer_id: subJson.customer?.id ?? null,
                 pagarme_subscription_id: subJson.id,
             })

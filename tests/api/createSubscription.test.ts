@@ -42,7 +42,7 @@ function cenario(perfil: Record<string, unknown> = {}) {
                 { user_id: "u-pausado", church_id: "c1", role: "pastor", status: "paused" },
             ],
             church_profiles: [
-                { id: "c1", user_id: "u-pastor", plan_slug: "free", subscription_active: false, pagarme_subscription_id: null, ...perfil },
+                { id: "c1", user_id: "u-pastor", plan_slug: "free", subscription_active: false, pagarme_subscription_id: null, canceled_at: "2026-01-01T00:00:00Z", ...perfil },
             ],
         },
         sessions: {
@@ -145,6 +145,7 @@ describe("Assinatura: mensal e anual", () => {
             pagarme_subscription_id: "sub_nova",
             pagarme_customer_id: "cus_1",
             plan_expires_at: new Date(FIM_DO_CICLO).toISOString(),
+            canceled_at: null,
         });
     });
 

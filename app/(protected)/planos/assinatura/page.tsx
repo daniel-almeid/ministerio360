@@ -35,6 +35,9 @@ export default function AssinaturaPage() {
         formattedExpiresOn,
         progressPercent,
         hasPaidPlan,
+        hasAutoRenewal,
+        renewalCanceled,
+        reload,
     } = useSubscription();
 
     if (loading) return <Loading />;
@@ -72,6 +75,7 @@ export default function AssinaturaPage() {
                         formattedLastPayment={formattedLastPayment}
                         formattedNextPayment={formattedNextPayment}
                         progressPercent={progressPercent}
+                        renewalCanceled={renewalCanceled}
                     />
 
                     <CycleToggle value={cycle} onChange={setCycle} />
@@ -86,7 +90,9 @@ export default function AssinaturaPage() {
 
                     <FooterActions
                         hasPaidPlan={hasPaidPlan}
-                        isActive={isActive}
+                        hasAutoRenewal={hasAutoRenewal}
+                        renewalCanceled={renewalCanceled}
+                        formattedExpiresOn={formattedExpiresOn}
                         onCancelClick={() => setShowCancelModal(true)}
                     />
                 </div>
@@ -95,6 +101,8 @@ export default function AssinaturaPage() {
             <CancelSubscriptionModal
                 open={showCancelModal}
                 onClose={() => setShowCancelModal(false)}
+                onCanceled={reload}
+                planName={currentPlan.name}
                 formattedExpiresOn={formattedExpiresOn}
             />
 
@@ -111,4 +119,4 @@ export default function AssinaturaPage() {
             )}
         </>
     );
-}
+}

@@ -7,6 +7,7 @@ type Props = {
     formattedLastPayment: string | null;
     formattedNextPayment: string | null;
     progressPercent: number | null;
+    renewalCanceled?: boolean;
 };
 
 export default function BillingCycle({
@@ -14,6 +15,7 @@ export default function BillingCycle({
     formattedLastPayment,
     formattedNextPayment,
     progressPercent,
+    renewalCanceled = false,
 }: Props) {
     if (!hasPaidPlan) return null;
 
@@ -43,7 +45,7 @@ export default function BillingCycle({
                         <div className="flex items-center gap-3 text-sm text-gray-700">
                             <Calendar className="w-4 h-4 text-gray-500" />
                             <span>
-                                Próxima cobrança em{" "}
+                                {renewalCanceled ? "Sem renovação: o plano termina em" : "Próxima cobrança em"}{" "}
                                 <span className="font-medium">
                                     {formattedNextPayment}
                                 </span>

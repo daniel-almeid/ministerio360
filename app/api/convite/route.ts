@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { legalAcceptance } from "@/lib/legal";
 
 // Cria a conta de quem recebeu um convite.
 // A conta já nasce com o e-mail confirmado (quem tem o link foi convidado pelo pastor),
@@ -39,6 +40,7 @@ export async function POST(req: Request) {
         if (name.length < 2) return fail("Informe seu nome.");
         if (!EMAIL.test(email) || email.length > 254) return fail("Confira o e-mail digitado.");
         if (password.length < 6 || password.length > 72) return fail("A senha precisa ter pelo menos 6 caracteres.");
+        if (body?.accepted_terms !== true) return fail("Para continuar, aceite os Termos de Uso e a Política de Privacidade.");
 
         const { data: invite, error: inviteError } = await supabase.rpc("get_church_invite", { p_token: token });
         if (inviteError) return fail("Não foi possível conferir o convite. Tente de novo.", 500);
@@ -52,7 +54,7 @@ export async function POST(req: Request) {
             email,
             password,
             email_confirm: true,
-            user_metadata: { name, invite_token: token },
+            user_metadata: { name, invite_token: token, ...legalAcceptance() },
         });
 
         if (error) {

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Eye, EyeOff, LinkIcon, Loader2, ShieldCheck, Smartphone } from "lucide-react";
 import { supabase } from "../../../../lib/supabaseClient";
 import { ROLE_HINT, ROLE_LABEL, isRole } from "../../../(protected)/usuarios/users/permissions";
+import ConsentCheckbox from "@/components/legal/consentCheckbox";
 
 type Invite = {
     found: true;
@@ -33,6 +34,7 @@ export function AcceptInvite({ token }: { token: string }) {
     const [password, setPassword] = useState("");
     const [confirm, setConfirm] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [accepted, setAccepted] = useState(false);
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -58,13 +60,14 @@ export function AcceptInvite({ token }: { token: string }) {
         if (name.trim().length < 2) return setError("Informe seu nome.");
         if (password.length < 6) return setError("A senha precisa ter pelo menos 6 caracteres.");
         if (password !== confirm) return setError("As senhas não conferem.");
+        if (!accepted) return setError("Para continuar, aceite os Termos de Uso e a Política de Privacidade.");
 
         setSending(true);
         try {
             const res = await fetch("/api/convite", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ token, name: name.trim(), email: email.trim(), password }),
+                body: JSON.stringify({ token, name: name.trim(), email: email.trim(), password, accepted_terms: accepted }),
             });
             const body = await res.json().catch(() => ({}));
             if (!res.ok) {
@@ -187,6 +190,8 @@ export function AcceptInvite({ token }: { token: string }) {
                                 onChange={setConfirm}
                                 autoComplete="new-password"
                             />
+
+                            <ConsentCheckbox checked={accepted} onChange={setAccepted} />
 
                             {error && <p className="text-sm text-red-600">{error}</p>}
 
