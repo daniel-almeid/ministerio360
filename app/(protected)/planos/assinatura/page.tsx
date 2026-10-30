@@ -103,6 +103,8 @@ export default function AssinaturaPage() {
                 onClose={() => setShowCancelModal(false)}
                 onCanceled={reload}
                 planName={currentPlan.name}
+                planSlug={planSlug}
+                billingCycle={billingCycle}
                 formattedExpiresOn={formattedExpiresOn}
             />
 
