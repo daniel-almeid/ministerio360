@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type User } from "@supabase/supabase-js";
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,11 +11,19 @@ const supabase = createClient(
 
 const PAID_PLANS = ["standard", "premium_basic", "premium"];
 
+// Cadastro sem login: só vale para conta recém-criada (o pagamento acontece logo
+// depois do cadastro), de igreja que nunca assinou e com poucas tentativas.
+// Fora disso a pessoa entra no sistema e assina logada.
+const SIGNUP_WINDOW_MS = 60 * 60 * 1000;
+const SIGNUP_MAX_ATTEMPTS = 5;
+const SIGNUP_LOGIN_REQUIRED = "Para assinar, entre no sistema com a sua conta.";
+
 type ChurchRow = {
     id: string;
     user_id: string | null;
     plan_slug: string | null;
     subscription_active: boolean | null;
+    pagarme_customer_id: string | null;
     pagarme_subscription_id: string | null;
 };
 
@@ -24,13 +32,13 @@ function fail(error: string, status: number, detail?: unknown) {
 }
 
 // Procura a conta pelo e-mail (usado só no cadastro, quando ainda não há login)
-async function findUserIdByEmail(email: string) {
+async function findUserByEmail(email: string): Promise<User | null> {
     const target = email.toLowerCase();
     for (let page = 1; page <= 50; page++) {
         const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
         if (error || !data) return null;
         const found = data.users.find((u) => u.email?.toLowerCase() === target);
-        if (found) return found.id;
+        if (found) return found;
         if (data.users.length < 1000) return null;
     }
     return null;
@@ -84,6 +92,7 @@ export async function POST(req: Request) {
         // 2) De qual igreja é a assinatura?
         let church: ChurchRow | null = null;
         let email: string | null = null;
+        let signupUser: User | null = null;
         const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
 
         if (token) {
@@ -104,26 +113,32 @@ export async function POST(req: Request) {
 
             const { data } = await supabase
                 .from("church_profiles")
-                .select("id, user_id, plan_slug, subscription_active, pagarme_subscription_id")
+                .select("id, user_id, plan_slug, subscription_active, pagarme_customer_id, pagarme_subscription_id")
                 .eq("id", link.church_id)
                 .single<ChurchRow>();
             church = data ?? null;
             email = user.email ?? null;
         } else {
-            // Cadastro (ainda sem login): pelo e-mail recém-cadastrado,
-            // e só se a igreja ainda não tiver uma assinatura paga ativa
+            // Cadastro (ainda sem login): pelo e-mail recém-cadastrado.
+            // Qualquer recusa dá a mesma resposta, para não revelar quais e-mails têm conta.
             if (!bodyEmail) return fail("Dados incompletos", 400);
-            const userId = await findUserIdByEmail(String(bodyEmail));
-            if (userId) {
-                const { data } = await supabase
-                    .from("church_profiles")
-                    .select("id, user_id, plan_slug, subscription_active, pagarme_subscription_id")
-                    .eq("user_id", userId)
-                    .maybeSingle<ChurchRow>();
-                church = data ?? null;
+            signupUser = await findUserByEmail(String(bodyEmail));
+            const createdAt = signupUser ? new Date(signupUser.created_at).getTime() : NaN;
+            if (!signupUser || !(Date.now() - createdAt <= SIGNUP_WINDOW_MS)) {
+                return fail(SIGNUP_LOGIN_REQUIRED, 401);
             }
-            if (church?.subscription_active && church.pagarme_subscription_id) {
-                return fail("Esta igreja já tem uma assinatura. Entre no sistema para mudar de plano.", 409);
+
+            const { data } = await supabase
+                .from("church_profiles")
+                .select("id, user_id, plan_slug, subscription_active, pagarme_customer_id, pagarme_subscription_id")
+                .eq("user_id", signupUser.id)
+                .maybeSingle<ChurchRow>();
+            church = data ?? null;
+            if (!church || church.pagarme_subscription_id || church.pagarme_customer_id) {
+                return fail(SIGNUP_LOGIN_REQUIRED, 401);
+            }
+            if ((Number(signupUser.app_metadata?.signup_payment_attempts) || 0) >= SIGNUP_MAX_ATTEMPTS) {
+                return fail(SIGNUP_LOGIN_REQUIRED, 401);
             }
             email = String(bodyEmail);
         }
@@ -144,6 +159,15 @@ export async function POST(req: Request) {
             state: address.state,
             country: "BR",
         };
+
+        // Cadastro sem login: conta a tentativa antes de cobrar (barra teste de cartões em série)
+        if (signupUser) {
+            const attempts = Number(signupUser.app_metadata?.signup_payment_attempts) || 0;
+            const { error: countError } = await supabase.auth.admin.updateUserById(signupUser.id, {
+                app_metadata: { ...signupUser.app_metadata, signup_payment_attempts: attempts + 1 },
+            });
+            if (countError) return fail("Erro interno", 500);
+        }
 
         // 3) Cria a assinatura
         const subRes = await fetch("https://api.pagar.me/core/v5/subscriptions", {

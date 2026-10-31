@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { mockPagarme, post, resetState, state } from "./fakes";
+import { mockPagarme, post, resetState, state, supabaseProxy } from "./fakes";
 
 vi.mock("@supabase/supabase-js", async () => {
     const { supabaseProxy } = await import("./fakes");
@@ -50,8 +50,13 @@ function cenario(perfil: Record<string, unknown> = {}) {
             "tok-tes": { id: "u-tes", email: "tes@igreja.com" },
             "tok-pausado": { id: "u-pausado", email: "p2@igreja.com" },
         },
-        users: [{ id: "u-pastor", email: "pastor@igreja.com" }],
+        users: [{ id: "u-pastor", email: "pastor@igreja.com", created_at: haMinutos(5) }],
     });
+}
+
+// Data de criação da conta "N minutos atrás"
+function haMinutos(n: number) {
+    return new Date(Date.now() - n * 60_000).toISOString();
 }
 
 function pagarmeOk(status = "active", cycle: unknown = { end_at: FIM_DO_CICLO }) {
@@ -236,7 +241,7 @@ describe("Assinatura no cadastro (ainda sem login)", () => {
     it("acha a conta pelo e-mail, mesmo depois de mil contas", async () => {
         state.users = [
             ...Array.from({ length: 1000 }, (_, i) => ({ id: `outro-${i}`, email: `pessoa${i}@x.com` })),
-            { id: "u-pastor", email: "Pastor@Igreja.com" },
+            { id: "u-pastor", email: "Pastor@Igreja.com", created_at: haMinutos(5) },
         ];
         const { calls } = pagarmeOk();
         const r = await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
@@ -245,18 +250,116 @@ describe("Assinatura no cadastro (ainda sem login)", () => {
         expect(perfil().subscription_active).toBe(true);
     });
 
-    it("igreja que já tem assinatura ativa precisa entrar no sistema para trocar", async () => {
-        cenario({ plan_slug: "standard", subscription_active: true, pagarme_subscription_id: "sub_antiga" });
-        const { calls } = pagarmeOk();
+    it("conta criada há quase 1 hora ainda paga no cadastro", async () => {
+        state.users[0].created_at = haMinutos(59);
+        pagarmeOk();
         const r = await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
-        expect(r.status).toBe(409);
-        expect(calls).toHaveLength(0);
+        expect(r.status).toBe(200);
     });
 
-    it("e-mail sem conta → 404", async () => {
+    it("conta a tentativa na própria conta antes de cobrar", async () => {
         pagarmeOk();
-        const r = await POST(post(URL, corpo({ email: "ninguem@x.com" })));
-        expect(r.status).toBe(404);
+        await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
+        expect(state.calls.updatedUsers).toEqual([
+            { id: "u-pastor", attrs: { app_metadata: { signup_payment_attempts: 1 } } },
+        ]);
+    });
+
+    it("cartão recusado no cadastro: pode tentar de novo", async () => {
+        pagarmeOk("failed");
+        const r1 = await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
+        expect(r1.status).toBe(402);
+        pagarmeOk();
+        const r2 = await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
+        expect(r2.status).toBe(200);
+    });
+
+    it("dados inválidos não gastam tentativa", async () => {
+        pagarmeOk();
+        await POST(post(URL, corpo({ email: "pastor@igreja.com", address: null })));
+        expect(state.calls.updatedUsers).toHaveLength(0);
+    });
+});
+
+describe("Assinatura sem login: recusas (achado de segurança)", () => {
+    const NEGADO = "Para assinar, entre no sistema com a sua conta.";
+
+    async function recusado(over: Record<string, unknown> = {}) {
+        const { calls } = pagarmeOk();
+        const r = await POST(post(URL, corpo({ email: "pastor@igreja.com", ...over })));
+        expect(r.status).toBe(401);
+        expect((await json(r)).error).toBe(NEGADO);
+        expect(calls).toHaveLength(0); // não falou com o Pagar.me
+        expect(state.calls.updates).toHaveLength(0); // não mexeu na igreja
+        expect(state.calls.rpc).toHaveLength(0);
+    }
+
+    it("conta antiga (mais de 1 hora) não assina sem login", async () => {
+        state.users[0].created_at = haMinutos(61);
+        await recusado();
+    });
+
+    it("conta sem data de criação não assina sem login", async () => {
+        delete state.users[0].created_at;
+        await recusado();
+    });
+
+    it("igreja com assinatura ativa não pode ser trocada por quem não está logado", async () => {
+        cenario({ plan_slug: "standard", subscription_active: true, pagarme_subscription_id: "sub_antiga" });
+        await recusado();
+        expect(perfil().pagarme_subscription_id).toBe("sub_antiga");
+    });
+
+    it("igreja que já assinou antes (assinatura vencida ou cancelada) não pode ser trocada", async () => {
+        cenario({ plan_slug: "free", subscription_active: false, pagarme_subscription_id: "sub_vencida" });
+        await recusado();
+    });
+
+    it("igreja que já tem cliente no Pagar.me não pode ser trocada", async () => {
+        cenario({ pagarme_customer_id: "cus_antigo" });
+        await recusado();
+    });
+
+    it("conta sem igreja (usuário convidado) não assina sem login", async () => {
+        state.db.church_profiles = [];
+        await recusado();
+    });
+
+    it("e-mail sem conta → mesma resposta (não revela quem tem conta)", async () => {
+        await recusado({ email: "ninguem@x.com" });
+    });
+
+    it("depois de 5 tentativas, a 6ª é bloqueada", async () => {
+        for (let i = 0; i < 5; i++) {
+            pagarmeOk("failed");
+            const r = await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
+            expect(r.status).toBe(402);
+        }
+        expect(state.users[0].app_metadata?.signup_payment_attempts).toBe(5);
+        state.calls.rpc = [];
+        await recusado();
+    });
+
+    it("se não conseguir contar a tentativa, não cobra", async () => {
+        const falha = vi
+            .spyOn(supabaseProxy.auth.admin, "updateUserById")
+            .mockResolvedValueOnce({ data: { user: null }, error: { message: "falhou" } });
+        try {
+            const { calls } = pagarmeOk();
+            const r = await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
+            expect(r.status).toBe(500);
+            expect(calls).toHaveLength(0);
+        } finally {
+            falha.mockRestore();
+        }
+    });
+
+    it("com login, conta antiga continua assinando normalmente", async () => {
+        state.users[0].created_at = haMinutos(60 * 24 * 365);
+        pagarmeOk();
+        const r = await POST(post(URL, corpo(), logado()));
+        expect(r.status).toBe(200);
+        expect(state.calls.updatedUsers).toHaveLength(0);
     });
 
     it("sem login e sem e-mail → 400", async () => {

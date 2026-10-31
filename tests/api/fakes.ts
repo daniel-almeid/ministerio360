@@ -9,7 +9,8 @@ type Filter = [string, unknown];
 
 export type FakeDb = Record<string, Row[]>;
 
-export type FakeUser = { id: string; email: string };
+export type FakeUser = { id: string; email: string; created_at?: string; app_metadata?: Record<string, unknown> };
+type UserAttrs = { app_metadata?: Record<string, unknown> };
 
 export type FakeState = {
     db: FakeDb;
@@ -27,6 +28,7 @@ export type FakeState = {
         removed: { table: string; filters: Filter[] }[];
         createUser: any[];
         deletedUsers: string[];
+        updatedUsers: { id: string; attrs: UserAttrs }[];
     };
 };
 
@@ -40,7 +42,7 @@ export function newState(): FakeState {
         passwords: {},
         rpc: () => ({ data: null, error: null }),
         createUser: () => ({ data: { user: { id: "novo" } }, error: null }),
-        calls: { rpc: [], updates: [], removed: [], createUser: [], deletedUsers: [] },
+        calls: { rpc: [], updates: [], removed: [], createUser: [], deletedUsers: [], updatedUsers: [] },
     };
 }
 
@@ -127,6 +129,15 @@ export const supabaseProxy = {
             deleteUser: async (id: string) => {
                 state.calls.deletedUsers.push(id);
                 return { data: null, error: null };
+            },
+            updateUserById: async (
+                id: string,
+                attrs: UserAttrs
+            ): Promise<{ data: { user: FakeUser | null }; error: { message: string } | null }> => {
+                state.calls.updatedUsers.push({ id, attrs });
+                const user = state.users.find((u) => u.id === id);
+                if (user && attrs?.app_metadata) user.app_metadata = attrs.app_metadata;
+                return { data: { user: user ?? null }, error: null };
             },
         },
     },
