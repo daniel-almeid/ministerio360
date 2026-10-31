@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { mockPagarme, post, resetState, state, supabaseProxy } from "./fakes";
+import { mockPagarme, post, resetState, state } from "./fakes";
 
 vi.mock("@supabase/supabase-js", async () => {
     const { supabaseProxy } = await import("./fakes");
@@ -51,8 +51,20 @@ function cenario(perfil: Record<string, unknown> = {}) {
             "tok-pausado": { id: "u-pausado", email: "p2@igreja.com" },
         },
         users: [{ id: "u-pastor", email: "pastor@igreja.com", created_at: haMinutos(5) }],
+        rpc: (fn, args) => (fn === "claim_signup_payment_attempt" ? somaTentativa(args) : { data: null }),
     });
 }
+
+// Igual à função claim_signup_payment_attempt do banco: confere e soma numa operação só
+function somaTentativa({ p_user_id, p_max }: { p_user_id: string; p_max: number }) {
+    const user = state.users.find((u) => u.id === p_user_id);
+    const atual = Number(user?.app_metadata?.signup_payment_attempts) || 0;
+    if (!user || atual >= p_max) return { data: null };
+    user.app_metadata = { ...user.app_metadata, signup_payment_attempts: atual + 1 };
+    return { data: atual + 1 };
+}
+
+const tentativas = () => state.calls.rpc.filter((c) => c.fn === "claim_signup_payment_attempt");
 
 // Data de criação da conta "N minutos atrás"
 function haMinutos(n: number) {
@@ -257,12 +269,11 @@ describe("Assinatura no cadastro (ainda sem login)", () => {
         expect(r.status).toBe(200);
     });
 
-    it("conta a tentativa na própria conta antes de cobrar", async () => {
+    it("conta a tentativa no banco antes de cobrar", async () => {
         pagarmeOk();
         await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
-        expect(state.calls.updatedUsers).toEqual([
-            { id: "u-pastor", attrs: { app_metadata: { signup_payment_attempts: 1 } } },
-        ]);
+        expect(tentativas().map((c) => c.args)).toEqual([{ p_user_id: "u-pastor", p_max: 5 }]);
+        expect(state.users[0].app_metadata?.signup_payment_attempts).toBe(1);
     });
 
     it("cartão recusado no cadastro: pode tentar de novo", async () => {
@@ -272,12 +283,13 @@ describe("Assinatura no cadastro (ainda sem login)", () => {
         pagarmeOk();
         const r2 = await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
         expect(r2.status).toBe(200);
+        expect(state.users[0].app_metadata?.signup_payment_attempts).toBe(2);
     });
 
     it("dados inválidos não gastam tentativa", async () => {
         pagarmeOk();
         await POST(post(URL, corpo({ email: "pastor@igreja.com", address: null })));
-        expect(state.calls.updatedUsers).toHaveLength(0);
+        expect(tentativas()).toHaveLength(0);
     });
 });
 
@@ -340,18 +352,32 @@ describe("Assinatura sem login: recusas (achado de segurança)", () => {
         await recusado();
     });
 
+    it("6 pedidos ao mesmo tempo: só 5 chegam ao Pagar.me", async () => {
+        const { calls } = pagarmeOk("failed");
+        const respostas = await Promise.all(
+            Array.from({ length: 6 }, () => POST(post(URL, corpo({ email: "pastor@igreja.com" }))))
+        );
+        expect(calls.filter((c) => c.method === "POST")).toHaveLength(5);
+        expect(respostas.map((r) => r.status).sort()).toEqual([401, 402, 402, 402, 402, 402]);
+        expect(state.users[0].app_metadata?.signup_payment_attempts).toBe(5);
+    });
+
+    it("limite atingido no banco vale mesmo se a leitura da conta estava atrasada", async () => {
+        state.rpc = () => ({ data: null }); // o banco diz que já chegou a 5
+        const { calls } = pagarmeOk();
+        const r = await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
+        expect(r.status).toBe(401);
+        expect((await json(r)).error).toBe(NEGADO);
+        expect(calls).toHaveLength(0);
+        expect(state.calls.updates).toHaveLength(0);
+    });
+
     it("se não conseguir contar a tentativa, não cobra", async () => {
-        const falha = vi
-            .spyOn(supabaseProxy.auth.admin, "updateUserById")
-            .mockResolvedValueOnce({ data: { user: null }, error: { message: "falhou" } });
-        try {
-            const { calls } = pagarmeOk();
-            const r = await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
-            expect(r.status).toBe(500);
-            expect(calls).toHaveLength(0);
-        } finally {
-            falha.mockRestore();
-        }
+        state.rpc = () => ({ error: { message: "falhou" } });
+        const { calls } = pagarmeOk();
+        const r = await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
+        expect(r.status).toBe(500);
+        expect(calls).toHaveLength(0);
     });
 
     it("com login, conta antiga continua assinando normalmente", async () => {
@@ -359,7 +385,7 @@ describe("Assinatura sem login: recusas (achado de segurança)", () => {
         pagarmeOk();
         const r = await POST(post(URL, corpo(), logado()));
         expect(r.status).toBe(200);
-        expect(state.calls.updatedUsers).toHaveLength(0);
+        expect(tentativas()).toHaveLength(0);
     });
 
     it("sem login e sem e-mail → 400", async () => {

@@ -160,13 +160,15 @@ export async function POST(req: Request) {
             country: "BR",
         };
 
-        // Cadastro sem login: conta a tentativa antes de cobrar (barra teste de cartões em série)
+        // Cadastro sem login: conta a tentativa antes de cobrar (barra teste de cartões em série).
+        // A soma é feita no banco numa operação só: pedidos ao mesmo tempo não furam o limite.
         if (signupUser) {
-            const attempts = Number(signupUser.app_metadata?.signup_payment_attempts) || 0;
-            const { error: countError } = await supabase.auth.admin.updateUserById(signupUser.id, {
-                app_metadata: { ...signupUser.app_metadata, signup_payment_attempts: attempts + 1 },
+            const { data: attempt, error: countError } = await supabase.rpc("claim_signup_payment_attempt", {
+                p_user_id: signupUser.id,
+                p_max: SIGNUP_MAX_ATTEMPTS,
             });
             if (countError) return fail("Erro interno", 500);
+            if (attempt == null) return fail(SIGNUP_LOGIN_REQUIRED, 401);
         }
 
         // 3) Cria a assinatura
