@@ -13,6 +13,7 @@ type Props = {
     cycle: BillingCycle;
     name: string;
     email: string;
+    userId: string;
 };
 
 export default function RegisterSuccessModal({
@@ -22,6 +23,7 @@ export default function RegisterSuccessModal({
     cycle,
     name,
     email,
+    userId,
 }: Props) {
     const [exitLoading, setExitLoading] = useState(false);
     const [showCardModal, setShowCardModal] = useState(false);
@@ -42,7 +44,7 @@ export default function RegisterSuccessModal({
     const plan = getPlan(planSlug);
 
     async function confirmarAssinatura(values: CardFormValues) {
-        await subscribeWithCard({ planSlug, cycle, values, email, name });
+        await subscribeWithCard({ planSlug, cycle, values, email, name, userId });
         setShowCardModal(false);
         setPaidSuccessfully(true);
     }

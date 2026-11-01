@@ -112,8 +112,8 @@ export default function VisitorTable({
 
   return (
     <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-4 md:p-4">
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-3">
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-center">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-3">
+        <div className="flex flex-wrap gap-3 items-center min-w-0 w-full sm:w-auto">
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-2.5 text-gray-400 w-5 h-5" />
             <input
@@ -131,7 +131,7 @@ export default function VisitorTable({
           </div>
 
           {!showArchived && (
-            <div className="flex items-center bg-gray-100 rounded-full gap-1 px-1 py-1">
+            <div className="flex flex-wrap items-center gap-1 bg-gray-100 rounded-2xl px-1 py-1">
               {[
                 { key: "all", label: "Todos" },
                 { key: "pendente", label: "Pendente" },
@@ -144,7 +144,7 @@ export default function VisitorTable({
                     setCurrentPage(1);
                     setStatusFilter(option.key);
                   }}
-                  className={`px-1 py-1.5 rounded-full text-sm font-medium transition-all ${statusFilter === option.key
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${statusFilter === option.key
                       ? "bg-[#38B2AC] text-white shadow-sm"
                       : "text-gray-600 hover:text-[#38B2AC]"
                     }`}
@@ -157,7 +157,7 @@ export default function VisitorTable({
         </div>
 
         {/* AÇÕES */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 ml-auto">
           <button
             onClick={() => exportPdf(churchName, sortedVisitors)}
             title="Exportar PDF"
@@ -185,7 +185,7 @@ export default function VisitorTable({
           {!showArchived && canEdit && (
             <button
               onClick={onNewClick}
-              className="flex items-center gap-2 px-3 py-2 bg-[#38B2AC]
+              className="flex items-center gap-2 px-3 py-2 whitespace-nowrap bg-[#38B2AC]
                          text-white rounded-lg hover:bg-[#319795]
                          transition-all shadow-sm"
             >

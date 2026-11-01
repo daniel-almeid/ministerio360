@@ -28,6 +28,9 @@ const corpo = (over: Record<string, unknown> = {}) => ({
 
 const logado = (token = "tok-pastor") => ({ authorization: `Bearer ${token}` });
 
+// Pagamento logo após o cadastro: e-mail + id da conta devolvido pelo signUp
+const cadastro = (over: Record<string, unknown> = {}) => corpo({ email: "pastor@igreja.com", user_id: "u-pastor", ...over });
+
 function cenario(perfil: Record<string, unknown> = {}) {
     resetState({
         db: {
@@ -256,7 +259,7 @@ describe("Assinatura no cadastro (ainda sem login)", () => {
             { id: "u-pastor", email: "Pastor@Igreja.com", created_at: haMinutos(5) },
         ];
         const { calls } = pagarmeOk();
-        const r = await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
+        const r = await POST(post(URL, cadastro()));
         expect(r.status).toBe(200);
         expect(calls.find((c) => c.method === "POST")!.body.customer.email).toBe("pastor@igreja.com");
         expect(perfil().subscription_active).toBe(true);
@@ -265,31 +268,38 @@ describe("Assinatura no cadastro (ainda sem login)", () => {
     it("conta criada há quase 1 hora ainda paga no cadastro", async () => {
         state.users[0].created_at = haMinutos(59);
         pagarmeOk();
-        const r = await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
+        const r = await POST(post(URL, cadastro()));
         expect(r.status).toBe(200);
     });
 
     it("conta a tentativa no banco antes de cobrar", async () => {
         pagarmeOk();
-        await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
+        await POST(post(URL, cadastro()));
         expect(tentativas().map((c) => c.args)).toEqual([{ p_user_id: "u-pastor", p_max: 5 }]);
         expect(state.users[0].app_metadata?.signup_payment_attempts).toBe(1);
     });
 
     it("cartão recusado no cadastro: pode tentar de novo", async () => {
         pagarmeOk("failed");
-        const r1 = await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
+        const r1 = await POST(post(URL, cadastro()));
         expect(r1.status).toBe(402);
         pagarmeOk();
-        const r2 = await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
+        const r2 = await POST(post(URL, cadastro()));
         expect(r2.status).toBe(200);
         expect(state.users[0].app_metadata?.signup_payment_attempts).toBe(2);
     });
 
     it("dados inválidos não gastam tentativa", async () => {
         pagarmeOk();
-        await POST(post(URL, corpo({ email: "pastor@igreja.com", address: null })));
+        await POST(post(URL, cadastro({ address: null })));
         expect(tentativas()).toHaveLength(0);
+    });
+
+    it("e-mail com espaços antes ou depois ainda acha a conta", async () => {
+        const { calls } = pagarmeOk();
+        const r = await POST(post(URL, cadastro({ email: "  pastor@igreja.com " })));
+        expect(r.status).toBe(200);
+        expect(calls.find((c) => c.method === "POST")!.body.customer.email).toBe("pastor@igreja.com");
     });
 });
 
@@ -298,7 +308,7 @@ describe("Assinatura sem login: recusas (achado de segurança)", () => {
 
     async function recusado(over: Record<string, unknown> = {}) {
         const { calls } = pagarmeOk();
-        const r = await POST(post(URL, corpo({ email: "pastor@igreja.com", ...over })));
+        const r = await POST(post(URL, cadastro({ ...over })));
         expect(r.status).toBe(401);
         expect((await json(r)).error).toBe(NEGADO);
         expect(calls).toHaveLength(0); // não falou com o Pagar.me
@@ -341,10 +351,18 @@ describe("Assinatura sem login: recusas (achado de segurança)", () => {
         await recusado({ email: "ninguem@x.com" });
     });
 
+    it("quem só sabe o e-mail (sem o id da conta) não assina", async () => {
+        await recusado({ user_id: undefined });
+    });
+
+    it("id de outra conta não serve", async () => {
+        await recusado({ user_id: "u-outra-conta" });
+    });
+
     it("depois de 5 tentativas, a 6ª é bloqueada", async () => {
         for (let i = 0; i < 5; i++) {
             pagarmeOk("failed");
-            const r = await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
+            const r = await POST(post(URL, cadastro()));
             expect(r.status).toBe(402);
         }
         expect(state.users[0].app_metadata?.signup_payment_attempts).toBe(5);
@@ -355,7 +373,7 @@ describe("Assinatura sem login: recusas (achado de segurança)", () => {
     it("6 pedidos ao mesmo tempo: só 5 chegam ao Pagar.me", async () => {
         const { calls } = pagarmeOk("failed");
         const respostas = await Promise.all(
-            Array.from({ length: 6 }, () => POST(post(URL, corpo({ email: "pastor@igreja.com" }))))
+            Array.from({ length: 6 }, () => POST(post(URL, cadastro())))
         );
         expect(calls.filter((c) => c.method === "POST")).toHaveLength(5);
         expect(respostas.map((r) => r.status).sort()).toEqual([401, 402, 402, 402, 402, 402]);
@@ -365,7 +383,7 @@ describe("Assinatura sem login: recusas (achado de segurança)", () => {
     it("limite atingido no banco vale mesmo se a leitura da conta estava atrasada", async () => {
         state.rpc = () => ({ data: null }); // o banco diz que já chegou a 5
         const { calls } = pagarmeOk();
-        const r = await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
+        const r = await POST(post(URL, cadastro()));
         expect(r.status).toBe(401);
         expect((await json(r)).error).toBe(NEGADO);
         expect(calls).toHaveLength(0);
@@ -375,7 +393,7 @@ describe("Assinatura sem login: recusas (achado de segurança)", () => {
     it("se não conseguir contar a tentativa, não cobra", async () => {
         state.rpc = () => ({ error: { message: "falhou" } });
         const { calls } = pagarmeOk();
-        const r = await POST(post(URL, corpo({ email: "pastor@igreja.com" })));
+        const r = await POST(post(URL, cadastro()));
         expect(r.status).toBe(500);
         expect(calls).toHaveLength(0);
     });
@@ -392,5 +410,54 @@ describe("Assinatura sem login: recusas (achado de segurança)", () => {
         pagarmeOk();
         const r = await POST(post(URL, corpo({ email: undefined })));
         expect(r.status).toBe(400);
+    });
+});
+
+describe("Dois pedidos ao mesmo tempo (duas abas, rede reenviando)", () => {
+    // Cada pedido cria uma assinatura diferente no Pagar.me: sub_1, sub_2...
+    function pagarmeEmSequencia() {
+        let n = 0;
+        return mockPagarme({
+            "POST subscriptions": () => ({
+                json: { id: `sub_${++n}`, status: "active", customer: { id: "cus_1" }, current_cycle: { end_at: FIM_DO_CICLO } },
+            }),
+            "DELETE subscriptions/.+": () => ({ json: { status: "canceled" } }),
+        });
+    }
+
+    const cancelados = (calls: { method: string; path: string }[]) =>
+        calls.filter((c) => c.method === "DELETE").map((c) => c.path).sort();
+
+    it("no cadastro: só uma vale, a outra é cancelada na hora", async () => {
+        const { calls } = pagarmeEmSequencia();
+        const [a, b] = await Promise.all([POST(post(URL, cadastro())), POST(post(URL, cadastro()))]);
+        expect([a.status, b.status].sort()).toEqual([200, 409]);
+
+        const vencedora = perfil().pagarme_subscription_id;
+        const perdedora = vencedora === "sub_1" ? "sub_2" : "sub_1";
+        expect(cancelados(calls)).toEqual([`subscriptions/${perdedora}`]);
+        expect(calls.find((c) => c.method === "DELETE")!.body).toEqual({ cancel_pending_invoices: true });
+
+        const recusada = a.status === 409 ? a : b;
+        expect((await json(recusada)).error).toMatch(/já foi registrado/);
+    });
+
+    it("logado trocando de plano: cancela a anterior e a duplicada, fica uma só", async () => {
+        cenario({ plan_slug: "standard", subscription_active: true, pagarme_subscription_id: "sub_antiga" });
+        const { calls } = pagarmeEmSequencia();
+        const [a, b] = await Promise.all([POST(post(URL, corpo(), logado())), POST(post(URL, corpo(), logado()))]);
+        expect([a.status, b.status].sort()).toEqual([200, 409]);
+
+        const vencedora = perfil().pagarme_subscription_id;
+        const perdedora = vencedora === "sub_1" ? "sub_2" : "sub_1";
+        expect(cancelados(calls)).toEqual([`subscriptions/${perdedora}`, "subscriptions/sub_antiga"].sort());
+    });
+
+    it("um pedido sozinho continua igual (não cancela nada a mais)", async () => {
+        const { calls } = pagarmeEmSequencia();
+        const r = await POST(post(URL, cadastro()));
+        expect(r.status).toBe(200);
+        expect(perfil().pagarme_subscription_id).toBe("sub_1");
+        expect(cancelados(calls)).toEqual([]);
     });
 });

@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { supabase } from "../../../lib/supabaseClient";
+import PasswordInput from "../../../components/shared/passwordInput";
+import { authErrorMessage } from "../../../lib/authErrors";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -36,12 +38,12 @@ export default function LoginPage() {
 
         try {
             const { data, error: loginError } = await supabase.auth.signInWithPassword({
-                email,
+                email: email.trim(),
                 password,
             });
 
             if (loginError || !data?.user) {
-                setError("E-mail ou senha incorretos.");
+                setError(authErrorMessage(loginError, "Não foi possível entrar. Tente novamente."));
                 setLoading(false);
                 return;
             }
@@ -72,8 +74,8 @@ export default function LoginPage() {
 
             router.push("/dashboard");
 
-        } catch {
-            setError("Erro inesperado.");
+        } catch (err) {
+            setError(authErrorMessage(err as { message?: string }, "Não foi possível entrar. Tente novamente."));
         } finally {
             setLoading(false);
         }
@@ -118,10 +120,10 @@ export default function LoginPage() {
 
                     <div>
                         <label className="block text-base font-medium text-gray-700 mb-2">Senha</label>
-                        <input
-                            type="password"
+                        <PasswordInput
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            autoComplete="current-password"
                             className="w-full px-5 py-4 text-lg border rounded-xl"
                             required
                         />

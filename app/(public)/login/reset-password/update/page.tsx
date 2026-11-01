@@ -4,6 +4,8 @@ import { useState } from "react";
 import { supabase } from "../../../../../lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import PasswordInput from "../../../../../components/shared/passwordInput";
+import { authErrorMessage } from "../../../../../lib/authErrors";
 
 const strongPasswordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
@@ -30,7 +32,7 @@ export default function UpdatePasswordPage() {
         const { error } = await supabase.auth.updateUser({ password });
 
         if (error) {
-            setError("Erro ao atualizar senha.");
+            setError(authErrorMessage(error, "Não foi possível atualizar a senha. Peça um novo link e tente de novo."));
             setLoading(false);
             return;
         }
@@ -52,14 +54,16 @@ export default function UpdatePasswordPage() {
                             Definir nova senha
                         </h2>
 
-                        <input
-                            type="password"
-                            placeholder="Nova senha"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-3 border rounded-xl mb-4"
-                            required
-                        />
+                        <div className="mb-4">
+                            <PasswordInput
+                                placeholder="Nova senha"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                autoComplete="new-password"
+                                className="w-full px-4 py-3 border rounded-xl"
+                                required
+                            />
+                        </div>
 
                         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 

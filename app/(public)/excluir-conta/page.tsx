@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import PasswordInput from "@/components/shared/passwordInput";
 
 type Mode = "user_only" | "transfer" | "delete_church";
 type Preview = {
@@ -177,10 +178,10 @@ export default function ExcluirContaPage() {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-                            <input
-                                type="password"
+                            <PasswordInput
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
+                                autoComplete="current-password"
                                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
                             />
                         </div>

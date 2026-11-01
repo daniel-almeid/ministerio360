@@ -31,13 +31,14 @@ async function tokenizeCard(values: CardFormValues) {
 
 // Assina um plano com cartão (usado em Planos, Minha assinatura e no cadastro).
 // Logado: o servidor identifica a igreja pelo login.
-// No cadastro (ainda sem login): identifica pelo e-mail recém-cadastrado.
+// No cadastro (ainda sem login): identifica pelo e-mail recém-cadastrado e pelo id da conta.
 export async function subscribeWithCard(input: {
     planSlug: PlanSlug;
     cycle: BillingCycle;
     values: CardFormValues;
     email?: string;
     name?: string;
+    userId?: string;
 }) {
     // No cadastro o e-mail vem junto e o login ainda não existe
     const { data } = await supabase.auth.getSession();
@@ -64,6 +65,7 @@ export async function subscribeWithCard(input: {
             installments: input.cycle === "yearly" ? Number(v.installments || 1) : 1,
             card_token: cardToken,
             email,
+            user_id: session ? undefined : input.userId,
             name,
             document: v.document,
             phone: { area_code: v.areaCode, number: v.phoneNumber },

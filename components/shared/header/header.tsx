@@ -7,7 +7,7 @@ export function Header() {
   const { churchName, userEmail } = useHeaderData();
 
   return (
-    <header className="h-16 border-b border-gray-200 bg-white flex items-center justify-between px-8 shadow-sm">
+    <header className="h-16 shrink-0 border-b border-gray-200 bg-white flex items-center justify-between px-8 shadow-sm">
 
       <h2 className="hidden md:block text-xl font-semibold text-gray-800 tracking-tight"></h2>
 

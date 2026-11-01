@@ -62,6 +62,7 @@ export async function POST(req: Request) {
             installments: rawInstallments = 1,
             card_token,
             email: bodyEmail,
+            user_id: bodyUserId,
             name,
             document,
             phone,
@@ -119,12 +120,14 @@ export async function POST(req: Request) {
             church = data ?? null;
             email = user.email ?? null;
         } else {
-            // Cadastro (ainda sem login): pelo e-mail recém-cadastrado.
+            // Cadastro (ainda sem login): pelo e-mail recém-cadastrado + o id da conta,
+            // que só o navegador que fez o cadastro recebeu (quem só sabe o e-mail não passa).
             // Qualquer recusa dá a mesma resposta, para não revelar quais e-mails têm conta.
             if (!bodyEmail) return fail("Dados incompletos", 400);
-            signupUser = await findUserByEmail(String(bodyEmail));
+            const signupEmail = String(bodyEmail).trim();
+            signupUser = await findUserByEmail(signupEmail);
             const createdAt = signupUser ? new Date(signupUser.created_at).getTime() : NaN;
-            if (!signupUser || !(Date.now() - createdAt <= SIGNUP_WINDOW_MS)) {
+            if (!signupUser || signupUser.id !== bodyUserId || !(Date.now() - createdAt <= SIGNUP_WINDOW_MS)) {
                 return fail(SIGNUP_LOGIN_REQUIRED, 401);
             }
 
@@ -140,7 +143,7 @@ export async function POST(req: Request) {
             if ((Number(signupUser.app_metadata?.signup_payment_attempts) || 0) >= SIGNUP_MAX_ATTEMPTS) {
                 return fail(SIGNUP_LOGIN_REQUIRED, 401);
             }
-            email = String(bodyEmail);
+            email = signupEmail;
         }
 
         if (!church || !email) return fail("Igreja não encontrada para esta conta.", 404);
@@ -222,7 +225,9 @@ export async function POST(req: Request) {
 
         const previousSubscription = church.pagarme_subscription_id;
 
-        await supabase
+        // Grava só se a igreja ainda estiver como foi lida. Dois pedidos ao mesmo tempo
+        // (duas abas, a rede reenviando) não deixam uma assinatura esquecida cobrando.
+        const save = supabase
             .from("church_profiles")
             .update({
                 plan_slug,
@@ -234,6 +239,24 @@ export async function POST(req: Request) {
                 pagarme_subscription_id: subJson.id,
             })
             .eq("id", church.id);
+        const { data: saved, error: saveError } = await (previousSubscription
+            ? save.eq("pagarme_subscription_id", previousSubscription)
+            : save.is("pagarme_subscription_id", null)
+        ).select("id");
+
+        if (saveError) {
+            console.error("❌ Erro ao gravar a assinatura na igreja:", church.id, subJson.id, saveError);
+        } else if (!saved?.length) {
+            // Outro pedido gravou antes: cancela esta para não cobrar todo mês em dobro.
+            // A 1ª cobrança dela já foi feita e precisa ser estornada no painel do Pagar.me.
+            console.error("⚠️ Assinatura em duplicidade cancelada; estornar a 1ª cobrança:", church.id, subJson.id);
+            await fetch(`https://api.pagar.me/core/v5/subscriptions/${subJson.id}`, {
+                method: "DELETE",
+                headers: { Authorization: auth, "Content-Type": "application/json" },
+                body: JSON.stringify({ cancel_pending_invoices: true }),
+            }).catch(() => {});
+            return fail("Este pagamento já foi registrado. Atualize a página para ver o seu plano.", 409);
+        }
 
         await refreshChurchClaims(church.id, church.user_id);
 

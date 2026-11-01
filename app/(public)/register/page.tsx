@@ -13,12 +13,14 @@ export default function RegisterPage() {
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
   const [registerName, setRegisterName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
+  const [registerUserId, setRegisterUserId] = useState("");
 
-  function handleSuccess(plan: PlanSlug, chosenCycle: BillingCycle, name: string, email: string) {
+  function handleSuccess(plan: PlanSlug, chosenCycle: BillingCycle, name: string, email: string, userId: string) {
     setPlanSlug(plan);
     setCycle(chosenCycle);
     setRegisterName(name);
     setRegisterEmail(email);
+    setRegisterUserId(userId);
     setShowSuccessModal(true);
   }
 
@@ -36,6 +38,7 @@ export default function RegisterPage() {
             cycle={cycle}
             name={registerName}
             email={registerEmail}
+            userId={registerUserId}
             onClose={() => setShowSuccessModal(false)}
           />
         </>

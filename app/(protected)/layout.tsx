@@ -75,20 +75,22 @@ export default function ProtectedLayout({
     );
   }
 
+  // As telas ficam do tamanho da janela, ao lado do menu: quem rola é só a área do
+  // conteúdo (e as tabelas, para o lado). A página nunca passa do menu nem da tela.
   return (
     <div
       className={`
         ${poppins.variable}
         bg-[#F7FAFC] text-gray-800 font-sans
-        min-h-screen
+        h-dvh overflow-hidden
         flex flex-col md:flex-row
       `}
     >
       <Sidebar />
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 min-w-0 min-h-0 flex flex-col">
         <Header />
-        <main className="p-4 md:p-6 flex-1">
+        <main className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden p-4 md:p-6">
           {/* Cada página só aparece para quem tem acesso a ela */}
           <AccessGate>{children}</AccessGate>
         </main>

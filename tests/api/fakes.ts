@@ -50,15 +50,26 @@ export function resetState(over: Partial<FakeState> = {}) {
 
 function query(table: string) {
     const filters: Filter[] = [];
+    const nullCols: string[] = []; // .is(coluna, null)
     let mode: "select" | "update" | "remove" = "select";
     let values: Row = {};
+    let returning = false; // .update(...).select(): devolve as linhas alteradas
 
-    const match = () => (state.db[table] ?? []).filter((r) => filters.every(([c, v]) => r[c] === v));
+    const match = () =>
+        (state.db[table] ?? []).filter((r) => filters.every(([c, v]) => r[c] === v) && nullCols.every((c) => r[c] == null));
 
     const api: any = {
-        select: () => api,
+        select: () => {
+            if (mode === "update") returning = true;
+            return api;
+        },
         eq: (col: string, val: unknown) => {
             filters.push([col, val]);
+            return api;
+        },
+        is: (col: string, val: unknown) => {
+            if (val === null) nullCols.push(col);
+            else filters.push([col, val]);
             return api;
         },
         update: (v: Row) => {
@@ -78,9 +89,10 @@ function query(table: string) {
         then: (resolve: (v: unknown) => void, reject: (e: unknown) => void) => {
             let result: unknown;
             if (mode === "update") {
-                match().forEach((r) => Object.assign(r, values));
+                const rows = match();
+                rows.forEach((r) => Object.assign(r, values));
                 state.calls.updates.push({ table, values, filters: [...filters] });
-                result = { data: null, error: null };
+                result = { data: returning ? rows.map((r) => ({ ...r })) : null, error: null };
             } else if (mode === "remove") {
                 const keep = (state.db[table] ?? []).filter((r) => !filters.every(([c, v]) => r[c] === v));
                 state.db[table] = keep;

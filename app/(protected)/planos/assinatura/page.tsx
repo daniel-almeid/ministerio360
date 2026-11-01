@@ -58,8 +58,8 @@ export default function AssinaturaPage() {
 
     return (
         <>
-            <div className="max-w-5xl mx-auto px-6 py-0.5 space-y-0.5">
-                <div className="bg-white shadow-lg border border-gray-200 rounded-2xl p-8 md:p-10 space-y-8">
+            <div className="max-w-5xl mx-auto md:px-6 py-0.5 space-y-0.5">
+                <div className="bg-white shadow-lg border border-gray-200 rounded-2xl p-5 sm:p-8 md:p-10 space-y-8">
                     <CurrentPlanCard
                         currentPlan={currentPlan}
                         price={price}

@@ -81,7 +81,7 @@ export function SidebarDesktop({
                     width: isCollapsed ? 100 : 256,
                     transition: { duration: 0.5, type: "spring", stiffness: 100, damping: 16 }
                 }}
-                className="hidden md:flex h-screen bg-[#1E3A5F] text-white flex-col shadow-lg overflow-hidden"
+                className="hidden md:flex h-dvh shrink-0 bg-[#1E3A5F] text-white flex-col shadow-lg overflow-hidden"
             >
                 <div
                     className={`relative border-b border-white/10 ${isCollapsed
