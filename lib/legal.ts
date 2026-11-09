@@ -5,8 +5,8 @@
 
 export const LEGAL = {
     // Versão dos documentos (gravada na conta de quem aceita)
-    VERSION: "2026-10-22",
-    UPDATED_AT: "22 de outubro de 2026",
+    VERSION: "2026-11-08",
+    UPDATED_AT: "8 de novembro de 2026",
 
     PRODUCT: "Ministério360",
     SITE: "https://ministerio360.vercel.app",

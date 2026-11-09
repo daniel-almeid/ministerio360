@@ -37,6 +37,7 @@ export default function AssinaturaPage() {
         hasPaidPlan,
         hasAutoRenewal,
         renewalCanceled,
+        isBonus,
         reload,
     } = useSubscription();
 
@@ -68,10 +69,11 @@ export default function AssinaturaPage() {
                         isActive={isActive}
                         formattedNextPayment={formattedNextPayment}
                         formattedExpiresOn={formattedExpiresOn}
+                        isBonus={isBonus}
                     />
 
                     <BillingCycle
-                        hasPaidPlan={hasPaidPlan}
+                        hasPaidPlan={hasPaidPlan && !isBonus}
                         formattedLastPayment={formattedLastPayment}
                         formattedNextPayment={formattedNextPayment}
                         progressPercent={progressPercent}
@@ -83,13 +85,13 @@ export default function AssinaturaPage() {
                     <PlanComparison
                         plans={PLANS}
                         cycle={cycle}
-                        currentSlug={planSlug}
+                        currentSlug={isBonus ? "free" : planSlug} // no mês grátis, todos os planos podem ser assinados
                         currentCycle={billingCycle}
                         onSelectPlan={(plan) => openPaymentFor(plan.slug)}
                     />
 
                     <FooterActions
-                        hasPaidPlan={hasPaidPlan}
+                        hasPaidPlan={hasPaidPlan && !isBonus}
                         hasAutoRenewal={hasAutoRenewal}
                         renewalCanceled={renewalCanceled}
                         formattedExpiresOn={formattedExpiresOn}

@@ -17,6 +17,7 @@ type ProfileRow = {
     current_period_end: string | null;
     canceled_at: string | null;
     pagarme_subscription_id: string | null;
+    billing_provider: string | null;
 };
 
 export function useSubscription() {
@@ -34,7 +35,7 @@ export function useSubscription() {
 
         const { data } = await supabase
             .from("church_profiles")
-            .select("plan_slug, subscription_active, billing_cycle, plan_expires_at, current_period_end, canceled_at, pagarme_subscription_id")
+            .select("plan_slug, subscription_active, billing_cycle, plan_expires_at, current_period_end, canceled_at, pagarme_subscription_id, billing_provider")
             .eq("id", churchId)
             .single<ProfileRow>();
 
@@ -92,6 +93,8 @@ export function useSubscription() {
         // Renovação automática: existe no Pagar.me e não foi cancelada
         hasAutoRenewal: !!profile?.pagarme_subscription_id,
         renewalCanceled: hasPaidPlan && !!profile?.canceled_at,
+        // Mês grátis do programa de indicação (não é assinatura, não cobra nada)
+        isBonus: profile?.billing_provider === "bonus" && hasPaidPlan,
 
         reload: load,
     };

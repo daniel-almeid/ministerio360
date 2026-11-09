@@ -12,6 +12,7 @@ type Props = {
     isActive: boolean;
     formattedNextPayment: string | null;
     formattedExpiresOn: string | null;
+    isBonus?: boolean;
 };
 
 export default function CurrentPlanCard({
@@ -22,6 +23,7 @@ export default function CurrentPlanCard({
     isActive,
     formattedNextPayment,
     formattedExpiresOn,
+    isBonus = false,
 }: Props) {
 
     return (
@@ -38,7 +40,12 @@ export default function CurrentPlanCard({
                         {currentPlan.name}
                     </h2>
 
-                    {price > 0 ? (
+                    {isBonus ? (
+                        <p className="text-sm text-gray-600 mt-1">
+                            Grátis por indicação até <strong>{formattedExpiresOn}</strong>. Depois, a igreja volta ao plano
+                            Grátis, sem perder dados. Para continuar, assine abaixo.
+                        </p>
+                    ) : price > 0 ? (
                         <p className="text-sm text-gray-500 mt-1">
                             {formatBRL(Math.round(price * 100))} / {billingCycle === "yearly" ? "ano (plano anual)" : "mês"}
                         </p>
@@ -48,7 +55,7 @@ export default function CurrentPlanCard({
                         </p>
                     )}
 
-                    {formattedExpiresOn && (
+                    {formattedExpiresOn && !isBonus && (
                         <p className="text-sm text-gray-500 mt-1">
                             Plano válido até <strong>{formattedExpiresOn}</strong>
                         </p>

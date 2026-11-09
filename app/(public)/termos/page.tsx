@@ -114,6 +114,9 @@ const sections: LegalSection[] = [
                         diretamente a ele; nós não armazenamos o número do cartão.
                     </li>
                     <li>
+                        <strong>Assinatura pelo aplicativo (Google Play):</strong> no aplicativo para Android, a assinatura é contratada e paga pelo Google Play, com a forma de pagamento da sua conta Google. Valem o preço e as condições mostrados pelo Google Play antes da compra, que podem ser diferentes dos deste site. No Plano anual pelo Google Play, o valor é cobrado em 12 parcelas mensais, com compromisso de 12 meses.
+                    </li>
+                    <li>
                         <strong>Renovação automática:</strong> a assinatura é renovada e cobrada automaticamente ao fim
                         de cada ciclo (mensal ou anual), no mesmo cartão, até ser cancelada.
                     </li>
@@ -132,6 +135,9 @@ const sections: LegalSection[] = [
                         Novos preços valem para as renovações seguintes e serão comunicados com pelo menos 30 dias de
                         antecedência, para que você possa cancelar, se preferir.
                     </li>
+                    <li>
+                        <strong>Cobrança pelo Google Play:</strong> a renovação automática, as novas tentativas de cobrança e as trocas de Plano seguem as regras do Google Play. Se o pagamento não for aprovado, o Google Play pode manter o acesso por um período de carência enquanto tenta cobrar de novo; depois disso, a Igreja passa para o Plano Grátis, sem perda de dados.
+                    </li>
                 </UL>
             </>
         ),
@@ -144,8 +150,11 @@ const sections: LegalSection[] = [
                 <UL>
                     <li>
                         <strong>Cancelar a qualquer momento:</strong> um Pastor da Igreja pode cancelar a renovação
-                        automática em <em>Planos › Minha assinatura</em>, no site ou no aplicativo. Nada mais será
-                        cobrado.
+                        automática da assinatura feita pelo site em <em>Planos › Minha assinatura</em>, no site ou no
+                        aplicativo. Nada mais será cobrado.
+                    </li>
+                    <li>
+                        <strong>Assinatura pelo Google Play:</strong> o cancelamento é feito no próprio Google Play — pelo botão “Gerenciar na Google Play”, na tela Planos do aplicativo, ou em Play Store › Pagamentos e assinaturas › Assinaturas. No Plano anual parcelado, o cancelamento impede a renovação, mas as parcelas restantes dos 12 meses contratados continuam sendo cobradas, conforme as regras do Google Play.
                     </li>
                     <li>
                         Após o cancelamento, a Igreja continua com todos os recursos do Plano até o fim do período já
@@ -156,6 +165,9 @@ const sections: LegalSection[] = [
                         desistir em até <strong>7 (sete) dias</strong> e receber o reembolso integral do valor pago,
                         conforme o art. 49 do Código de Defesa do Consumidor. Para isso, cancele a assinatura e envie o
                         pedido para <Mail />. O estorno é feito no mesmo cartão, no prazo da operadora.
+                    </li>
+                    <li>
+                        <strong>Reembolso de compras pelo Google Play:</strong> o direito de arrependimento também vale para elas. Você pode pedir o reembolso diretamente ao Google Play, conforme a política da loja, ou escrever para <Mail />; nesse caso, o estorno é feito pelo Google Play, na mesma forma de pagamento.
                     </li>
                     <li>
                         Fora do prazo de arrependimento, valores já pagos — inclusive de Planos anuais — não são

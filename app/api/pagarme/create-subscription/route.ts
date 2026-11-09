@@ -237,6 +237,8 @@ export async function POST(req: Request) {
                 canceled_at: null, // nova assinatura: renovação automática ligada de novo
                 pagarme_customer_id: subJson.customer?.id ?? null,
                 pagarme_subscription_id: subJson.id,
+                // Passa a pagar pelo site (inclusive quem estava no mês grátis de indicação)
+                billing_provider: "pagarme",
             })
             .eq("id", church.id);
         const { data: saved, error: saveError } = await (previousSubscription

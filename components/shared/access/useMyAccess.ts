@@ -64,7 +64,7 @@ export function canOpen(access: MyAccess | null, path: string) {
     if (p.startsWith("/financas")) return can(access, "financas");
     if (p.startsWith("/relatorios")) return can(access, "membros") || can(access, "financas");
     if (p.startsWith("/agenda")) return can(access, "agenda") || can(access, "escalas");
-    if (p.startsWith("/configuracoes") || p.startsWith("/usuarios")) return isPastor(access);
+    if (p.startsWith("/configuracoes") || p.startsWith("/usuarios") || p.startsWith("/indique")) return isPastor(access);
     // Dashboard, Planos (precisa abrir quando a assinatura está pendente) e Admin (confere sozinho)
     return !!access && access.status === "active";
 }

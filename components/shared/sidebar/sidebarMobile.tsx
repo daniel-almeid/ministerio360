@@ -15,7 +15,8 @@ import {
     Church,
     Shield,
     UserCog,
-    Loader2
+    Loader2,
+    Gift,
 } from "lucide-react";
 import { useMyAccess } from "../access/useMyAccess";
 
@@ -28,6 +29,7 @@ const links = [
     { href: "/agenda", label: "Agenda & Escalas", icon: Calendar, plan: "premium" },
     { href: "/relatorios", label: "Relatórios", icon: BarChart3, plan: "standard" },
     { href: "/configuracoes", label: "Configurações", icon: Settings, plan: "free" },
+    { href: "/indique", label: "Indique e ganhe", icon: Gift, plan: "free" },
 ];
 
 export function SidebarMobile({

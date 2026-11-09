@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { post, resetState, state } from "./fakes";
+import { LEGAL } from "@/lib/legal";
 
 vi.mock("@supabase/supabase-js", async () => {
     const { supabaseProxy } = await import("./fakes");
@@ -34,7 +35,7 @@ describe("Aceitar convite (criar a conta do convidado)", () => {
                 user_metadata: {
                     name: "Maria Souza",
                     invite_token: TOKEN,
-                    terms_version: "2026-10-22",
+                    terms_version: LEGAL.VERSION, // versão atual dos Termos
                     terms_accepted_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
                 },
             },

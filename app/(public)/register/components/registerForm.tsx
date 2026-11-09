@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
@@ -10,6 +10,7 @@ import RegisterPlanDetails from "./registerPlanDetails";
 import RegisterBackdrop from "./registerBackDrop";
 import ConsentCheckbox from "@/components/legal/consentCheckbox";
 import { legalAcceptance } from "@/lib/legal";
+import { cleanReferralCode, clearReferralCode, readReferralCode } from "@/lib/referral";
 import PasswordInput from "@/components/shared/passwordInput";
 import { authErrorMessage } from "@/lib/authErrors";
 
@@ -34,6 +35,12 @@ export default function RegisterForm({ onSuccess }: Props) {
     const [showDetails, setShowDetails] = useState<string | null>(null);
 
     const [accepted, setAccepted] = useState(false);
+    // Código de indicação: vem do link (?indicacao=) ou do que ficou guardado ao passar pela página inicial
+    const [referral, setReferral] = useState("");
+    useEffect(() => {
+        const fromUrl = cleanReferralCode(new URLSearchParams(window.location.search).get("indicacao"));
+        setReferral(fromUrl || readReferralCode());
+    }, []);
     const [consentMissing, setConsentMissing] = useState(false);
 
     const [loading, setLoading] = useState(false);
@@ -95,6 +102,7 @@ export default function RegisterForm({ onSuccess }: Props) {
                         church_name: name,
                         plan_slug: plan,
                         ...legalAcceptance(),
+                        ...(cleanReferralCode(referral) ? { referral_code: cleanReferralCode(referral) } : {}),
                     },
                 },
             });
@@ -112,6 +120,7 @@ export default function RegisterForm({ onSuccess }: Props) {
             }
 
             // O id da conta vai junto para o pagamento logo após o cadastro (só este navegador o tem)
+            clearReferralCode();
             onSuccess(plan, cycle, name, email.trim(), data.user?.id ?? "");
         } catch (err) {
             setError(authErrorMessage(err as { message?: string }, "Não foi possível criar a conta. Tente novamente."));
@@ -171,6 +180,23 @@ export default function RegisterForm({ onSuccess }: Props) {
                             placeholder="seuemail@exemplo.com"
                             required
                         />
+                    </div>
+
+                    <div>
+                        <label htmlFor="referral" className="block text-base font-semibold text-gray-700 mb-2">
+                            Código de indicação <span className="font-normal text-gray-500">(opcional)</span>
+                        </label>
+                        <input
+                            id="referral"
+                            type="text"
+                            value={referral}
+                            onChange={(e) => setReferral(cleanReferralCode(e.target.value))}
+                            className="w-full px-5 py-4 text-lg border rounded-xl bg-white focus:ring-2 focus:ring-teal-500 uppercase tracking-widest"
+                            placeholder="Ex.: K7M2QX"
+                            autoComplete="off"
+                            maxLength={12}
+                        />
+                        <p className="mt-2 text-sm text-gray-500">Se outra igreja indicou o Ministério360 para você, informe o código dela.</p>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-8">

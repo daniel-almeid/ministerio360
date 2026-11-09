@@ -75,13 +75,18 @@ const sections: LegalSection[] = [
                         ],
                         [
                             <strong key="d">Pagamento</strong>,
-                            "Plano, ciclo, validade e identificadores da assinatura. Os dados do cartão, CPF ou CNPJ, telefone e endereço de cobrança são enviados diretamente ao Pagar.me; não armazenamos o número do cartão.",
+                            "Plano, ciclo, validade e identificadores da assinatura. Os dados do cartão, CPF ou CNPJ, telefone e endereço de cobrança são enviados diretamente ao Pagar.me; não armazenamos o número do cartão. Nas assinaturas feitas pelo aplicativo, o pagamento é processado pelo Google Play; recebemos apenas a confirmação, o plano e a validade da assinatura.",
                             "Titular da igreja",
                         ],
                         [
                             <strong key="e">Uso e segurança</strong>,
                             "Endereço IP, data e hora de acesso, tipo de dispositivo e navegador, registros técnicos de erros e de autenticação.",
                             "Gerados automaticamente pelo uso",
+                        ],
+                        [
+                            <strong key="f">Diagnóstico e estatística do aplicativo</strong>,
+                            "Relatórios de falhas do aplicativo (tipo do erro, tela, versão do app, modelo e sistema do aparelho) e quais telas são abertas, sem nome, e-mail, telefone, localização ou dados da igreja. Ficam ligados a um código aleatório gerado no aparelho, não à sua conta.",
+                            "Gerados automaticamente pelo uso do aplicativo",
                         ],
                     ]}
                 />
@@ -111,6 +116,7 @@ const sections: LegalSection[] = [
                         ["Guardar registros de acesso e cumprir obrigações fiscais e legais", "Cumprimento de obrigação legal (art. 7º, II)"],
                         ["Proteger a Plataforma, prevenir fraudes e acessos indevidos", "Legítimo interesse (art. 7º, IX) e prevenção à fraude (art. 11, II, g)"],
                         ["Atender solicitações de suporte e enviar avisos sobre a conta", "Execução de contrato (art. 7º, V)"],
+                        ["Corrigir falhas e entender quais recursos do aplicativo são usados, para melhorá-lo", "Legítimo interesse (art. 7º, IX), com dados que não identificam a pessoa"],
                         ["Defender direitos em processos judiciais ou administrativos", "Exercício regular de direitos (art. 7º, VI)"],
                         ["Tratar os cadastros feitos pela igreja", "Base legal definida pela igreja, como controladora"],
                     ]}
@@ -134,7 +140,10 @@ const sections: LegalSection[] = [
                         [<strong key="b">Vercel</strong>, "Hospedagem do site e dos serviços da Plataforma"],
                         [<strong key="c">Pagar.me</strong>, "Processamento de pagamentos e assinaturas"],
                         [<strong key="d">Expo (EAS)</strong>, "Distribuição e atualização do aplicativo"],
-                        [<strong key="e">Google Play e App Store</strong>, "Download e instalação do aplicativo, conforme as políticas de cada loja"],
+                        [<strong key="e">Google Play e App Store</strong>, "Download e instalação do aplicativo e pagamento das assinaturas feitas por ele, conforme as políticas de cada loja"],
+                        [<strong key="f">RevenueCat</strong>, "Controle das assinaturas feitas pelo aplicativo (plano e validade)"],
+                        [<strong key="g">Sentry</strong>, "Relatórios de falhas do aplicativo, sem dados que identifiquem a pessoa"],
+                        [<strong key="h">PostHog</strong>, "Estatísticas de uso do aplicativo, sem dados que identifiquem a pessoa"],
                     ]}
                 />
                 <p>
@@ -151,7 +160,7 @@ const sections: LegalSection[] = [
         title: "Transferência internacional",
         content: (
             <p>
-                Alguns fornecedores, como Supabase e Vercel, armazenam ou processam dados em servidores localizados
+                Alguns fornecedores, como Supabase, Vercel, RevenueCat, Sentry e PostHog, armazenam ou processam dados em servidores localizados
                 fora do Brasil, principalmente nos Estados Unidos. Essas transferências são feitas para a execução do
                 contrato e com fornecedores que adotam garantias de proteção compatíveis com a LGPD (art. 33).
             </p>
@@ -240,11 +249,14 @@ const sections: LegalSection[] = [
                     O site usa apenas armazenamento essencial no navegador, para manter você conectado e, se você
                     escolher, lembrar o seu e-mail na tela de login.
                 </li>
-                <li>Não usamos cookies de publicidade nem ferramentas de rastreamento de terceiros.</li>
+                <li>O site não usa cookies de publicidade nem ferramentas de rastreamento de terceiros.</li>
                 <li>
                     O aplicativo guarda a sessão de forma protegida no aparelho e pode pedir permissão para enviar
                     lembretes locais e para acessar arquivos quando você importa uma planilha. Esses lembretes são
                     gerados no próprio aparelho.
+                </li>
+                <li>
+                    O aplicativo envia relatórios de falhas e estatísticas de uso que não identificam você (veja “Quais dados tratamos”). Não há publicidade nem rastreamento entre aplicativos.
                 </li>
             </UL>
         ),
