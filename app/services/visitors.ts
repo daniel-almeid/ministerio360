@@ -41,3 +41,11 @@ export async function archiveVisitor(id: string) {
 
     return { success: true };
 }
+// "Tornar membro": depois de cadastrar o membro, o visitante sai da lista (arquivado e concluído)
+export async function convertVisitorToMember(id: string): Promise<void> {
+    const { error } = await supabase
+        .from("visitors")
+        .update({ archived: true, followup_status: "concluido" })
+        .eq("id", id);
+    if (error) throw error;
+}

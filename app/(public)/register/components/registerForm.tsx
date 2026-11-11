@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Check, Church, Loader2, Lock, Mail, Ticket, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import RegisterHeader from "./registerHeader";
 import RegisterPlanSelector from "./registerPlanSelector";
 import RegisterPlanDetails from "./registerPlanDetails";
 import RegisterBackdrop from "./registerBackDrop";
@@ -13,6 +12,7 @@ import { legalAcceptance } from "@/lib/legal";
 import { cleanReferralCode, clearReferralCode, readReferralCode } from "@/lib/referral";
 import PasswordInput from "@/components/shared/passwordInput";
 import { authErrorMessage } from "@/lib/authErrors";
+import { AuthError, AuthLabel, AuthLayout, AuthTitle, FieldBox, authInput, primaryButton } from "@/components/auth/authShell";
 
 import type { BillingCycle, PlanSlug } from "@/lib/plans";
 
@@ -132,123 +132,106 @@ export default function RegisterForm({ onSuccess }: Props) {
     // Objeto para verificar os requisitos visualmente
     const pwdCheck = validatePassword(password);
 
+    const rules = [
+        { ok: pwdCheck.minLength, label: "8 caracteres" },
+        { ok: pwdCheck.hasUpper, label: "1 maiúscula" },
+        { ok: pwdCheck.hasLower, label: "1 minúscula" },
+        { ok: pwdCheck.hasNumber, label: "1 número" },
+        { ok: pwdCheck.hasSpecial, label: "1 caractere especial" },
+    ];
+
     return (
-        <>
+        <AuthLayout width="lg" backHref="/login">
             {loading && <RegisterBackdrop />}
 
             <form
                 onSubmit={handleRegister}
-                className={`w-full max-w-5xl p-12 md:p-20 space-y-12 rounded-2xl bg-white/80 backdrop-blur-md border border-gray-300/50 shadow-xl transition-all ${
-                    loading ? "opacity-60 pointer-events-none" : "opacity-100"
-                }`}
+                className={`space-y-5 transition-all ${loading ? "opacity-60 pointer-events-none" : "opacity-100"}`}
             >
-                <button
-                    type="button"
-                    onClick={() => router.push("/login")}
-                    className="flex items-center text-teal-600 hover:text-teal-700 transition-colors"
-                >
-                    <ArrowLeft className="w-5 h-5 mr-1" />
-                    Voltar ao login
-                </button>
+                <AuthTitle title="Criar conta da igreja" subtitle="Leva menos de um minuto. Você confirma o e-mail e já começa a usar." />
 
-                <RegisterHeader />
+                <Section title="Sua igreja" />
 
-                <div className="space-y-8">
-                    <div>
-                        <label className="block text-base font-semibold text-gray-700 mb-2">
-                            Nome da igreja
-                        </label>
+                <div>
+                    <AuthLabel htmlFor="church">Nome da igreja</AuthLabel>
+                    <FieldBox icon={Church}>
                         <input
+                            id="church"
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full px-5 py-4 text-lg border rounded-xl bg-white focus:ring-2 focus:ring-teal-500"
+                            className={authInput}
                             placeholder="Exemplo: Igreja Vida Nova"
                             required
                         />
-                    </div>
+                    </FieldBox>
+                </div>
 
-                    <div>
-                        <label className="block text-base font-semibold text-gray-700 mb-2">
-                            E-mail
-                        </label>
+                <Section title="Seu acesso" />
+
+                <div>
+                    <AuthLabel htmlFor="email">E-mail</AuthLabel>
+                    <FieldBox icon={Mail}>
                         <input
+                            id="email"
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-5 py-4 text-lg border rounded-xl bg-white focus:ring-2 focus:ring-teal-500"
+                            className={authInput}
                             placeholder="seuemail@exemplo.com"
+                            autoComplete="email"
                             required
                         />
-                    </div>
+                    </FieldBox>
+                </div>
 
+                <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                        <label htmlFor="referral" className="block text-base font-semibold text-gray-700 mb-2">
-                            Código de indicação <span className="font-normal text-gray-500">(opcional)</span>
-                        </label>
-                        <input
-                            id="referral"
-                            type="text"
-                            value={referral}
-                            onChange={(e) => setReferral(cleanReferralCode(e.target.value))}
-                            className="w-full px-5 py-4 text-lg border rounded-xl bg-white focus:ring-2 focus:ring-teal-500 uppercase tracking-widest"
-                            placeholder="Ex.: K7M2QX"
-                            autoComplete="off"
-                            maxLength={12}
-                        />
-                        <p className="mt-2 text-sm text-gray-500">Se outra igreja indicou o Ministério360 para você, informe o código dela.</p>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-8">
-                        <div className="relative">
-                            <label className="block text-base font-semibold text-gray-700 mb-2">
-                                Senha
-                            </label>
+                        <AuthLabel htmlFor="password">Senha</AuthLabel>
+                        <FieldBox icon={Lock}>
                             <PasswordInput
+                                id="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-5 py-4 text-lg border rounded-xl bg-white focus:ring-2 focus:ring-teal-500"
+                                className={authInput}
                                 placeholder="Crie uma senha forte"
                                 autoComplete="new-password"
                                 required
                             />
-                        </div>
+                        </FieldBox>
+                    </div>
 
-                        <div className="relative">
-                            <label className="block text-base font-semibold text-gray-700 mb-2">
-                                Confirmar senha
-                            </label>
+                    <div>
+                        <AuthLabel htmlFor="confirm">Confirmar senha</AuthLabel>
+                        <FieldBox icon={Lock} invalid={!!confirmPassword && confirmPassword !== password}>
                             <PasswordInput
+                                id="confirm"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                className="w-full px-5 py-4 text-lg border rounded-xl bg-white focus:ring-2 focus:ring-teal-500"
+                                className={authInput}
                                 placeholder="Repita sua senha"
                                 autoComplete="new-password"
                                 required
                             />
-                        </div>
-                    </div>
-
-                    <div className="text-sm text-gray-700 space-y-1">
-                        <p className={pwdCheck.minLength ? "text-green-600" : "text-red-600"}>
-                            • Mínimo de 8 caracteres
-                        </p>
-                        <p className={pwdCheck.hasUpper ? "text-green-600" : "text-red-600"}>
-                            • Pelo menos 1 letra maiúscula
-                        </p>
-                        <p className={pwdCheck.hasLower ? "text-green-600" : "text-red-600"}>
-                            • Pelo menos 1 letra minúscula
-                        </p>
-                        <p className={pwdCheck.hasNumber ? "text-green-600" : "text-red-600"}>
-                            • Pelo menos 1 número
-                        </p>
-                        <p className={pwdCheck.hasSpecial ? "text-green-600" : "text-red-600"}>
-                            • Pelo menos 1 caractere especial
-                        </p>
+                        </FieldBox>
                     </div>
                 </div>
 
-                <div className="h-px bg-gray-300 my-10"></div>
+                <div className="flex flex-wrap gap-2" aria-label="Requisitos da senha">
+                    {rules.map((r) => (
+                        <span
+                            key={r.label}
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                r.ok ? "bg-[#E6F7F5] text-[#0F766E]" : "bg-gray-100 text-gray-500"
+                            }`}
+                        >
+                            {r.ok ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+                            {r.label}
+                        </span>
+                    ))}
+                </div>
+
+                <Section title="Plano" />
 
                 <RegisterPlanSelector
                     plan={plan}
@@ -257,6 +240,27 @@ export default function RegisterForm({ onSuccess }: Props) {
                     setCycle={setCycle}
                     setShowDetails={setShowDetails}
                 />
+
+                <div>
+                    <AuthLabel htmlFor="referral">
+                        Código de indicação <span className="font-normal text-gray-500">(opcional)</span>
+                    </AuthLabel>
+                    <FieldBox icon={Ticket}>
+                        <input
+                            id="referral"
+                            type="text"
+                            value={referral}
+                            onChange={(e) => setReferral(cleanReferralCode(e.target.value))}
+                            className={`${authInput} uppercase tracking-widest`}
+                            placeholder="Ex.: K7M2QX"
+                            autoComplete="off"
+                            maxLength={12}
+                        />
+                    </FieldBox>
+                    <p className="mt-1.5 text-[12.5px] text-gray-500">
+                        Se outra igreja indicou o Ministério360 para você, informe o código dela.
+                    </p>
+                </div>
 
                 <ConsentCheckbox
                     checked={accepted}
@@ -267,32 +271,43 @@ export default function RegisterForm({ onSuccess }: Props) {
                     }}
                 />
 
-                {error && <p className="text-base text-red-500 text-center">{error}</p>}
+                <AuthError message={error} />
 
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full flex items-center justify-center gap-2 text-white py-4 text-lg rounded-xl font-semibold bg-teal-500 hover:bg-teal-600 transition shadow-sm"
-                >
+                <button type="submit" disabled={loading} className={primaryButton}>
                     {loading ? (
                         <>
                             <Loader2 className="animate-spin h-6 w-6" />
                             Criando...
                         </>
                     ) : (
-                        "Criar conta"
+                        "Criar minha conta"
                     )}
                 </button>
 
-                <p className="text-center text-sm text-gray-500">
-                    © {new Date().getFullYear()} Ministério360
+                <p className="text-center text-[14px] text-gray-500">
+                    Já tem conta?{" "}
+                    <button type="button" onClick={() => router.push("/login")} className="font-bold text-[#0F766E] hover:underline">
+                        Voltar ao login
+                    </button>
                 </p>
+
+                <p className="text-center text-[13px] text-gray-400">© {new Date().getFullYear()} Ministério360</p>
             </form>
 
             <RegisterPlanDetails
                 showDetails={showDetails}
                 setShowDetails={setShowDetails}
             />
-        </>
+        </AuthLayout>
+    );
+}
+
+// Título de bloco dentro do formulário ("Sua igreja", "Seu acesso", "Plano")
+function Section({ title }: { title: string }) {
+    return (
+        <div className="flex items-center gap-2 pt-2">
+            <span className="text-[13px] font-bold text-[#0F766E]">{title}</span>
+            <span className="h-px flex-1 bg-[#E3EEEC]" />
+        </div>
     );
 }

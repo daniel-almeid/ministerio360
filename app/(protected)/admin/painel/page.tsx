@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import AdminTable from "../components/adminTable";
 import EditPlanModal from "../components/editPlanModal";
 import AdminUsersTab from "../components/adminUsersTab";
+import AdminReferralsTab from "../components/adminReferralsTab";
 import { useAdmin } from "../hook/useAdminPlans";
 import { useMyAccess } from "@/components/shared/access/useMyAccess";
 import { PLAN_NAME, PLAN_SLUGS, type PlanSlug } from "@/lib/plans";
@@ -13,7 +14,7 @@ export default function AdminPage() {
     // Admin = quem está em platform_admins no banco
     const { access, loading: checking } = useMyAccess();
     const enabled = !!access?.platform_admin;
-    const [tab, setTab] = useState<"churches" | "users">("churches");
+    const [tab, setTab] = useState<"churches" | "users" | "referrals">("churches");
 
     const [search, setSearch] = useState("");
     const [planFilter, setPlanFilter] = useState("all");
@@ -91,13 +92,16 @@ export default function AdminPage() {
             <p className="text-sm text-gray-500 mb-4">
                 {tab === "churches"
                     ? `Igrejas e seus planos.${users.length > 0 ? ` · ${filteredUsers.length} de ${users.length}` : ""}`
-                    : "Todas as pessoas que acessam o Ministério360."}
+                    : tab === "users"
+                      ? "Todas as pessoas que acessam o Ministério360."
+                      : "Prêmios de indicação que precisam de ação manual."}
             </p>
 
             <div className="inline-flex rounded-xl bg-gray-100 p-1 mb-6">
                 {([
                     ["churches", "Igrejas e planos"],
                     ["users", "Usuários"],
+                    ["referrals", "Indicações"],
                 ] as const).map(([value, label]) => (
                     <button
                         key={value}
@@ -111,7 +115,9 @@ export default function AdminPage() {
                 ))}
             </div>
 
-            {tab === "users" ? (
+            {tab === "referrals" ? (
+                <AdminReferralsTab enabled={enabled} />
+            ) : tab === "users" ? (
                 <AdminUsersTab enabled={enabled} />
             ) : (
                 <>

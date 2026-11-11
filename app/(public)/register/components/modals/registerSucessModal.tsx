@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CheckCircle2, CreditCard, MailCheck } from "lucide-react";
 import Loading from "@/components/shared/loading";
 import PaymentCardModal, { CardFormValues } from "@/app/(protected)/planos/components/paymentCardModal";
 import { subscribeWithCard } from "@/app/(protected)/planos/subscribe";
@@ -50,36 +51,43 @@ export default function RegisterSuccessModal({
     }
 
     return (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl w-full max-w-md p-6 space-y-6">
-                <h2 className="text-2xl font-semibold text-center">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 sm:p-8 space-y-5">
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#E6F7F5] text-[#0F766E]">
+                    <CheckCircle2 className="h-10 w-10" />
+                </div>
+
+                <h2 className="text-2xl font-extrabold text-center text-[#1E3A5F]">
                     Cadastro realizado com sucesso
                 </h2>
 
-                <p className="text-center text-gray-600">
-                    Antes de continuar, acesse o seu e-mail e confirme sua conta para poder entrar no sistema.
-                </p>
+                <div className="flex items-start gap-2.5 rounded-[14px] bg-[#F5F9F8] p-3.5 text-[14px] text-gray-700">
+                    <MailCheck className="h-5 w-5 shrink-0 text-[#0F766E]" />
+                    <p>Antes de continuar, acesse o seu e-mail e confirme sua conta para poder entrar no sistema.</p>
+                </div>
 
                 {paidSuccessfully ? (
-                    <p className="text-center text-emerald-600 font-medium">
+                    <p className="flex items-start gap-2.5 rounded-[14px] bg-emerald-50 p-3.5 text-[14px] font-medium text-emerald-700">
+                        <CheckCircle2 className="h-5 w-5 shrink-0" />
                         Assinatura confirmada! Assim que você confirmar o e-mail e fizer login, o
                         plano {PLAN_NAME[planSlug]} já estará ativo.
                     </p>
                 ) : isPaidPlan ? (
-                    <p className="text-center text-gray-600">
+                    <p className="flex items-start gap-2.5 rounded-[14px] bg-[#F5F9F8] p-3.5 text-[14px] text-gray-700">
+                        <CreditCard className="h-5 w-5 shrink-0 text-[#0F766E]" />
                         Após confirmar, finalize o pagamento para liberar todas as funcionalidades do plano.
                     </p>
                 ) : (
-                    <p className="text-center text-gray-600">
+                    <p className="text-center text-[14px] text-gray-600">
                         Após confirmar, você já poderá acessar normalmente.
                     </p>
                 )}
 
-                <div className="flex flex-col gap-3 mt-4">
+                <div className="flex flex-col gap-3 pt-1">
                     {isPaidPlan && !paidSuccessfully && (
                         <button
                             onClick={() => setShowCardModal(true)}
-                            className="w-full bg-emerald-600 text-white py-2 rounded-lg font-medium hover:bg-emerald-700 transition"
+                            className="w-full min-h-[50px] bg-[#0F766E] text-white rounded-[14px] font-bold hover:bg-[#0D5C56] transition"
                         >
                             Pagar plano
                         </button>
@@ -87,7 +95,7 @@ export default function RegisterSuccessModal({
 
                     <button
                         onClick={handleClose}
-                        className="w-full border border-gray-300 py-2 rounded-lg font-medium hover:bg-gray-100 transition"
+                        className="w-full min-h-[50px] border-[1.5px] border-[#CFE6E2] text-[#0F766E] rounded-[14px] font-bold hover:bg-[#F5FBFA] transition"
                     >
                         Fechar
                     </button>
@@ -105,4 +113,4 @@ export default function RegisterSuccessModal({
             />
         </div>
     );
-}
+}

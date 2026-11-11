@@ -21,15 +21,18 @@ interface VisitorDetailsDrawerProps {
     visitor: Visitor;
     onClose: () => void;
     onUpdated: () => void;
+    onConvert?: (visitor: Visitor) => void;
 }
 
 export default function VisitorDetailsDrawer({
     visitor,
     onClose,
     onUpdated,
+    onConvert,
 }: VisitorDetailsDrawerProps) {
     const { can } = useMyAccess();
     const canEdit = can("visitantes", "edit");
+    const canAddMember = can("membros", "edit");
     const [isVisible, setIsVisible] = useState(false);
     const { handleFollowup, handleFinish, processingId } = useFollowup();
     const [archiving, setArchiving] = useState(false);
@@ -220,6 +223,16 @@ export default function VisitorDetailsDrawer({
                                     {visitor.notes}
                                 </p>
                             </div>
+                        )}
+
+                        {!visitor.archived && canAddMember && onConvert && (
+                            <button
+                                onClick={() => onConvert(visitor)}
+                                className="w-full px-4 py-2.5 rounded-lg border border-[#38B2AC] text-[#0F766E] bg-white hover:bg-[#E6FFFA] transition flex items-center justify-center gap-2 font-medium"
+                            >
+                                <UserCheck className="w-4 h-4" />
+                                Tornar membro
+                            </button>
                         )}
                     </div>
 

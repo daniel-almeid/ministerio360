@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Loading from "@/components/shared/loading";
 import { useMyAccess } from "../../../../../components/shared/access/useMyAccess";
+import { ReceiptButton } from "../../receipts/receiptButton";
 
 export function TransactionTableMobile({
     data,
@@ -73,6 +74,8 @@ export function TransactionTableMobile({
                         </div>
 
                         <div className="flex justify-end gap-5 pt-2">
+                            <ReceiptButton transaction={t} className="[&>svg]:w-5 [&>svg]:h-5" />
+
                             {canEdit && (<button
                                 onClick={() => onEdit(t)}
                                 className="text-emerald-600 hover:text-emerald-700 transition"

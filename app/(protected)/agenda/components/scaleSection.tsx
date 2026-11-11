@@ -220,6 +220,7 @@ export default function ScaleSection({ ministries }: Props) {
             {drawerOpen && selected && (
                 <DrawerScaleDetails
                     scaleId={selected.id}
+                    ministryIds={(selected.ministries ?? []).map((m: any) => m.id)}
                     onClose={closeAll}
                 />
             )}

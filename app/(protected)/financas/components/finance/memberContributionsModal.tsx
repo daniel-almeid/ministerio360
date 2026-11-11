@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowUpCircle, DollarSign } from "lucide-react";
+import { ArrowUpCircle, DollarSign, FileText, Loader2 } from "lucide-react";
+import toast from "react-hot-toast";
 import { fetchMemberContributions } from "../../finance/financeService";
 import { formatBRL } from "../../finance/money";
 import type { Contribution } from "../../finance/types";
-import { ModalShell, SecondaryButton } from "./ui";
+import { printAnnualStatement, printReceipt } from "../../receipts/receiptService";
+import { ModalShell, PrimaryButton, SecondaryButton } from "./ui";
 
 // Histórico de contribuições (dízimos, ofertas...) lançadas para o membro
 export function MemberContributionsModal({
@@ -18,6 +20,8 @@ export function MemberContributionsModal({
     const [items, setItems] = useState<Contribution[] | null>(null);
     const [failed, setFailed] = useState(false);
     const [year, setYear] = useState(new Date().getFullYear());
+    // Qual PDF está sendo gerado: "informe" ou o id do lançamento
+    const [busy, setBusy] = useState<string | null>(null);
 
     useEffect(() => {
         fetchMemberContributions(member.id)
@@ -37,13 +41,41 @@ export function MemberContributionsModal({
         return [...set].sort((a, b) => b - a);
     }, [items]);
 
+    async function run(key: string, task: () => Promise<void>) {
+        if (busy) return;
+        setBusy(key);
+        try {
+            await task();
+        } catch {
+            toast.error("Não foi possível gerar o PDF. Tente novamente.");
+        } finally {
+            setBusy(null);
+        }
+    }
+
+    const statement = () => run("informe", () => printAnnualStatement(member, year));
+    const receipt = (c: Contribution) =>
+        run(c.id, () =>
+            printReceipt({ id: c.id, personName: member.name, category: c.category, amount: Number(c.amount), date: c.created_at })
+        );
+
     return (
         <ModalShell
             title="Contribuições"
             subtitle={member.name}
             icon={DollarSign}
             onClose={onClose}
-            footer={<SecondaryButton onClick={onClose}>Fechar</SecondaryButton>}
+            footer={
+                <>
+                    <SecondaryButton onClick={onClose}>Fechar</SecondaryButton>
+                    {ofYear.length > 0 && (
+                        <PrimaryButton onClick={statement} loading={busy === "informe"} disabled={!!busy}>
+                            {busy !== "informe" && <FileText className="w-4 h-4" />}
+                            Informe de {year}
+                        </PrimaryButton>
+                    )}
+                </>
+            }
         >
             {items === null && !failed ? (
                 <p className="text-sm text-gray-500 py-6 text-center">Carregando...</p>
@@ -97,6 +129,16 @@ export function MemberContributionsModal({
                                         </p>
                                     </div>
                                     <span className="font-semibold text-gray-800">{formatBRL(c.amount)}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => receipt(c)}
+                                        disabled={!!busy}
+                                        title="Recibo"
+                                        aria-label={`Recibo de ${c.category || "contribuição"} de ${new Date(c.created_at).toLocaleDateString("pt-BR")}`}
+                                        className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-[#0F766E] hover:bg-[#E6FFFA] disabled:opacity-60"
+                                    >
+                                        {busy === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                                    </button>
                                 </div>
                             ))}
                         </div>

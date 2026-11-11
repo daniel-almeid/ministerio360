@@ -3,7 +3,9 @@ import { supabase } from "../../../../../../lib/supabaseClient";
 import toast from "react-hot-toast";
 import { normalizeMemberName, sameNameWarning, type SameNameMember } from "@/lib/memberNames";
 
-export function useMemberForm(member: any, onSuccess: () => void, onClose: () => void) {
+export type MemberPrefill = { name?: string | null; phone?: string | null; email?: string | null };
+
+export function useMemberForm(member: any, onSuccess: () => void, onClose: () => void, prefill?: MemberPrefill) {
     const [form, setForm] = useState({
         name: "",
         ministry_id: "",
@@ -29,6 +31,14 @@ export function useMemberForm(member: any, onSuccess: () => void, onClose: () =>
                 is_active: member.is_active,
                 birth_date: member.birth_date ? member.birth_date.split("T")[0] : "",
             });
+        } else if (prefill) {
+            // Novo membro já preenchido (ex.: "Tornar membro" na tela de Visitantes)
+            setForm((f) => ({
+                ...f,
+                name: prefill.name ?? "",
+                phone: prefill.phone ?? "",
+                email: prefill.email ?? "",
+            }));
         }
     }, [member]);
 

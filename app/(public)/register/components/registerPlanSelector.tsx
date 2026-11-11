@@ -11,56 +11,67 @@ type Props = {
     setShowDetails: (v: string | null) => void;
 };
 
+// Escolha do plano: cada cartão é uma opção (clicar seleciona); "Ver detalhes" abre a lista de recursos
 export default function RegisterPlanSelector({ plan, setPlan, cycle, setCycle, setShowDetails }: Props) {
     return (
-        <div>
-            <label className="block text-base font-semibold text-gray-700 mb-3">Plano</label>
+        <div className="space-y-4">
+            <CycleToggle value={cycle} onChange={setCycle} />
 
-            <div className="mb-5">
-                <CycleToggle value={cycle} onChange={setCycle} />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-                {PLANS.map((p) => (
-                    <div
-                        key={p.slug}
-                        className={`rounded-2xl border p-5 flex flex-col justify-between shadow-md transition ${plan === p.slug ? "border-teal-500 bg-teal-50" : "border-gray-300 bg-white"
+            <div role="radiogroup" aria-label="Plano" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {PLANS.map((p) => {
+                    const selected = plan === p.slug;
+                    return (
+                        <div
+                            key={p.slug}
+                            role="radio"
+                            aria-checked={selected}
+                            tabIndex={0}
+                            onClick={() => setPlan(p.slug)}
+                            onKeyDown={(e) => {
+                                if (e.key === " " || e.key === "Enter") {
+                                    e.preventDefault();
+                                    setPlan(p.slug);
+                                }
+                            }}
+                            className={`cursor-pointer rounded-2xl border-[1.5px] p-4 transition outline-none focus-visible:ring-4 focus-visible:ring-[#38B2AC]/25 ${
+                                selected ? "border-[#0F766E] bg-[#F0FAF8]" : "border-[#E3E8EF] bg-white hover:border-[#9EDBD5]"
                             }`}
-                    >
-                        <div>
-                            <h3 className="text-2xl font-bold text-gray-800 mb-1">{p.name}</h3>
-
-                            <p className="text-sm text-gray-600 mb-3">{p.tagline}</p>
-
-                            <p className="text-2xl font-extrabold text-gray-800">{priceLabel(p, cycle)}</p>
-                            <p className="text-xs text-emerald-700 font-medium h-4 mb-2">
-                                {p.monthlyCents > 0 && cycle === "yearly" ? monthlyEquivalent(p) : ""}
-                            </p>
-                            <p className="text-sm font-semibold text-gray-700 mb-4">{p.features[0]}</p>
-                        </div>
-
-                        <div className="flex flex-col gap-2">
-                            <button
-                                onClick={() => setPlan(p.slug)}
-                                type="button"
-                                className={`w-full py-2 rounded-xl font-semibold ${plan === p.slug
-                                    ? "bg-teal-600 text-white"
-                                    : "bg-gray-200 text-gray-700"
+                        >
+                            <div className="flex items-start gap-3">
+                                <span
+                                    className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
+                                        selected ? "border-[#0F766E]" : "border-gray-300"
                                     }`}
-                            >
-                                Selecionar
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => setShowDetails(p.slug)}
-                                className="w-full py-2 rounded-xl border border-gray-400 text-gray-700 text-sm"
-                            >
-                                Ver detalhes
-                            </button>
+                                >
+                                    {selected && <span className="h-2.5 w-2.5 rounded-full bg-[#0F766E]" />}
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex flex-wrap items-baseline justify-between gap-x-2">
+                                        <h3 className="text-[17px] font-bold text-[#1E3A5F]">{p.name}</h3>
+                                        <span className="text-[15px] font-extrabold text-gray-800">{priceLabel(p, cycle)}</span>
+                                    </div>
+                                    <p className="text-[13px] text-gray-500">{p.tagline}</p>
+                                    {p.monthlyCents > 0 && cycle === "yearly" && (
+                                        <p className="text-xs font-medium text-emerald-700">{monthlyEquivalent(p)}</p>
+                                    )}
+                                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                                        <span className="text-[13px] font-semibold text-gray-700">{p.features[0]}</span>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setShowDetails(p.slug);
+                                            }}
+                                            className="text-[13px] font-bold text-[#0F766E] hover:underline"
+                                        >
+                                            Ver detalhes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );

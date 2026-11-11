@@ -2,10 +2,21 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock, Mail } from "lucide-react";
 import { supabase } from "../../../lib/supabaseClient";
 import PasswordInput from "../../../components/shared/passwordInput";
 import { authErrorMessage } from "../../../lib/authErrors";
+import {
+    AuthError,
+    AuthLabel,
+    AuthLayout,
+    AuthTitle,
+    Divider,
+    FieldBox,
+    authInput,
+    outlineButton,
+    primaryButton,
+} from "../../../components/auth/authShell";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -82,12 +93,11 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="relative min-h-screen flex items-center justify-center bg-linear-to-br from-gray-200 to-gray-200 px-6 overflow-hidden">
-
+        <AuthLayout>
             {(loading || navLoading) && (
-                <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="flex flex-col items-center space-y-4">
-                        <Loader2 className="animate-spin text-[#38B2AC] w-10 h-10" />
+                        <Loader2 className="animate-spin text-[#0F766E] w-10 h-10" />
                         <p className="text-gray-700 font-medium animate-pulse">
                             {loading ? "Entrando..." : "Carregando..."}
                         </p>
@@ -95,113 +105,100 @@ export default function LoginPage() {
                 </div>
             )}
 
-            <form
-                onSubmit={handleLogin}
-                className="w-full max-w-lg p-12 md:p-20 space-y-10 rounded-2xl bg-white/70 backdrop-blur-sm border border-gray-300/50 shadow-md"
-            >
-                <div className="text-center mb-8">
-                    <h1 className="text-5xl font-extrabold text-gray-800 tracking-tight">
-                        Ministério<span className="text-[#38B2AC]">360</span>
-                    </h1>
-                    <p className="text-gray-600 text-base mt-3">Acesse sua conta</p>
-                </div>
+            <form onSubmit={handleLogin} className="space-y-5">
+                <AuthTitle title="Que bom te ver!" subtitle="Entre com o e-mail e a senha da sua conta." />
 
-                <div className="space-y-6">
-                    <div>
-                        <label className="block text-base font-medium text-gray-700 mb-2">E-mail</label>
+                <div>
+                    <AuthLabel htmlFor="email">E-mail</AuthLabel>
+                    <FieldBox icon={Mail}>
                         <input
+                            id="email"
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-5 py-4 text-lg border rounded-xl"
+                            autoComplete="email"
+                            placeholder="seu@email.com"
+                            className={authInput}
                             required
                         />
-                    </div>
+                    </FieldBox>
+                </div>
 
-                    <div>
-                        <label className="block text-base font-medium text-gray-700 mb-2">Senha</label>
+                <div>
+                    <AuthLabel htmlFor="password">Senha</AuthLabel>
+                    <FieldBox icon={Lock}>
                         <PasswordInput
+                            id="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             autoComplete="current-password"
-                            className="w-full px-5 py-4 text-lg border rounded-xl"
+                            placeholder="Sua senha"
+                            className={authInput}
                             required
                         />
+                    </FieldBox>
+                </div>
 
-                        <div className="text-right mt-2">
-                            <button
-                                type="button"
-                                onClick={() => navigateWithLoading("/login/reset-password")}
-                                className="text-sm text-[#38B2AC] hover:underline"
-                            >
-                                Esqueci minha senha
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center space-x-3 mt-2">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <label htmlFor="remember" className="flex items-center gap-2.5 text-[14px] text-gray-700 cursor-pointer">
                         <input
                             id="remember"
                             type="checkbox"
                             checked={remember}
                             onChange={(e) => setRemember(e.target.checked)}
-                            className="w-5 h-5 accent-[#38B2AC]"
+                            className="w-5 h-5 accent-[#0F766E]"
                         />
-                        <label htmlFor="remember" className="text-gray-700 cursor-pointer">
-                            Lembrar meus dados
-                        </label>
-                    </div>
+                        Lembrar meus dados
+                    </label>
+
+                    <button
+                        type="button"
+                        onClick={() => navigateWithLoading("/login/reset-password")}
+                        className="text-[14px] font-bold text-[#0F766E] hover:underline"
+                    >
+                        Esqueci minha senha
+                    </button>
                 </div>
 
-                {error && <p className="text-base text-red-500 text-center">{error}</p>}
+                <AuthError message={error} />
 
-                <button
-                    type="submit"
-                    disabled={loading || navLoading}
-                    className="w-full flex items-center justify-center gap-2 text-white py-4 text-lg rounded-xl bg-[#38B2AC]"
-                >
+                <button type="submit" disabled={loading || navLoading} className={primaryButton}>
                     {loading ? <Loader2 className="animate-spin h-6 w-6" /> : "Entrar"}
                 </button>
 
-                <button
-                    type="button"
-                    onClick={() => navigateWithLoading("/register")}
-                    className="w-full mt-4 py-4 border border-[#38B2AC] text-[#38B2AC] rounded-xl"
-                >
-                    Criar conta
+                <Divider text="ainda não usa o Ministério360?" />
+
+                <button type="button" onClick={() => navigateWithLoading("/register")} className={outlineButton}>
+                    Criar conta da igreja
                 </button>
 
-                <p className="text-center text-sm text-gray-500 mt-10">
-                    © {new Date().getFullYear()} Ministério360
-                </p>
-
-                <div className="mt-3 flex justify-center gap-6 text-sm">
-                    <button
-                        type="button"
-                        onClick={() => navigateWithLoading("/termos")}
-                        className="text-gray-600 hover:text-[#38B2AC] transition underline-offset-2 hover:underline"
-                    >
-                        Termos de Uso
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={() => navigateWithLoading("/privacidade")}
-                        className="text-gray-600 hover:text-[#38B2AC] transition underline-offset-2 hover:underline"
-                    >
-                        Política de Privacidade
-                    </button>
-                </div>
-                <div className="mt-2 flex justify-center text-sm">
-                    <button
-                        type="button"
-                        onClick={() => navigateWithLoading("/excluir-conta")}
-                        className="text-gray-400 hover:text-red-500 transition underline-offset-2 hover:underline"
-                    >
-                        Excluir minha conta
-                    </button>
+                <div className="pt-4 text-center text-[13px] text-gray-500 space-y-2">
+                    <div className="flex flex-wrap justify-center gap-x-5 gap-y-1">
+                        <button
+                            type="button"
+                            onClick={() => navigateWithLoading("/termos")}
+                            className="hover:text-[#0F766E] hover:underline underline-offset-2"
+                        >
+                            Termos de Uso
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => navigateWithLoading("/privacidade")}
+                            className="hover:text-[#0F766E] hover:underline underline-offset-2"
+                        >
+                            Política de Privacidade
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => navigateWithLoading("/excluir-conta")}
+                            className="text-gray-400 hover:text-red-500 hover:underline underline-offset-2"
+                        >
+                            Excluir minha conta
+                        </button>
+                    </div>
+                    <p>© {new Date().getFullYear()} Ministério360</p>
                 </div>
             </form>
-        </div>
+        </AuthLayout>
     );
 }

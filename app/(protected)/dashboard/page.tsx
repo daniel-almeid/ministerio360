@@ -8,6 +8,9 @@ import { DashboardFinanceChart } from '../dashboard/components/dashboardFinanceC
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Loading from "@/components/shared/loading";
+import { useHeaderData } from "@/components/shared/header/useHeaderData";
+import { FirstSteps } from './components/firstSteps';
+import { DashboardBirthdays } from './birthdays/dashboardBirthdays';
 
 export default function DashboardPage() {
     const {
@@ -18,6 +21,7 @@ export default function DashboardPage() {
         loading,
         monthlyTransactions,
     } = useDashboardData();
+    const { churchName } = useHeaderData();
 
     const getNextEventLabel = () => {
         if (!upcomingEvents.length) return 'Nenhum evento futuro';
@@ -41,6 +45,8 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-4.5 pb-0.5">
+            <FirstSteps />
+
             <DashboardMetrics
                 currentMonthIncome={currentMonthIncome}
                 currentMonthExpenses={currentMonthExpenses}
@@ -61,9 +67,15 @@ export default function DashboardPage() {
                 <DashboardEvents events={upcomingEvents} loading={loading.events} />
             </section>
 
-            <div className="rounded-xl">
-                <DashboardVisitors visitors={visitors} loading={loading.visitors} />
-            </div>
+            <section className="flex flex-col xl:flex-row gap-8 xl:items-start">
+                <div className="rounded-xl flex-1 min-w-0">
+                    <DashboardVisitors visitors={visitors} loading={loading.visitors} />
+                </div>
+
+                <div className="xl:w-[380px] shrink-0 empty:hidden">
+                    <DashboardBirthdays churchName={churchName} />
+                </div>
+            </section>
         </div>
     );
 }

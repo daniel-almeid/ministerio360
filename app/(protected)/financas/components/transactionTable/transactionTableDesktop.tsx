@@ -8,6 +8,7 @@ import {
     Trash,
 } from "lucide-react";
 import { useMyAccess } from "../../../../../components/shared/access/useMyAccess";
+import { ReceiptButton } from "../../receipts/receiptButton";
 
 export function TransactionTableDesktop({ data, onEdit, onDelete, accountName }: any) {
     const { can } = useMyAccess();
@@ -88,6 +89,8 @@ export function TransactionTableDesktop({ data, onEdit, onDelete, accountName }:
 
                             <td className="px-5 py-4 text-center">
                                 <div className="flex justify-center gap-3">
+                                    <ReceiptButton transaction={t} />
+
                                     {canEdit && (<button
                                         onClick={() => onEdit(t)}
                                         className="text-emerald-600 hover:text-emerald-700 transition"

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useMembersData } from "../../hook/useMembersData";
-import { Search, PlusCircle, FileDown } from "lucide-react";
+import { Search, PlusCircle, FileDown, FileSpreadsheet } from "lucide-react";
 import { PaginationControls } from "../../../../../components/shared/paginationControls";
 import Loading from "@/components/shared/loading";
 import { useHeaderData } from "../../../../../components/shared/header/useHeaderData";
@@ -11,7 +11,7 @@ import { MemberTableMobile } from "./memberTableMobile";
 import { FileText } from "lucide-react";
 import { useMyAccess } from "../../../../../components/shared/access/useMyAccess";
 
-export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick, onContributions }: any) {
+export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick, onImportClick, onContributions }: any) {
     const { can } = useMyAccess();
     const canEdit = can("membros", "edit");
     const canSeeGiving = can("financas", "view");
@@ -95,6 +95,18 @@ export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick, 
                             PDF
                         </span>
                     </button>
+
+                    {canEdit && onImportClick && (
+                        <button
+                            onClick={onImportClick}
+                            title="Importar membros de uma planilha"
+                            className="flex items-center gap-2 px-3 py-2 whitespace-nowrap rounded-lg border border-teal-400
+                       bg-white text-[#0F766E] hover:bg-teal-50 transition"
+                        >
+                            <FileSpreadsheet size={18} />
+                            Importar planilha
+                        </button>
+                    )}
 
                     {canEdit && (<button
                         onClick={onNewClick}

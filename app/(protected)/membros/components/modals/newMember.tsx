@@ -1,20 +1,23 @@
 'use client';
 
 import { AlertTriangle, X } from "lucide-react";
-import { useMemberForm } from "./memberModal/useMemberForm";
+import { useMemberForm, type MemberPrefill } from "./memberModal/useMemberForm";
 import { MinistrySelect } from "./memberModal/ministrySelect";
 
 type Props = {
     member?: any;
+    prefill?: MemberPrefill;
+    title?: string;
     onClose: () => void;
     onSuccess: () => void;
 };
 
-export default function MemberModal({ member, onClose, onSuccess }: Props) {
+export default function MemberModal({ member, prefill, title, onClose, onSuccess }: Props) {
     const { form, setForm, ministries, saving, handleSubmit, nameWarning } = useMemberForm(
         member,
         onSuccess,
-        onClose
+        onClose,
+        prefill
     );
 
     return (
@@ -28,7 +31,7 @@ export default function MemberModal({ member, onClose, onSuccess }: Props) {
                 </button>
 
                 <h3 className="text-xl font-semibold text-gray-800 mb-5">
-                    {member ? "Editar Membro" : "Novo Membro"}
+                    {title ?? (member ? "Editar Membro" : "Novo Membro")}
                 </h3>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
