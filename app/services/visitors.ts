@@ -1,16 +1,18 @@
 import { supabase } from "../../lib/supabaseClient";
 import { Visitor } from "../types/visitors";
+import { fetchAllPages } from "../../lib/fetchAllPages";
 
+// Todas as páginas: com mais de 1.000 visitantes o banco cortaria o resto da lista
 export async function getVisitors(archived: boolean = false): Promise<Visitor[]> {
-    const { data, error } = await supabase
-        .from("visitors")
-        .select("*")
-        .eq("archived", archived)
-        .order("visit_date", { ascending: false });
-
-    if (error) throw error;
-
-    return data as Visitor[];
+    return fetchAllPages<Visitor>((from, to) =>
+        supabase
+            .from("visitors")
+            .select("*")
+            .eq("archived", archived)
+            .order("visit_date", { ascending: false })
+            .order("id", { ascending: true })
+            .range(from, to)
+    );
 }
 
 export async function addVisitor(visitor: Omit<Visitor, "id" | "created_at" | "updated_at">) {

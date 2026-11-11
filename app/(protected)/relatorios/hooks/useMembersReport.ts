@@ -15,19 +15,20 @@ export function useMembersReport() {
         const start = new Date(Number(year), Number(monthNum) - 1, 1);
         const end = new Date(Number(year), Number(monthNum), 0, 23, 59, 59);
 
-        const { data: members } = await supabase
+        // Só a contagem (sem trazer as linhas): vale para qualquer quantidade de membros
+        const { count: activeCount } = await supabase
             .from("members")
-            .select("id")
+            .select("id", { count: "exact", head: true })
             .eq("is_active", true);
 
-        const { data: visitors } = await supabase
+        const { count: visitorCount } = await supabase
             .from("visitors")
-            .select("id, created_at")
+            .select("id", { count: "exact", head: true })
             .gte("created_at", start.toISOString())
             .lte("created_at", end.toISOString());
 
-        setActiveMembers(members?.length || 0);
-        setMonthlyVisitors(visitors?.length || 0);
+        setActiveMembers(activeCount ?? 0);
+        setMonthlyVisitors(visitorCount ?? 0);
         setLoadingMembers(false);
     }
 

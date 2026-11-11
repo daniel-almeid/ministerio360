@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 import toast from "react-hot-toast";
 import { Ministry, Member } from "../../../../../types/agenda";
 
@@ -38,7 +39,10 @@ export function useScaleForm(onSuccess: () => void, onClose: () => void, scaleDa
 
     async function load() {
         const { data: mins } = await supabase.from("ministries").select("id, name").order("name");
-        const { data: mems } = await supabase.from("members").select("id, name, ministry_id").order("name");
+        // Todas as páginas: com mais de 1.000 membros o banco cortaria o resto da lista
+        const mems = await fetchAllPages<any>((from, to) =>
+            supabase.from("members").select("id, name, ministry_id").order("name").order("id").range(from, to)
+        ).catch(() => []);
 
         setMinistries(mins || []);
         setMembers(mems || []);

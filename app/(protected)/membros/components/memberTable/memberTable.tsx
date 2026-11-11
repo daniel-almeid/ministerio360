@@ -20,7 +20,7 @@ export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick, 
         loading,
         currentPage,
         totalPages,
-        filtered,
+        totalItems,
         loadMembers,
         handlePrevious,
         handleNext,
@@ -149,7 +149,7 @@ export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick, 
                             <PaginationControls
                                 currentPage={currentPage}
                                 totalPages={totalPages}
-                                totalItems={filtered.length}
+                                totalItems={totalItems}
                                 onNext={handleNext}
                                 onPrev={handlePrevious}
                                 itemsPerPage={10}
@@ -159,7 +159,9 @@ export default function MemberTable({ reloadFlag, onEdit, onDelete, onNewClick, 
                 </>
             ) : (
                 <p className="text-gray-500 text-sm text-center py-8">
-                    Nenhum membro cadastrado ainda.
+                    {search.trim() || statusFilter !== "all"
+                        ? "Nenhum membro encontrado com esse filtro."
+                        : "Nenhum membro cadastrado ainda."}
                 </p>
             )}
         </section>
