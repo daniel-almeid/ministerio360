@@ -1,5 +1,6 @@
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
+import { SystemGate } from "@/components/system/systemGate";
 
 export const metadata = {
     title: "Ministério360",
@@ -15,6 +16,8 @@ export default function RootLayout({
         <html lang="pt-BR">
             <body suppressHydrationWarning>
                 {children}
+                {/* Manutenção, instabilidade e avisos de conexão (por cima de tudo) */}
+                <SystemGate />
                 <Toaster
                     position="bottom-right"
                     toastOptions={{

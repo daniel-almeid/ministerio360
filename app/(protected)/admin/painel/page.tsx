@@ -5,6 +5,7 @@ import AdminTable from "../components/adminTable";
 import EditPlanModal from "../components/editPlanModal";
 import AdminUsersTab from "../components/adminUsersTab";
 import AdminReferralsTab from "../components/adminReferralsTab";
+import AdminSystemTab from "../components/adminSystemTab";
 import { useAdmin } from "../hook/useAdminPlans";
 import { useMyAccess } from "@/components/shared/access/useMyAccess";
 import { PLAN_NAME, PLAN_SLUGS, type PlanSlug } from "@/lib/plans";
@@ -14,7 +15,7 @@ export default function AdminPage() {
     // Admin = quem está em platform_admins no banco
     const { access, loading: checking } = useMyAccess();
     const enabled = !!access?.platform_admin;
-    const [tab, setTab] = useState<"churches" | "users" | "referrals">("churches");
+    const [tab, setTab] = useState<"churches" | "users" | "referrals" | "system">("churches");
 
     const [search, setSearch] = useState("");
     const [planFilter, setPlanFilter] = useState("all");
@@ -94,7 +95,9 @@ export default function AdminPage() {
                     ? `Igrejas e seus planos.${users.length > 0 ? ` · ${filteredUsers.length} de ${users.length}` : ""}`
                     : tab === "users"
                       ? "Todas as pessoas que acessam o Ministério360."
-                      : "Prêmios de indicação que precisam de ação manual."}
+                      : tab === "referrals"
+                        ? "Prêmios de indicação que precisam de ação manual."
+                        : "Manutenção do app e do site."}
             </p>
 
             <div className="inline-flex rounded-xl bg-gray-100 p-1 mb-6">
@@ -102,6 +105,7 @@ export default function AdminPage() {
                     ["churches", "Igrejas e planos"],
                     ["users", "Usuários"],
                     ["referrals", "Indicações"],
+                    ["system", "Sistema"],
                 ] as const).map(([value, label]) => (
                     <button
                         key={value}
@@ -115,7 +119,9 @@ export default function AdminPage() {
                 ))}
             </div>
 
-            {tab === "referrals" ? (
+            {tab === "system" ? (
+                <AdminSystemTab enabled={enabled} />
+            ) : tab === "referrals" ? (
                 <AdminReferralsTab enabled={enabled} />
             ) : tab === "users" ? (
                 <AdminUsersTab enabled={enabled} />
