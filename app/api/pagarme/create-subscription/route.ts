@@ -25,7 +25,13 @@ type ChurchRow = {
     subscription_active: boolean | null;
     pagarme_customer_id: string | null;
     pagarme_subscription_id: string | null;
+    billing_provider: string | null;
 };
+
+// Igreja com assinatura ativa pela loja do celular não assina de novo pelo cartão (pagaria duas vezes)
+const STORE_PROVIDERS = ["google_play", "app_store"];
+const PAYS_THROUGH_STORE =
+    "A assinatura da sua igreja é feita pela Google Play. Para mudar de plano ou cancelar, use o aplicativo ou a Google Play.";
 
 function fail(error: string, status: number, detail?: unknown) {
     return NextResponse.json({ error, ...(detail ? { detail } : {}) }, { status });
@@ -114,7 +120,7 @@ export async function POST(req: Request) {
 
             const { data } = await supabase
                 .from("church_profiles")
-                .select("id, user_id, plan_slug, subscription_active, pagarme_customer_id, pagarme_subscription_id")
+                .select("id, user_id, plan_slug, subscription_active, pagarme_customer_id, pagarme_subscription_id, billing_provider")
                 .eq("id", link.church_id)
                 .single<ChurchRow>();
             church = data ?? null;
@@ -133,7 +139,7 @@ export async function POST(req: Request) {
 
             const { data } = await supabase
                 .from("church_profiles")
-                .select("id, user_id, plan_slug, subscription_active, pagarme_customer_id, pagarme_subscription_id")
+                .select("id, user_id, plan_slug, subscription_active, pagarme_customer_id, pagarme_subscription_id, billing_provider")
                 .eq("user_id", signupUser.id)
                 .maybeSingle<ChurchRow>();
             church = data ?? null;
@@ -147,6 +153,9 @@ export async function POST(req: Request) {
         }
 
         if (!church || !email) return fail("Igreja não encontrada para esta conta.", 404);
+        if (church.subscription_active && STORE_PROVIDERS.includes(church.billing_provider ?? "")) {
+            return fail(PAYS_THROUGH_STORE, 409);
+        }
 
         const pagarmeSecret = process.env.PAGARME_SECRET_KEY!;
         const auth = "Basic " + Buffer.from(pagarmeSecret + ":").toString("base64");

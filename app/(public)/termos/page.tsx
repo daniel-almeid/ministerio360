@@ -32,7 +32,10 @@ const sections: LegalSection[] = [
                 </p>
                 <p>
                     Quem cadastra uma igreja declara ter poderes para representá-la e aceitar estes Termos em nome dela.
-                    A Plataforma é destinada a maiores de 18 anos.
+                    Quem cadastra a Igreja e contrata o Plano precisa ser maior de 18 anos. Os demais Usuários são
+                    convidados pela Igreja, que decide quem terá acesso, inclusive menores de idade, e a quais áreas. Ao
+                    convidar um menor, cabe à Igreja obter a autorização de um dos pais ou responsável quando a lei
+                    exigir.
                 </p>
             </>
         ),
@@ -136,6 +139,11 @@ const sections: LegalSection[] = [
                         antecedência, para que você possa cancelar, se preferir.
                     </li>
                     <li>
+                        O <strong>Ministério Infantil</strong> faz parte dos Planos Premium e Premium+. Se a Igreja
+                        passar para um Plano sem esse recurso, os dados continuam guardados (seguindo as regras de
+                        arquivamento e exclusão) e voltam a aparecer se ela voltar a um desses Planos.
+                    </li>
+                    <li>
                         <strong>Cobrança pelo Google Play:</strong> a renovação automática, as novas tentativas de cobrança e as trocas de Plano seguem as regras do Google Play. Se o pagamento não for aprovado, o Google Play pode manter o acesso por um período de carência enquanto tenta cobrar de novo; depois disso, a Igreja passa para o Plano Grátis, sem perda de dados.
                     </li>
                 </UL>
@@ -186,6 +194,10 @@ const sections: LegalSection[] = [
                 <UL>
                     <li>usá-la para qualquer finalidade ilegal ou que viole direitos de terceiros;</li>
                     <li>cadastrar dados de pessoas sem uma base legal adequada ou contra a vontade delas;</li>
+                    <li>
+                        cadastrar crianças no Ministério Infantil sem a autorização de um dos pais ou responsável, ou
+                        com informações além das necessárias;
+                    </li>
                     <li>enviar mensagens em massa não solicitadas (spam) a partir dos recursos de compartilhamento;</li>
                     <li>tentar acessar dados de outras igrejas, contornar permissões ou explorar falhas de segurança;</li>
                     <li>copiar, modificar, revender ou fazer engenharia reversa da Plataforma;</li>
@@ -214,6 +226,18 @@ const sections: LegalSection[] = [
                     <li>
                         obter o consentimento de um dos pais ou responsável antes de cadastrar dados de crianças e
                         adolescentes (art. 14 da LGPD);
+                    </li>
+                    <li>
+                        no Ministério Infantil, obter a autorização de um dos pais ou responsável <strong>antes</strong>{" "}
+                        de cadastrar cada criança. Ao marcar a confirmação, a Igreja declara que tem essa autorização;
+                    </li>
+                    <li>
+                        guardar a prova da autorização (por exemplo, a folha assinada que a Plataforma gera), já que o
+                        sistema registra apenas quem marcou e quando;
+                    </li>
+                    <li>
+                        usar os dados das crianças apenas para o Ministério Infantil e atender aos pedidos dos pais e
+                        responsáveis;
                     </li>
                     <li>manter os dados corretos e atender às solicitações das pessoas cadastradas.</li>
                 </UL>

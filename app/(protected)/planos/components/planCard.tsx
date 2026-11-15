@@ -11,9 +11,11 @@ type Props = {
     cycle: BillingCycle;
     current: PlanSlug;
     active: boolean;
+    // Igreja que paga pela loja do celular: os botões de assinar ficam desligados
+    locked?: boolean;
 };
 
-export default function PlanCard({ plan, cycle, current, active }: Props) {
+export default function PlanCard({ plan, cycle, current, active, locked = false }: Props) {
     const [modalOpen, setModalOpen] = useState(false);
 
     const isSelected = current === plan.slug;
@@ -59,6 +61,10 @@ export default function PlanCard({ plan, cycle, current, active }: Props) {
                 {isActive ? (
                     <button disabled className="mt-8 py-3 px-4 rounded-xl font-semibold text-white bg-gray-400 cursor-not-allowed">
                         Plano atual
+                    </button>
+                ) : locked && !isFree ? (
+                    <button disabled className="mt-8 py-3 px-4 rounded-xl font-semibold text-gray-500 bg-gray-100 cursor-not-allowed">
+                        Pela Google Play
                     </button>
                 ) : isFree ? (
                     <button disabled className="mt-8 py-3 px-4 rounded-xl font-semibold text-gray-500 bg-gray-100 cursor-default">

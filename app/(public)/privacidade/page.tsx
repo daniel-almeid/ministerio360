@@ -39,7 +39,7 @@ const sections: LegalSection[] = [
                     </li>
                     <li>
                         <strong>A igreja é controladora</strong> dos dados que ela cadastra — membros, visitantes,
-                        lançamentos financeiros, escalas e afins. Nesse caso, somos <strong>operadores</strong>: tratamos
+                        crianças do Ministério Infantil, lançamentos financeiros, escalas e afins. Nesse caso, somos <strong>operadores</strong>: tratamos
                         esses dados somente para prestar o serviço à igreja e seguindo as instruções dela.
                     </li>
                 </UL>
@@ -74,6 +74,11 @@ const sections: LegalSection[] = [
                             "Usuários da igreja",
                         ],
                         [
+                            <strong key="i">Ministério Infantil</strong>,
+                            "Crianças: nome, data de nascimento e turma. Responsáveis (sempre membros da igreja): vínculo com a criança e parentesco. Registro da autorização: quem a confirmou e quando. Não há campos para dados de saúde, fotos ou documentos.",
+                            "Usuários da igreja, com autorização de um dos pais ou responsável",
+                        ],
+                        [
                             <strong key="d">Pagamento</strong>,
                             "Plano, ciclo, validade e identificadores da assinatura. Os dados do cartão, CPF ou CNPJ, telefone e endereço de cobrança são enviados diretamente ao Pagar.me; não armazenamos o número do cartão. Nas assinaturas feitas pelo aplicativo, o pagamento é processado pelo Google Play; recebemos apenas a confirmação, o plano e a validade da assinatura.",
                             "Titular da igreja",
@@ -96,10 +101,34 @@ const sections: LegalSection[] = [
                     redobrado, apenas para as finalidades do serviço e com isolamento total entre igrejas.
                 </p>
                 <p>
-                    <strong>Crianças e adolescentes.</strong> A Plataforma não é destinada a menores de 18 anos como
-                    usuários. Quando uma igreja cadastra dados de crianças ou adolescentes (por exemplo, no cadastro de
-                    membros), cabe a ela obter o consentimento de um dos pais ou responsável (art. 14 da LGPD).
+                    <strong>Crianças e adolescentes.</strong> A igreja decide quem usa a Plataforma, inclusive jovens
+                    menores de 18 anos que trabalham com ela. Ao liberar o acesso a um menor, cabe à igreja obter a
+                    autorização de um dos pais ou responsável quando a lei exigir e escolher a quais áreas ele terá
+                    acesso. Quando a igreja cadastra dados de crianças ou adolescentes, cabe a ela obter o consentimento
+                    de um dos pais ou responsável (art. 14 da LGPD).
                 </p>
+                <p>
+                    No <strong>Ministério Infantil</strong>, a igreja pode cadastrar crianças e adolescentes para
+                    organizar as turmas e falar com os responsáveis. Para isso:
+                </p>
+                <UL>
+                    <li>cada cadastro tem pelo menos um responsável, que precisa ser membro da igreja;</li>
+                    <li>
+                        antes de salvar, a igreja confirma que um dos pais ou responsável autorizou o cadastro. O
+                        sistema registra quem confirmou e quando, e oferece um modelo de autorização para imprimir e
+                        assinar;
+                    </li>
+                    <li>
+                        são guardados apenas o nome, a data de nascimento, a turma e os responsáveis. Não há campos
+                        para dados de saúde, fotos ou documentos;
+                    </li>
+                    <li>somente os usuários a quem o Pastor dá acesso ao Ministério Infantil veem esses dados;</li>
+                    <li>
+                        os dados são usados apenas para organizar o ministério e para a igreja falar com os
+                        responsáveis, sempre no melhor interesse da criança (art. 14 da LGPD).
+                    </li>
+                </UL>
+                <p>Os dados das crianças são da igreja, que é a controladora; nós atuamos como operadores.</p>
             </>
         ),
     },
@@ -118,6 +147,7 @@ const sections: LegalSection[] = [
                         ["Atender solicitações de suporte e enviar avisos sobre a conta", "Execução de contrato (art. 7º, V)"],
                         ["Corrigir falhas e entender quais recursos do aplicativo são usados, para melhorá-lo", "Legítimo interesse (art. 7º, IX), com dados que não identificam a pessoa"],
                         ["Defender direitos em processos judiciais ou administrativos", "Exercício regular de direitos (art. 7º, VI)"],
+                        ["Organizar o Ministério Infantil da igreja (turmas, responsáveis e contato)", "Consentimento específico de um dos pais ou responsável, obtido pela igreja (art. 14, §1º)"],
                         ["Tratar os cadastros feitos pela igreja", "Base legal definida pela igreja, como controladora"],
                     ]}
                 />
@@ -197,6 +227,12 @@ const sections: LegalSection[] = [
                     com as confirmações de presença.
                 </li>
                 <li>
+                    No Ministério Infantil, o cadastro arquivado (por exemplo, quando a criança sai do ministério) fica
+                    oculto e é <strong>apagado automaticamente 12 meses depois</strong>. Até lá, a igreja pode
+                    desarquivar ou apagar na hora. Se o único responsável por uma criança arquivada for excluído, o
+                    cadastro dela é apagado junto.
+                </li>
+                <li>
                     Na exclusão de conta, os dados são apagados da base principal na hora (veja as regras na seção
                     “Seus direitos”). Cópias de segurança mantidas pelos provedores são sobrescritas automaticamente
                     em período limitado.
@@ -233,6 +269,11 @@ const sections: LegalSection[] = [
                     <Link href="/excluir-conta" className="text-teal-700 underline">Excluir conta</Link>. Se você for
                     o Titular e houver outro Pastor ativo, a igreja passa para ele; se não houver, a igreja e todos os
                     seus dados são apagados. Usuários convidados excluem apenas a própria conta.
+                </p>
+                <p>
+                    <strong>Pais e responsáveis</strong> podem pedir à igreja, a qualquer momento, para ver, corrigir ou
+                    apagar os dados da criança, e podem retirar a autorização. Nesse caso, a igreja deve apagar o
+                    cadastro. Se preferir, escreva para <Mail /> e encaminharemos o pedido à igreja.
                 </p>
                 <p>
                     Você também pode apresentar reclamação à Autoridade Nacional de Proteção de Dados (ANPD).
