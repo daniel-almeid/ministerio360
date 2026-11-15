@@ -58,14 +58,21 @@ begin
     perform pg_temp.t_works(format('update church_profiles set billing_cycle = %L where id = %L', 'yearly', c), 'anual aceito');
 end`);
 
-    dbTest("Verificação de e-mail já cadastrado (usada no cadastro do app)", `
+    // Desde o seguranca_email.sql (15/11/2026) a consulta é fechada para o público:
+    // ninguém de fora descobre quais e-mails têm conta. A função continua funcionando por dentro.
+    dbTest("Verificação de e-mail já cadastrado: fechada para o público, funciona por dentro", `
 declare e text := 'Existe.' || gen_random_uuid() || '@M360.test';
 begin
     perform pg_temp.t_signup(e, '{"church_name":"Igreja"}');
-    perform pg_temp.t_anon();
     perform pg_temp.t_ok(public.email_already_registered(upper(e)), 'acha mesmo com maiúsculas');
     perform pg_temp.t_ok(public.email_already_registered('  ' || lower(e) || '  '), 'acha mesmo com espaços');
     perform pg_temp.t_ok(not public.email_already_registered('ninguem.' || gen_random_uuid() || '@m360.test'), 'e-mail novo');
+
+    perform pg_temp.t_anon();
+    perform pg_temp.t_fails(format('select public.email_already_registered(%L)', e), 'permission denied', 'visitante sem login consulta e-mail');
+    perform pg_temp.t_reset();
+    perform pg_temp.t_as(pg_temp.t_signup('Outro.' || gen_random_uuid() || '@m360.test', '{"church_name":"Igreja 2"}'));
+    perform pg_temp.t_fails(format('select public.email_already_registered(%L)', e), 'permission denied', 'usuário logado consulta e-mail');
 end`);
 
     dbTest("Ninguém libera plano de graça: plano e assinatura só mudam pelo pagamento ou pelo Admin", `
