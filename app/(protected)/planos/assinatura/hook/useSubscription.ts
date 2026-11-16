@@ -47,7 +47,10 @@ export function useSubscription() {
         load();
     }, []);
 
-    const currentPlan = getPlan(profile?.plan_slug ?? "free");
+    // Plano escolhido no cadastro e ainda não pago: a igreja está no Grátis até assinar
+    const savedSlug: PlanSlug = profile?.plan_slug ?? "free";
+    const pendingPlan = savedSlug !== "free" && !profile?.subscription_active;
+    const currentPlan = getPlan(pendingPlan ? "free" : savedSlug);
     const planSlug = currentPlan.slug;
     const billingCycle: BillingCycle = profile?.billing_cycle === "yearly" ? "yearly" : "monthly";
 
