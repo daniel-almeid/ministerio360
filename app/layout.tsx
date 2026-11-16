@@ -22,10 +22,10 @@ export const metadata: Metadata = {
         images: [{ url: "/og.png", width: 1200, height: 630, alt: "Ministério360: a gestão completa da sua igreja no celular" }],
     },
     twitter: { card: "summary_large_image" },
-    // Código do Google Search Console (Vercel › Settings › Environment Variables)
-    verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
-        ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
-        : undefined,
+    // Código do Google Search Console (é público: aparece no HTML do site)
+    verification: {
+        google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "BWXBo4I0o8QpxmW5gkEMU5WRJU78n3LxcFBspmrt5-M",
+    },
 };
 
 export default function RootLayout({
