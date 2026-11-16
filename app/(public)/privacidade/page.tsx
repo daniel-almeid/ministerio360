@@ -4,7 +4,8 @@ import LegalDocument, { Mail, Table, UL, type LegalSection } from "@/components/
 import { LEGAL } from "@/lib/legal";
 
 export const metadata: Metadata = {
-    title: "Política de Privacidade · Ministério360",
+    title: "Política de Privacidade",
+    alternates: { canonical: "/privacidade" },
     description: "Como o Ministério360 trata dados pessoais, conforme a LGPD.",
 };
 

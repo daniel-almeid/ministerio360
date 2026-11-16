@@ -154,6 +154,9 @@ export default function LandingPage({ testimonials }: { testimonials: Testimonia
                         <a href="#planos" className="hidden rounded-full px-3 py-2 text-sm font-medium text-white/80 hover:text-white sm:inline-block">
                             Planos
                         </a>
+                        <Link href="/recursos" className="hidden rounded-full px-3 py-2 text-sm font-medium text-white/80 hover:text-white sm:inline-block">
+                            Recursos
+                        </Link>
                         <Link href="/login" className="rounded-full px-3 py-2 text-sm font-medium text-white/90 hover:text-white focus-visible:outline-2 focus-visible:outline-white">
                             Entrar
                         </Link>
@@ -308,6 +311,7 @@ export default function LandingPage({ testimonials }: { testimonials: Testimonia
                         Ministério360 · gestão para igrejas
                     </p>
                     <nav className="flex flex-wrap gap-x-6 gap-y-2">
+                        <Link href="/recursos" className="hover:text-white">Recursos grátis</Link>
                         <Link href="/termos" className="hover:text-white">Termos de Uso</Link>
                         <Link href="/privacidade" className="hover:text-white">Política de Privacidade</Link>
                         <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-white">Contato</a>

@@ -16,7 +16,7 @@ const MAINTENANCE_EVERY_MS = 30000;
 const UNSTABLE_EVERY_MS = 20000;
 
 // Páginas que continuam no ar mesmo durante a manutenção
-const ALWAYS_OPEN = ["/termos", "/privacidade", "/confirmar"];
+const ALWAYS_OPEN = ["/termos", "/privacidade", "/confirmar", "/recursos"];
 function isAlwaysOpen(path: string) {
     return path === "/" || ALWAYS_OPEN.some((p) => path === p || path.startsWith(`${p}/`));
 }

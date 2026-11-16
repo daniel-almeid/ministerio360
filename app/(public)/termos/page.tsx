@@ -5,7 +5,8 @@ import { LEGAL } from "@/lib/legal";
 import { PLANS, formatBRL } from "@/lib/plans";
 
 export const metadata: Metadata = {
-    title: "Termos de Uso · Ministério360",
+    title: "Termos de Uso",
+    alternates: { canonical: "/termos" },
     description: "Regras de uso, planos, pagamentos, cancelamento e responsabilidades do Ministério360.",
 };
 
