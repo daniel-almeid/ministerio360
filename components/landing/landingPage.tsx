@@ -151,17 +151,18 @@ export default function LandingPage({ testimonials }: { testimonials: Testimonia
                         <span className="hidden text-lg font-semibold text-white min-[370px]:inline">Ministério360</span>
                     </Link>
                     <nav className="flex items-center gap-1 sm:gap-2">
-                        <a href="#planos" className="hidden rounded-full px-3 py-2 text-sm font-medium text-white/80 hover:text-white sm:inline-block">
+                        <a href="#planos" data-ph="home_topo_planos" className="hidden rounded-full px-3 py-2 text-sm font-medium text-white/80 hover:text-white sm:inline-block">
                             Planos
                         </a>
-                        <Link href="/recursos" className="hidden rounded-full px-3 py-2 text-sm font-medium text-white/80 hover:text-white sm:inline-block">
+                        <Link href="/recursos" data-ph="home_topo_recursos" className="hidden rounded-full px-3 py-2 text-sm font-medium text-white/80 hover:text-white sm:inline-block">
                             Recursos
                         </Link>
-                        <Link href="/login" className="rounded-full px-3 py-2 text-sm font-medium text-white/90 hover:text-white focus-visible:outline-2 focus-visible:outline-white">
+                        <Link href="/login" data-ph="home_topo_entrar" className="rounded-full px-3 py-2 text-sm font-medium text-white/90 hover:text-white focus-visible:outline-2 focus-visible:outline-white">
                             Entrar
                         </Link>
                         <Link
                             href="/register"
+                            data-ph="home_topo_criar_conta"
                             className="whitespace-nowrap rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#13324F] hover:bg-[#E3F2EF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                         >
                             Criar conta
@@ -183,11 +184,11 @@ export default function LandingPage({ testimonials }: { testimonials: Testimonia
                                 No celular e no computador.
                             </p>
                             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-                                <Link href="/register" className={btnPrimary}>
+                                <Link href="/register" data-ph="home_abertura_criar_conta" className={btnPrimary}>
                                     Criar conta grátis
                                 </Link>
                                 {PLAY_STORE_URL && (
-                                    <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" className={btnGhost}>
+                                    <a href={PLAY_STORE_URL} data-ph="home_abertura_google_play" target="_blank" rel="noopener noreferrer" className={btnGhost}>
                                         <Smartphone aria-hidden="true" className="h-5 w-5" />
                                         Baixar na Google Play
                                     </a>
@@ -290,11 +291,11 @@ export default function LandingPage({ testimonials }: { testimonials: Testimonia
                             <p className="mt-2 text-white/85">Cadastre a igreja em dois minutos e convide sua equipe quando quiser.</p>
                         </div>
                         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-                            <Link href="/register" className={btnPrimary}>
+                            <Link href="/register" data-ph="home_final_criar_conta" className={btnPrimary}>
                                 Criar conta grátis
                             </Link>
                             {PLAY_STORE_URL && (
-                                <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" className={btnGhost}>
+                                <a href={PLAY_STORE_URL} data-ph="home_final_google_play" target="_blank" rel="noopener noreferrer" className={btnGhost}>
                                     <Smartphone aria-hidden="true" className="h-5 w-5" />
                                     Baixar na Google Play
                                 </a>
@@ -311,7 +312,7 @@ export default function LandingPage({ testimonials }: { testimonials: Testimonia
                         Ministério360 · gestão para igrejas
                     </p>
                     <nav className="flex flex-wrap gap-x-6 gap-y-2">
-                        <Link href="/recursos" className="hover:text-white">Recursos grátis</Link>
+                        <Link href="/recursos" data-ph="home_rodape_recursos" className="hover:text-white">Recursos grátis</Link>
                         <Link href="/termos" className="hover:text-white">Termos de Uso</Link>
                         <Link href="/privacidade" className="hover:text-white">Política de Privacidade</Link>
                         <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-white">Contato</a>

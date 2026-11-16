@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { Church, User, LogOut, CreditCard } from "lucide-react";
 import { Menu, Transition } from "@headlessui/react";
 import toast from "react-hot-toast";
+import { resetAnalytics, track } from "@/lib/analytics";
 
 export function HeaderProfileMenu({
     churchName,
@@ -22,6 +23,8 @@ export function HeaderProfileMenu({
             toast.error("Erro ao sair. Tente novamente.");
             return;
         }
+        track("logout");
+        resetAnalytics();
         toast.success("Logout realizado com sucesso!");
         router.push("/login");
     }

@@ -1,6 +1,7 @@
 "use client";
 
 import { supabase } from "@/lib/supabaseClient";
+import { track } from "@/lib/analytics";
 import type { BillingCycle, PlanSlug } from "@/lib/plans";
 import type { CardFormValues } from "./components/paymentCardModal";
 
@@ -53,6 +54,7 @@ export async function subscribeWithCard(input: {
     const v = input.values;
     const streetLine = `${v.street}, ${v.number_address}${v.complement ? " - " + v.complement : ""}`;
 
+    track("assinatura_iniciada", { plano: input.planSlug, ciclo: input.cycle, no_cadastro: !session });
     const res = await fetch("/api/pagarme/create-subscription", {
         method: "POST",
         headers: {
@@ -75,8 +77,10 @@ export async function subscribeWithCard(input: {
 
     const json = await res.json();
     if (!res.ok || !json?.success) {
+        track("assinatura_erro", { plano: input.planSlug, ciclo: input.cycle });
         throw new Error(json?.error || "Erro ao criar assinatura.");
     }
+    track("assinatura_concluida", { plano: input.planSlug, ciclo: input.cycle });
 
     // Token novo já com o plano atualizado (sem precisar sair e entrar)
     if (session) await supabase.auth.refreshSession();

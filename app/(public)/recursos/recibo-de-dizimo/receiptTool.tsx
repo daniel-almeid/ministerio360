@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Printer } from "lucide-react";
+import { track } from "@/lib/analytics";
 import { reaisPorExtenso } from "@/app/(protected)/financas/receipts/extenso";
 
 const TYPES = ["Dízimo", "Oferta", "Oferta de missões", "Doação"];
@@ -104,7 +105,10 @@ export default function ReceiptTool() {
                 </div>
                 <button
                     type="button"
-                    onClick={() => window.print()}
+                    onClick={() => {
+                        track("recurso_recibo_impresso", { tipo: type });
+                        window.print();
+                    }}
                     className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#0F766E] px-6 font-semibold text-white hover:bg-[#0D5C56]"
                 >
                     <Printer className="h-5 w-5" aria-hidden="true" />

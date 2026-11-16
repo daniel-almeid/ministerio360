@@ -15,6 +15,7 @@ import { authErrorMessage } from "@/lib/authErrors";
 import { AuthError, AuthLabel, AuthLayout, AuthTitle, FieldBox, authInput, primaryButton } from "@/components/auth/authShell";
 
 import type { BillingCycle, PlanSlug } from "@/lib/plans";
+import { track } from "@/lib/analytics";
 
 type Props = {
     onSuccess: (planSlug: PlanSlug, cycle: BillingCycle, name: string, email: string, userId: string) => void;
@@ -120,6 +121,7 @@ export default function RegisterForm({ onSuccess }: Props) {
             }
 
             // O id da conta vai junto para o pagamento logo após o cadastro (só este navegador o tem)
+            track("conta_criada", { plano_escolhido: plan, ciclo: cycle, com_indicacao: !!cleanReferralCode(referral) });
             clearReferralCode();
             onSuccess(plan, cycle, name, email.trim(), data.user?.id ?? "");
         } catch (err) {

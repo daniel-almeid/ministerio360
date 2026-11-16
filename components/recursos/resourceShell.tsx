@@ -19,11 +19,12 @@ export default function ResourceShell({ crumbs, children }: { crumbs: Crumb[]; c
                         <Link href="/recursos" className="hidden rounded-full px-3 py-2 text-sm font-medium text-white/80 hover:text-white sm:inline-block">
                             Recursos
                         </Link>
-                        <Link href="/login" className="rounded-full px-3 py-2 text-sm font-medium text-white/90 hover:text-white">
+                        <Link href="/login" data-ph="recurso_topo_entrar" className="rounded-full px-3 py-2 text-sm font-medium text-white/90 hover:text-white">
                             Entrar
                         </Link>
                         <Link
                             href="/register"
+                            data-ph="recurso_topo_criar_conta"
                             className="whitespace-nowrap rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#13324F] hover:bg-[#E3F2EF]"
                         >
                             Criar conta

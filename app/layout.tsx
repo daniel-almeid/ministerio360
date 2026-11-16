@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { SystemGate } from "@/components/system/systemGate";
+import { Analytics } from "@/components/system/analytics";
 
 import type { Metadata } from "next";
 import { SITE_URL } from "@/lib/seo";
@@ -39,6 +40,7 @@ export default function RootLayout({
                 {children}
                 {/* Manutenção, instabilidade e avisos de conexão (por cima de tudo) */}
                 <SystemGate />
+                <Analytics />
                 <Toaster
                     position="bottom-right"
                     toastOptions={{

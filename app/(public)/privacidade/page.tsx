@@ -90,9 +90,9 @@ const sections: LegalSection[] = [
                             "Gerados automaticamente pelo uso",
                         ],
                         [
-                            <strong key="f">Diagnóstico e estatística do aplicativo</strong>,
-                            "Relatórios de falhas do aplicativo (tipo do erro, tela, versão do app, modelo e sistema do aparelho) e quais telas são abertas, sem nome, e-mail, telefone, localização ou dados da igreja. Ficam ligados a um código aleatório gerado no aparelho, não à sua conta.",
-                            "Gerados automaticamente pelo uso do aplicativo",
+                            <strong key="f">Diagnóstico e estatística de uso</strong>,
+                            "Relatórios de falhas do aplicativo (tipo do erro, tela, versão do app, modelo e sistema do aparelho) e estatísticas de uso do aplicativo e do site: telas e páginas abertas, ações feitas (por exemplo, “membro cadastrado” ou “recibo gerado”), plano da igreja e papel do usuário. Não incluem nome, e-mail, telefone, localização, valores nem o conteúdo dos cadastros. Na área logada, ficam ligadas apenas ao código interno da igreja, não ao nome dela nem à pessoa; fora dela, a um código aleatório que vale só para aquela visita.",
+                            "Gerados automaticamente pelo uso do aplicativo e do site",
                         ],
                     ]}
                 />
@@ -146,7 +146,7 @@ const sections: LegalSection[] = [
                         ["Guardar registros de acesso e cumprir obrigações fiscais e legais", "Cumprimento de obrigação legal (art. 7º, II)"],
                         ["Proteger a Plataforma, prevenir fraudes e acessos indevidos", "Legítimo interesse (art. 7º, IX) e prevenção à fraude (art. 11, II, g)"],
                         ["Atender solicitações de suporte e enviar avisos sobre a conta", "Execução de contrato (art. 7º, V)"],
-                        ["Corrigir falhas e entender quais recursos do aplicativo são usados, para melhorá-lo", "Legítimo interesse (art. 7º, IX), com dados que não identificam a pessoa"],
+                        ["Corrigir falhas e entender quais recursos do aplicativo e do site são usados, para melhorá-los", "Legítimo interesse (art. 7º, IX), com dados que não identificam a pessoa"],
                         ["Defender direitos em processos judiciais ou administrativos", "Exercício regular de direitos (art. 7º, VI)"],
                         ["Organizar o Ministério Infantil da igreja (turmas, responsáveis e contato)", "Consentimento específico de um dos pais ou responsável, obtido pela igreja (art. 14, §1º)"],
                         ["Tratar os cadastros feitos pela igreja", "Base legal definida pela igreja, como controladora"],
@@ -174,7 +174,7 @@ const sections: LegalSection[] = [
                         [<strong key="e">Google Play e App Store</strong>, "Download e instalação do aplicativo e pagamento das assinaturas feitas por ele, conforme as políticas de cada loja"],
                         [<strong key="f">RevenueCat</strong>, "Controle das assinaturas feitas pelo aplicativo (plano e validade)"],
                         [<strong key="g">Sentry</strong>, "Relatórios de falhas do aplicativo, sem dados que identifiquem a pessoa"],
-                        [<strong key="h">PostHog</strong>, "Estatísticas de uso do aplicativo, sem dados que identifiquem a pessoa"],
+                        [<strong key="h">PostHog</strong>, "Estatísticas de uso do aplicativo e do site, sem dados que identifiquem a pessoa"],
                     ]}
                 />
                 <p>
@@ -291,14 +291,17 @@ const sections: LegalSection[] = [
                     O site usa apenas armazenamento essencial no navegador, para manter você conectado e, se você
                     escolher, lembrar o seu e-mail na tela de login.
                 </li>
-                <li>O site não usa cookies de publicidade nem ferramentas de rastreamento de terceiros.</li>
+                <li>
+                    O site não usa cookies de publicidade nem de rastreamento. As estatísticas de visita não usam
+                    cookies e não guardam nada no navegador.
+                </li>
                 <li>
                     O aplicativo guarda a sessão de forma protegida no aparelho e pode pedir permissão para enviar
                     lembretes locais e para acessar arquivos quando você importa uma planilha. Esses lembretes são
                     gerados no próprio aparelho.
                 </li>
                 <li>
-                    O aplicativo envia relatórios de falhas e estatísticas de uso que não identificam você (veja “Quais dados tratamos”). Não há publicidade nem rastreamento entre aplicativos.
+                    O aplicativo envia relatórios de falhas e estatísticas de uso sem dados que identifiquem você (veja “Quais dados tratamos”). Não há publicidade nem rastreamento entre aplicativos.
                 </li>
             </UL>
         ),

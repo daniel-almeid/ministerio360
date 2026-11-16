@@ -11,6 +11,7 @@ export default function AppCta({ title, text }: { title: string; text: string })
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Link
                     href="/register"
+                    data-ph="recurso_criar_conta"
                     className="inline-flex h-12 items-center justify-center rounded-full bg-[#F4B942] px-6 text-[15px] font-semibold text-[#13324F] hover:bg-[#F7C968]"
                 >
                     Criar conta grátis
@@ -18,6 +19,7 @@ export default function AppCta({ title, text }: { title: string; text: string })
                 {PLAY_STORE_URL && (
                     <a
                         href={PLAY_STORE_URL}
+                        data-ph="recurso_google_play"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex h-12 items-center justify-center rounded-full px-6 text-[15px] font-semibold text-white ring-1 ring-white/35 hover:bg-white/10"

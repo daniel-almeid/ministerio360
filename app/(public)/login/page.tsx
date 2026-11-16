@@ -17,6 +17,7 @@ import {
     outlineButton,
     primaryButton,
 } from "../../../components/auth/authShell";
+import { track } from "../../../lib/analytics";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -60,6 +61,7 @@ export default function LoginPage() {
             }
 
             await supabase.rpc("refresh_church_claim", { p_user_id: data.user.id });
+            track("login_feito");
 
             const { data: newSession } = await supabase.auth.refreshSession();
             if (newSession?.session) {

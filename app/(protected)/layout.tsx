@@ -7,6 +7,7 @@ import { Poppins } from "next/font/google";
 import { Sidebar } from "../../components/shared/sidebar/sidebar";
 import { Header } from "../../components/shared/header/header";
 import { supabase } from "../../lib/supabaseClient";
+import { identifyChurch } from "../../lib/analytics";
 import { AccessGate } from "../../components/shared/access/accessGate";
 
 const poppins = Poppins({
@@ -48,6 +49,9 @@ export default function ProtectedLayout({
         router.push("/login");
         return;
       }
+
+      // Estatística: liga os eventos à igreja (só o código interno)
+      identifyChurch(churchId, plan, active);
 
       // 👉 Nunca bloquear qualquer rota dentro de `/planos`
       if (pathname.startsWith("/planos")) {

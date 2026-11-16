@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Printer } from "lucide-react";
+import { track } from "@/lib/analytics";
 
 const field =
     "mt-1 w-full rounded-xl border border-[#D6E4E1] bg-white px-3.5 py-2.5 text-[15px] text-[#1B2430] outline-none focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/15";
@@ -44,7 +45,10 @@ export default function MemberFormTool() {
                 </label>
                 <button
                     type="button"
-                    onClick={() => window.print()}
+                    onClick={() => {
+                        track("recurso_ficha_impressa", { com_nome_igreja: !!church.trim() });
+                        window.print();
+                    }}
                     className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#0F766E] px-6 font-semibold text-white hover:bg-[#0D5C56]"
                 >
                     <Printer className="h-5 w-5" aria-hidden="true" />
