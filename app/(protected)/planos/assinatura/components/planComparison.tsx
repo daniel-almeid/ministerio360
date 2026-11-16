@@ -1,6 +1,7 @@
 "use client";
 
-import { monthlyEquivalent, priceLabel, type BillingCycle } from "@/lib/plans";
+import { formatBRL, monthlyEquivalent, priceLabel, type BillingCycle } from "@/lib/plans";
+import { promoView } from "@/lib/promo";
 import type { PlanDef, PlanSlug } from "../hook/useSubscription";
 
 type Props = {
@@ -9,15 +10,17 @@ type Props = {
     currentSlug: PlanSlug;
     currentCycle: BillingCycle;
     onSelectPlan?: (plan: PlanDef) => void;
+    promo?: boolean; // Black Friday para esta igreja
 };
 
-export default function PlanComparison({ plans, cycle, currentSlug, currentCycle, onSelectPlan }: Props) {
+export default function PlanComparison({ plans, cycle, currentSlug, currentCycle, onSelectPlan, promo = false }: Props) {
     return (
         <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {plans.map((plan: PlanDef) => {
                 const isFree = plan.monthlyCents === 0;
                 // Mesmo plano em outro ciclo (ex.: mensal → anual) pode ser assinado
                 const isCurrent = plan.slug === currentSlug && (isFree || cycle === currentCycle);
+                const offer = promo && !isFree && !isCurrent ? promoView(plan, cycle, formatBRL) : null;
 
                 return (
                     <div
@@ -28,8 +31,18 @@ export default function PlanComparison({ plans, cycle, currentSlug, currentCycle
                     >
                         <h3 className="text-lg font-bold">{plan.name}</h3>
 
-                        <p className="mt-1 text-gray-700 font-semibold">{isFree ? "Gratuito" : priceLabel(plan, cycle)}</p>
-                        <p className="text-xs text-emerald-700 h-4">{!isFree && cycle === "yearly" ? monthlyEquivalent(plan) : ""}</p>
+                        {offer ? (
+                            <>
+                                <p className="mt-1 text-xs text-gray-500 line-through">{offer.fullLabel}</p>
+                                <p className="text-gray-800 font-bold">{offer.label}</p>
+                                <p className="text-xs text-emerald-700">{offer.badge}</p>
+                            </>
+                        ) : (
+                            <>
+                                <p className="mt-1 text-gray-700 font-semibold">{isFree ? "Gratuito" : priceLabel(plan, cycle)}</p>
+                                <p className="text-xs text-emerald-700 h-4">{!isFree && cycle === "yearly" ? monthlyEquivalent(plan) : ""}</p>
+                            </>
+                        )}
 
                         <ul className="mt-3 space-y-1 text-sm text-gray-700 flex-1">
                             {plan.features.map((f: string, i: number) => (

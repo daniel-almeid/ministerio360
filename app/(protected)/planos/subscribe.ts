@@ -40,6 +40,7 @@ export async function subscribeWithCard(input: {
     email?: string;
     name?: string;
     userId?: string;
+    promo?: boolean; // a tela mostrou o preço da Black Friday
 }) {
     // No cadastro o e-mail vem junto e o login ainda não existe
     const { data } = await supabase.auth.getSession();
@@ -54,7 +55,7 @@ export async function subscribeWithCard(input: {
     const v = input.values;
     const streetLine = `${v.street}, ${v.number_address}${v.complement ? " - " + v.complement : ""}`;
 
-    track("assinatura_iniciada", { plano: input.planSlug, ciclo: input.cycle, no_cadastro: !session });
+    track("assinatura_iniciada", { plano: input.planSlug, ciclo: input.cycle, no_cadastro: !session, black_friday: !!input.promo });
     const res = await fetch("/api/pagarme/create-subscription", {
         method: "POST",
         headers: {
@@ -72,15 +73,16 @@ export async function subscribeWithCard(input: {
             document: v.document,
             phone: { area_code: v.areaCode, number: v.phoneNumber },
             address: { line_1: streetLine, zip_code: v.zipCode, city: v.city, state: v.state },
+            promo: !!input.promo,
         }),
     });
 
     const json = await res.json();
     if (!res.ok || !json?.success) {
-        track("assinatura_erro", { plano: input.planSlug, ciclo: input.cycle });
+        track("assinatura_erro", { plano: input.planSlug, ciclo: input.cycle, black_friday: !!input.promo });
         throw new Error(json?.error || "Erro ao criar assinatura.");
     }
-    track("assinatura_concluida", { plano: input.planSlug, ciclo: input.cycle });
+    track("assinatura_concluida", { plano: input.planSlug, ciclo: input.cycle, black_friday: !!json.promo });
 
     // Token novo já com o plano atualizado (sem precisar sair e entrar)
     if (session) await supabase.auth.refreshSession();

@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Check } from "lucide-react";
 import PaymentCardModal, { CardFormValues } from "./paymentCardModal";
 import { subscribeWithCard } from "../subscribe";
-import { monthlyEquivalent, priceCents, priceLabel, type BillingCycle, type PlanInfo, type PlanSlug } from "@/lib/plans";
+import { formatBRL, monthlyEquivalent, priceCents, priceLabel, type BillingCycle, type PlanInfo, type PlanSlug } from "@/lib/plans";
+import { promoView } from "@/lib/promo";
 
 type Props = {
     plan: PlanInfo;
@@ -13,17 +14,20 @@ type Props = {
     active: boolean;
     // Igreja que paga pela loja do celular: os botões de assinar ficam desligados
     locked?: boolean;
+    // Black Friday para esta igreja (preço da primeira cobrança com desconto)
+    promo?: boolean;
 };
 
-export default function PlanCard({ plan, cycle, current, active, locked = false }: Props) {
+export default function PlanCard({ plan, cycle, current, active, locked = false, promo = false }: Props) {
     const [modalOpen, setModalOpen] = useState(false);
 
     const isSelected = current === plan.slug;
     const isActive = active && isSelected;
     const isFree = plan.monthlyCents === 0;
+    const offer = promo && !isFree && !locked && !(active && isSelected) ? promoView(plan, cycle, formatBRL) : null;
 
     async function confirmarAssinatura(values: CardFormValues) {
-        await subscribeWithCard({ planSlug: plan.slug, cycle, values });
+        await subscribeWithCard({ planSlug: plan.slug, cycle, values, promo: !!offer });
         setModalOpen(false);
         window.location.reload();
     }
@@ -43,10 +47,26 @@ export default function PlanCard({ plan, cycle, current, active, locked = false 
                 <div>
                     <h3 className="text-2xl font-bold text-gray-800">{plan.name}</h3>
                     <p className="text-sm text-gray-500">{plan.tagline}</p>
-                    <p className="text-3xl font-extrabold text-gray-800 mt-3">{priceLabel(plan, cycle)}</p>
-                    <p className="text-sm text-emerald-700 font-medium h-5 mt-0.5">
-                        {!isFree && cycle === "yearly" ? monthlyEquivalent(plan) : ""}
-                    </p>
+                    {offer ? (
+                        <>
+                            <span className="inline-block mt-3 rounded-full bg-[#13324F] px-2.5 py-0.5 text-xs font-bold text-[#F4B942]">
+                                {offer.badge}
+                            </span>
+                            <p className="text-sm text-gray-500 line-through mt-2">{offer.fullLabel}</p>
+                            <p>
+                                <span className="text-3xl font-extrabold text-gray-800">{offer.amount}</span>
+                                <span className="ml-1 text-sm font-semibold text-gray-500">{offer.when}</span>
+                            </p>
+                            <p className="text-sm text-emerald-700 font-medium mt-0.5">{offer.note}</p>
+                        </>
+                    ) : (
+                        <>
+                            <p className="text-3xl font-extrabold text-gray-800 mt-3">{priceLabel(plan, cycle)}</p>
+                            <p className="text-sm text-emerald-700 font-medium h-5 mt-0.5">
+                                {!isFree && cycle === "yearly" ? monthlyEquivalent(plan) : ""}
+                            </p>
+                        </>
+                    )}
 
                     <ul className="mt-5 space-y-2.5">
                         {plan.features.map((f, i) => (
@@ -83,8 +103,8 @@ export default function PlanCard({ plan, cycle, current, active, locked = false 
             <PaymentCardModal
                 open={modalOpen}
                 planName={`${plan.name} ${cycle === "yearly" ? "Anual" : "Mensal"}`}
-                price={priceLabel(plan, cycle)}
-                totalCents={priceCents(plan, cycle)}
+                price={offer ? offer.label : priceLabel(plan, cycle)}
+                totalCents={offer ? offer.cents : priceCents(plan, cycle)}
                 maxInstallments={cycle === "yearly" ? plan.maxInstallments : 1}
                 onClose={() => setModalOpen(false)}
                 onSubmit={confirmarAssinatura}

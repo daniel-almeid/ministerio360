@@ -5,7 +5,8 @@ import { CheckCircle2, CreditCard, MailCheck } from "lucide-react";
 import Loading from "@/components/shared/loading";
 import PaymentCardModal, { CardFormValues } from "@/app/(protected)/planos/components/paymentCardModal";
 import { subscribeWithCard } from "@/app/(protected)/planos/subscribe";
-import { PLAN_NAME, getPlan, priceCents, priceLabel, type BillingCycle, type PlanSlug } from "@/lib/plans";
+import { PLAN_NAME, formatBRL, getPlan, priceCents, priceLabel, type BillingCycle, type PlanSlug } from "@/lib/plans";
+import { promoActive, promoView } from "@/lib/promo";
 
 type Props = {
     open: boolean;
@@ -43,9 +44,11 @@ export default function RegisterSuccessModal({
     const isPaidPlan = planSlug !== "free";
 
     const plan = getPlan(planSlug);
+    // Conta nova: na Black Friday a primeira cobrança sai com desconto
+    const offer = isPaidPlan && promoActive() ? promoView(plan, cycle, formatBRL) : null;
 
     async function confirmarAssinatura(values: CardFormValues) {
-        await subscribeWithCard({ planSlug, cycle, values, email, name, userId });
+        await subscribeWithCard({ planSlug, cycle, values, email, name, userId, promo: !!offer });
         setShowCardModal(false);
         setPaidSuccessfully(true);
     }
@@ -105,8 +108,8 @@ export default function RegisterSuccessModal({
             <PaymentCardModal
                 open={showCardModal}
                 planName={`${plan.name} ${cycle === "yearly" ? "Anual" : "Mensal"}`}
-                price={priceLabel(plan, cycle)}
-                totalCents={priceCents(plan, cycle)}
+                price={offer ? offer.label : priceLabel(plan, cycle)}
+                totalCents={offer ? offer.cents : priceCents(plan, cycle)}
                 maxInstallments={cycle === "yearly" ? plan.maxInstallments : 1}
                 onClose={() => setShowCardModal(false)}
                 onSubmit={confirmarAssinatura}

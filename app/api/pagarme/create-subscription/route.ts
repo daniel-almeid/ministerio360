@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { createClient, type User } from "@supabase/supabase-js";
+import { PROMO, pagarmeDiscount, promoActive, promoEligible } from "@/lib/promo";
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -32,6 +33,8 @@ type ChurchRow = {
 const STORE_PROVIDERS = ["google_play", "app_store"];
 const PAYS_THROUGH_STORE =
     "A assinatura da sua igreja é feita pela Google Play. Para mudar de plano ou cancelar, use o aplicativo ou a Google Play.";
+// A tela mostrou o preço da Black Friday, mas a igreja não tem direito (ou a oferta acabou): não cobra
+const PROMO_UNAVAILABLE = "A oferta de Black Friday não está disponível para esta igreja. Confira o valor e tente de novo.";
 
 function fail(error: string, status: number, detail?: unknown) {
     return NextResponse.json({ error, ...(detail ? { detail } : {}) }, { status });
@@ -73,6 +76,7 @@ export async function POST(req: Request) {
             document,
             phone,
             address,
+            promo: expectsPromo = false,
         } = await req.json();
 
         if (!PAID_PLANS.includes(plan_slug)) return fail("Plano inválido", 400);
@@ -157,6 +161,10 @@ export async function POST(req: Request) {
             return fail(PAYS_THROUGH_STORE, 409);
         }
 
+        // Black Friday: só no período e para igreja que nunca pagou (a regra fica no servidor)
+        const withPromo = promoActive() && promoEligible(church);
+        if (expectsPromo && !withPromo) return fail(PROMO_UNAVAILABLE, 409, { code: "PROMO_UNAVAILABLE" });
+
         const pagarmeSecret = process.env.PAGARME_SECRET_KEY!;
         const auth = "Basic " + Buffer.from(pagarmeSecret + ":").toString("base64");
         const onlyDigits = (v: string) => v.replace(/\D/g, "");
@@ -202,7 +210,9 @@ export async function POST(req: Request) {
                         : undefined,
                     address: billingAddress,
                 },
-                metadata: { church_id: church.id, plan_slug, billing_cycle },
+                // Desconto só na primeira cobrança (cycles: 1); depois volta ao preço do plano
+                ...(withPromo ? { discounts: [pagarmeDiscount(billing_cycle)] } : {}),
+                metadata: { church_id: church.id, plan_slug, billing_cycle, ...(withPromo ? { promo: PROMO.id } : {}) },
             }),
         });
 
@@ -283,7 +293,7 @@ export async function POST(req: Request) {
                 .catch((e) => console.error("⚠️ Não foi possível cancelar a assinatura anterior:", previousSubscription, e));
         }
 
-        return NextResponse.json({ success: true, subscription_id: subJson.id });
+        return NextResponse.json({ success: true, subscription_id: subJson.id, ...(withPromo ? { promo: PROMO.id } : {}) });
     } catch (err) {
         console.error("❌ ERRO GERAL:", err);
         return fail("Erro interno", 500, String(err));

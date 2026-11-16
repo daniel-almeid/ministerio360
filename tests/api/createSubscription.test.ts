@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockPagarme, post, resetState, state } from "./fakes";
 
 vi.mock("@supabase/supabase-js", async () => {
@@ -84,7 +84,12 @@ function pagarmeOk(status = "active", cycle: unknown = { end_at: FIM_DO_CICLO })
 const perfil = () => state.db.church_profiles[0];
 const json = (r: Response) => r.json();
 
-beforeEach(() => cenario());
+// Fora da Black Friday, salvo nos testes dela (a data fica fixa para o resultado não mudar com o calendário)
+beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-11-10T12:00:00-03:00") });
+    cenario();
+});
+afterEach(() => vi.useRealTimers());
 
 describe("Assinatura: validações", () => {
     it.each([
@@ -459,5 +464,70 @@ describe("Dois pedidos ao mesmo tempo (duas abas, rede reenviando)", () => {
         expect(r.status).toBe(200);
         expect(perfil().pagarme_subscription_id).toBe("sub_1");
         expect(cancelados(calls)).toEqual([]);
+    });
+});
+
+describe("Black Friday (16 a 30/11)", () => {
+    beforeEach(() => {
+        vi.setSystemTime(new Date("2026-11-20T10:00:00-03:00"));
+        cenario(); // conta criada "agora" (dentro do período)
+    });
+
+    it("igreja no Grátis: 50% off só no 1º mês do mensal", async () => {
+        const { calls } = pagarmeOk();
+        const r = await POST(post(URL, corpo({ promo: true }), logado()));
+        expect(r.status).toBe(200);
+        expect((await json(r)).promo).toBe("black_friday_2026");
+        const enviado = calls.find((c) => c.method === "POST")!.body;
+        expect(enviado.discounts).toEqual([expect.objectContaining({ value: 50, discount_type: "percentage", cycles: 1 })]);
+        expect(enviado.metadata.promo).toBe("black_friday_2026");
+    });
+
+    it("anual: 30% off na primeira cobrança", async () => {
+        const { calls } = pagarmeOk();
+        await POST(post(URL, corpo({ billing_cycle: "yearly", installments: 12, promo: true }), logado()));
+        const enviado = calls.find((c) => c.method === "POST")!.body;
+        expect(enviado.discounts).toEqual([expect.objectContaining({ value: 30, cycles: 1 })]);
+    });
+
+    it("conta nova no cadastro também ganha", async () => {
+        const { calls } = pagarmeOk();
+        const r = await POST(post(URL, cadastro({ promo: true })));
+        expect(r.status).toBe(200);
+        expect(calls.find((c) => c.method === "POST")!.body.discounts).toHaveLength(1);
+    });
+
+    it("mês grátis de indicação conta como quem nunca pagou", async () => {
+        cenario({ billing_provider: "bonus" });
+        const { calls } = pagarmeOk();
+        await POST(post(URL, corpo({ promo: true }), logado()));
+        expect(calls.find((c) => c.method === "POST")!.body.discounts).toHaveLength(1);
+    });
+
+    it("igreja que já pagou: a tela não devia mostrar a oferta → recusa sem cobrar", async () => {
+        cenario({ billing_provider: "pagarme", pagarme_subscription_id: "sub_velha", pagarme_customer_id: "cus_1" });
+        const { calls } = pagarmeOk();
+        const r = await POST(post(URL, corpo({ promo: true }), logado()));
+        expect(r.status).toBe(409);
+        expect(calls).toHaveLength(0);
+    });
+
+    it("igreja que já pagou, sem pedir a oferta: preço normal", async () => {
+        cenario({ billing_provider: "pagarme", pagarme_subscription_id: "sub_velha", pagarme_customer_id: "cus_1" });
+        const { calls } = pagarmeOk();
+        const r = await POST(post(URL, corpo(), logado()));
+        expect(r.status).toBe(200);
+        expect(calls.find((c) => c.method === "POST")!.body.discounts).toBeUndefined();
+    });
+
+    it("depois de 30/11: sem desconto, e quem ainda vê a oferta é avisado antes de cobrar", async () => {
+        vi.setSystemTime(new Date("2026-12-01T00:00:01-03:00"));
+        const { calls } = pagarmeOk();
+        const r = await POST(post(URL, corpo({ promo: true }), logado()));
+        expect(r.status).toBe(409);
+        expect(calls).toHaveLength(0);
+        const r2 = await POST(post(URL, corpo(), logado()));
+        expect(r2.status).toBe(200);
+        expect(calls.find((c) => c.method === "POST")!.body.discounts).toBeUndefined();
     });
 });

@@ -8,10 +8,13 @@ import PlanFooter from "./components/planFooter";
 import CycleToggle from "./components/cycleToggle";
 import { PLANS, type BillingCycle } from "@/lib/plans";
 import { Smartphone } from "lucide-react";
+import { usePromoOffer } from "@/lib/usePromoOffer";
+import { PROMO } from "@/lib/promo";
 
 export default function PlanosPage() {
     const { loading, currentPlan, active, paysThroughStore } = usePlan();
     const [cycle, setCycle] = useState<BillingCycle>("monthly");
+    const promo = usePromoOffer();
 
     if (loading) return <Loading />;
 
@@ -35,6 +38,15 @@ export default function PlanosPage() {
                 </div>
             )}
 
+            {promo && (
+                <div className="max-w-2xl mx-auto rounded-2xl bg-[#13324F] px-5 py-4 text-center text-white">
+                    <p className="font-bold text-[#F4B942]">{PROMO.name} até {PROMO.lastDayLabel}</p>
+                    <p className="text-sm text-white/85 mt-1">
+                        {PROMO.percent.yearly}% off no plano anual ou {PROMO.percent.monthly}% off no 1º mês do mensal.
+                    </p>
+                </div>
+            )}
+
             <CycleToggle value={cycle} onChange={setCycle} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -46,6 +58,7 @@ export default function PlanosPage() {
                         current={currentPlan}
                         active={active && currentPlan === plan.slug}
                         locked={paysThroughStore}
+                        promo={promo}
                     />
                 ))}
             </div>

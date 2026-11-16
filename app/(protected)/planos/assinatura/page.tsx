@@ -15,13 +15,16 @@ import CancelSubscriptionModal from "./components/modal/cancelSubscriptionModal"
 import PaymentCardModal, { CardFormValues } from "../components/paymentCardModal";
 import CycleToggle from "../components/cycleToggle";
 import { subscribeWithCard } from "../subscribe";
-import { priceCents, priceLabel, type BillingCycle as Cycle } from "@/lib/plans";
+import { formatBRL, priceCents, priceLabel, type BillingCycle as Cycle } from "@/lib/plans";
+import { promoView } from "@/lib/promo";
+import { usePromoOffer } from "@/lib/usePromoOffer";
 
 export default function AssinaturaPage() {
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [selectedPlanSlug, setSelectedPlanSlug] = useState<PlanSlug | null>(null);
     const [cycle, setCycle] = useState<Cycle>("monthly");
+    const promo = usePromoOffer();
 
     const {
         loading,
@@ -50,12 +53,13 @@ export default function AssinaturaPage() {
 
     async function confirmarAssinatura(values: CardFormValues) {
         if (!selectedPlanSlug) return;
-        await subscribeWithCard({ planSlug: selectedPlanSlug, cycle, values });
+        await subscribeWithCard({ planSlug: selectedPlanSlug, cycle, values, promo: !!offer });
         setShowPaymentModal(false);
         window.location.reload();
     }
 
     const selectedPlan = PLANS.find((p) => p.slug === selectedPlanSlug);
+    const offer = promo && selectedPlan && selectedPlan.monthlyCents > 0 ? promoView(selectedPlan, cycle, formatBRL) : null;
 
     return (
         <>
@@ -87,6 +91,7 @@ export default function AssinaturaPage() {
                         cycle={cycle}
                         currentSlug={isBonus ? "free" : planSlug} // no mês grátis, todos os planos podem ser assinados
                         currentCycle={billingCycle}
+                        promo={promo}
                         onSelectPlan={(plan) => openPaymentFor(plan.slug)}
                     />
 
@@ -114,8 +119,8 @@ export default function AssinaturaPage() {
                 <PaymentCardModal
                     open={showPaymentModal}
                     planName={`${selectedPlan.name} ${cycle === "yearly" ? "Anual" : "Mensal"}`}
-                    price={priceLabel(selectedPlan, cycle)}
-                    totalCents={priceCents(selectedPlan, cycle)}
+                    price={offer ? offer.label : priceLabel(selectedPlan, cycle)}
+                    totalCents={offer ? offer.cents : priceCents(selectedPlan, cycle)}
                     maxInstallments={cycle === "yearly" ? selectedPlan.maxInstallments : 1}
                     onClose={() => setShowPaymentModal(false)}
                     onSubmit={confirmarAssinatura}
