@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
 import PaymentCardModal, { CardFormValues } from "./paymentCardModal";
 import { subscribeWithCard } from "../subscribe";
@@ -16,10 +16,18 @@ type Props = {
     locked?: boolean;
     // Black Friday para esta igreja (preço da primeira cobrança com desconto)
     promo?: boolean;
+    // Abre o pagamento sozinho, uma vez (plano escolhido no cadastro, logo após o login)
+    autoOpen?: boolean;
 };
 
-export default function PlanCard({ plan, cycle, current, active, locked = false, promo = false }: Props) {
+export default function PlanCard({ plan, cycle, current, active, locked = false, promo = false, autoOpen = false }: Props) {
     const [modalOpen, setModalOpen] = useState(false);
+    const opened = useRef(false);
+    useEffect(() => {
+        if (!autoOpen || opened.current || plan.monthlyCents === 0) return;
+        opened.current = true;
+        setModalOpen(true);
+    }, [autoOpen, plan.monthlyCents]);
 
     const isSelected = current === plan.slug;
     const isActive = active && isSelected;
@@ -29,7 +37,9 @@ export default function PlanCard({ plan, cycle, current, active, locked = false,
     async function confirmarAssinatura(values: CardFormValues) {
         await subscribeWithCard({ planSlug: plan.slug, cycle, values, promo: !!offer });
         setModalOpen(false);
-        window.location.reload();
+        // Pagou o plano escolhido no cadastro: segue para o sistema, já liberado
+        if (autoOpen) window.location.href = "/dashboard";
+        else window.location.reload();
     }
 
     return (
