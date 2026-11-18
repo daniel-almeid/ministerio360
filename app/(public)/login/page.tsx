@@ -81,7 +81,7 @@ export default function LoginPage() {
             else localStorage.removeItem("rememberedEmail");
 
             if (plan !== "free" && active === false) {
-                router.push("/planos");
+                router.push("/planos?pagar=1");
                 return;
             }
 
