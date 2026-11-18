@@ -123,6 +123,10 @@ export default function RegisterForm({ onSuccess }: Props) {
             // O id da conta vai junto para o pagamento logo após o cadastro (só este navegador o tem)
             track("conta_criada", { plano_escolhido: plan, ciclo: cycle, com_indicacao: !!cleanReferralCode(referral) });
             clearReferralCode();
+            // Ciclo escolhido: usado para abrir o pagamento certo depois do login
+            try {
+                localStorage.setItem("m360_ciclo_escolhido", cycle);
+            } catch {}
             onSuccess(plan, cycle, name, email.trim(), data.user?.id ?? "");
         } catch (err) {
             setError(authErrorMessage(err as { message?: string }, "Não foi possível criar a conta. Tente novamente."));
