@@ -61,7 +61,7 @@ export default function ProtectedLayout({
 
       // Se plano é pago mas assinatura ainda não foi ativada
       if (plan !== "free" && active === false) {
-        router.push("/planos");
+        router.push("/planos?pagar=1");
         return;
       }
 
