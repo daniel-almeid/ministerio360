@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePlan } from "./hook/usePlan";
 import Loading from "@/components/shared/loading";
 import PlanCard from "./components/planCard";
@@ -15,6 +15,17 @@ export default function PlanosPage() {
     const { loading, currentPlan, active, paysThroughStore } = usePlan();
     const [cycle, setCycle] = useState<BillingCycle>("monthly");
     const promo = usePromoOffer();
+
+    // Veio do login com um plano escolhido no cadastro e ainda sem pagamento:
+    // abre direto o pagamento desse plano (no ciclo escolhido no cadastro)
+    const [payNow, setPayNow] = useState(false);
+    useEffect(() => {
+        if (new URLSearchParams(window.location.search).get("pagar") !== "1") return;
+        setPayNow(true);
+        try {
+            if (localStorage.getItem("m360_ciclo_escolhido") === "yearly") setCycle("yearly");
+        } catch {}
+    }, []);
 
     if (loading) return <Loading />;
 
@@ -59,6 +70,7 @@ export default function PlanosPage() {
                         active={active && currentPlan === plan.slug}
                         locked={paysThroughStore}
                         promo={promo}
+                        autoOpen={payNow && !active && !paysThroughStore && currentPlan === plan.slug}
                     />
                 ))}
             </div>
