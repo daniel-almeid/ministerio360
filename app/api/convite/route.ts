@@ -22,6 +22,7 @@ const STATUS_MESSAGE: Record<string, string> = {
     revoked: "Este convite foi cancelado pelo pastor.",
     expired: "Este convite expirou. Peça um novo ao pastor.",
     full: "A igreja atingiu o limite de usuários do plano. Fale com o pastor.",
+    unavailable: "A Área do membro não está ativa no plano da igreja. Fale com o pastor.",
 };
 
 function fail(message: string, status = 400) {
