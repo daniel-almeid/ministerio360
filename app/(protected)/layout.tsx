@@ -50,6 +50,13 @@ export default function ProtectedLayout({
         return;
       }
 
+      // Membro usa só o aplicativo: a área web é da equipe
+      const { data: access } = await supabase.rpc("my_access");
+      if (access?.role === "membro") {
+        router.replace("/abrir-app");
+        return;
+      }
+
       // Estatística: liga os eventos à igreja (só o código interno)
       identifyChurch(churchId, plan, active);
 
