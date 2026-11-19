@@ -5,10 +5,11 @@ import { Eye, EyeOff, LinkIcon, Loader2, ShieldCheck, Smartphone } from "lucide-
 import { supabase } from "../../../../lib/supabaseClient";
 import { ROLE_HINT, ROLE_LABEL, isRole } from "../../../(protected)/usuarios/users/permissions";
 import ConsentCheckbox from "@/components/legal/consentCheckbox";
+import { PLAY_STORE_URL } from "@/lib/site";
 
 type Invite = {
     found: true;
-    status: "valid" | "used" | "revoked" | "expired" | "full";
+    status: "valid" | "used" | "revoked" | "expired" | "full" | "unavailable";
     church: string | null;
     role: string;
     name: string | null;
@@ -23,7 +24,13 @@ const STATUS_TEXT: Record<Exclude<Invite["status"], "valid">, { title: string; t
     revoked: { title: "Convite cancelado", text: "O pastor cancelou este convite. Peça um novo, se precisar." },
     expired: { title: "Convite expirado", text: "Este link venceu. Peça um novo convite ao pastor." },
     full: { title: "Limite de usuários", text: "A igreja atingiu o limite de usuários do plano. Fale com o pastor." },
+    unavailable: { title: "Convite indisponível", text: "A Área do membro não está ativa no plano da igreja. Fale com o pastor." },
 };
+
+// Membro usa só o aplicativo: a área web é da equipe
+const MEMBER_LABEL = "Membro";
+const MEMBER_HINT = "Agenda, suas escalas e seus dados pelo app";
+const ANDROID_LINK = "intent://auth/login#Intent;scheme=ministerio360;package=com.ministerio360.app;end";
 
 export function AcceptInvite({ token }: { token: string }) {
     const [invite, setInvite] = useState<Invite | null>(null);
@@ -88,6 +95,13 @@ export function AcceptInvite({ token }: { token: string }) {
             }
             await supabase.rpc("refresh_church_claim", { p_user_id: data.user.id });
             await supabase.auth.refreshSession();
+            if (invite?.role === "membro") {
+                // O membro não usa o sistema web: sai daqui e entra pelo app
+                await supabase.auth.signOut();
+                setState("done");
+                setSending(false);
+                return;
+            }
             setState("done");
             window.location.href = "/dashboard";
         } catch {
@@ -96,8 +110,9 @@ export function AcceptInvite({ token }: { token: string }) {
         }
     }
 
-    const roleLabel = invite && isRole(invite.role) ? ROLE_LABEL[invite.role] : invite?.role;
-    const roleHint = invite && isRole(invite.role) ? ROLE_HINT[invite.role] : "";
+    const isMember = invite?.role === "membro";
+    const roleLabel = isMember ? MEMBER_LABEL : invite && isRole(invite.role) ? ROLE_LABEL[invite.role] : invite?.role;
+    const roleHint = isMember ? MEMBER_HINT : invite && isRole(invite.role) ? ROLE_HINT[invite.role] : "";
 
     return (
         <main className="min-h-dvh bg-gray-50 flex flex-col items-center px-4 py-8">
@@ -136,10 +151,32 @@ export function AcceptInvite({ token }: { token: string }) {
                                 <ShieldCheck className="w-6 h-6 text-white" />
                             </div>
                             <h1 className="text-lg font-bold text-gray-800">Conta criada!</h1>
-                            <p className="text-sm text-gray-500">Entrando no sistema...</p>
-                            <a href="/login" className="text-sm font-semibold text-[#0F766E] hover:underline">
-                                Ir para o login
-                            </a>
+                            {isMember ? (
+                                <>
+                                    <p className="text-sm text-gray-500">
+                                        Abra o aplicativo Ministério360 no celular e entre com seu e-mail e a senha que você criou.
+                                    </p>
+                                    <a
+                                        href={ANDROID_LINK}
+                                        className="w-full max-w-xs inline-flex items-center justify-center gap-2 rounded-xl bg-[#0F766E] px-4 py-3 text-sm font-semibold text-white hover:bg-[#0d6560]"
+                                    >
+                                        <Smartphone className="w-4 h-4" />
+                                        Abrir o aplicativo
+                                    </a>
+                                    {PLAY_STORE_URL && (
+                                        <a href={PLAY_STORE_URL} className="text-sm font-semibold text-[#0F766E] hover:underline">
+                                            Ainda não tem o app? Baixe na Google Play
+                                        </a>
+                                    )}
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-sm text-gray-500">Entrando no sistema...</p>
+                                    <a href="/login" className="text-sm font-semibold text-[#0F766E] hover:underline">
+                                        Ir para o login
+                                    </a>
+                                </>
+                            )}
                         </div>
                     )}
 
