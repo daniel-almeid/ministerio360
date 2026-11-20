@@ -24,12 +24,15 @@ const STATUS_TEXT: Record<Exclude<Invite["status"], "valid">, { title: string; t
     revoked: { title: "Convite cancelado", text: "O pastor cancelou este convite. Peça um novo, se precisar." },
     expired: { title: "Convite expirado", text: "Este link venceu. Peça um novo convite ao pastor." },
     full: { title: "Limite de usuários", text: "A igreja atingiu o limite de usuários do plano. Fale com o pastor." },
-    unavailable: { title: "Convite indisponível", text: "A Área do membro não está ativa no plano da igreja. Fale com o pastor." },
+    unavailable: { title: "Convite indisponível", text: "Este acesso não está disponível no plano atual da igreja. Fale com o pastor." },
 };
 
-// Membro usa só o aplicativo: a área web é da equipe
-const MEMBER_LABEL = "Membro";
-const MEMBER_HINT = "Agenda, suas escalas e seus dados pelo app";
+// Membro e líder de célula usam só o aplicativo: a área web é da equipe
+const APP_ONLY_ROLES = ["membro", "lider_celula"];
+const APP_ROLE_LABEL: Record<string, { label: string; hint: string }> = {
+    membro: { label: "Membro", hint: "Agenda, suas escalas e seus dados pelo app" },
+    lider_celula: { label: "Líder de célula", hint: "Sua célula, presença e relatórios das reuniões pelo app" },
+};
 const ANDROID_LINK = "intent://auth/login#Intent;scheme=ministerio360;package=com.ministerio360.app;end";
 
 export function AcceptInvite({ token }: { token: string }) {
@@ -95,7 +98,7 @@ export function AcceptInvite({ token }: { token: string }) {
             }
             await supabase.rpc("refresh_church_claim", { p_user_id: data.user.id });
             await supabase.auth.refreshSession();
-            if (invite?.role === "membro") {
+            if (invite && APP_ONLY_ROLES.includes(invite.role)) {
                 // O membro não usa o sistema web: sai daqui e entra pelo app
                 await supabase.auth.signOut();
                 setState("done");
@@ -110,9 +113,10 @@ export function AcceptInvite({ token }: { token: string }) {
         }
     }
 
-    const isMember = invite?.role === "membro";
-    const roleLabel = isMember ? MEMBER_LABEL : invite && isRole(invite.role) ? ROLE_LABEL[invite.role] : invite?.role;
-    const roleHint = isMember ? MEMBER_HINT : invite && isRole(invite.role) ? ROLE_HINT[invite.role] : "";
+    const isMember = !!invite && APP_ONLY_ROLES.includes(invite.role);
+    const appRole = invite ? APP_ROLE_LABEL[invite.role] : undefined;
+    const roleLabel = appRole ? appRole.label : invite && isRole(invite.role) ? ROLE_LABEL[invite.role] : invite?.role;
+    const roleHint = appRole ? appRole.hint : invite && isRole(invite.role) ? ROLE_HINT[invite.role] : "";
 
     return (
         <main className="min-h-dvh bg-gray-50 flex flex-col items-center px-4 py-8">
