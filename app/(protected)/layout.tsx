@@ -50,9 +50,9 @@ export default function ProtectedLayout({
         return;
       }
 
-      // Membro usa só o aplicativo: a área web é da equipe
+      // Membro e líder de célula usam só o aplicativo: a área web é da equipe
       const { data: access } = await supabase.rpc("my_access");
-      if (access?.role === "membro") {
+      if (access?.role === "membro" || access?.role === "lider_celula") {
         router.replace("/abrir-app");
         return;
       }
